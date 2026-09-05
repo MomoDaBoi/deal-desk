@@ -1,5 +1,6 @@
 import type { Mission } from '../engine/types'
 import { gradeBalance } from '../engine/graders/balance'
+import { mdVerdict } from '../engine/voice'
 import { LEDGERLY, margin } from './companies'
 
 const { revenue, grossProfit, ebitda, netIncome } = LEDGERLY.income
@@ -38,7 +39,7 @@ const mission: Mission = {
   },
   task: {
     kind: 'balance',
-    prompt: "Ledgerly's income statement, in dollars. Turn each profit line into a margin.",
+    prompt: "Ledgerly's income statement, in $k. Turn each profit line into a margin.",
     unit: '%',
     tolerance: 0.1,
     sections: [
@@ -47,10 +48,10 @@ const mission: Mission = {
         label: 'Income statement ($k)',
         role: 'neutral',
         lines: [
-          { id: 'revenue', label: 'Revenue', value: revenue },
-          { id: 'gross-profit', label: 'Gross profit', value: grossProfit },
-          { id: 'ebitda', label: 'EBITDA', value: ebitda },
-          { id: 'net-income', label: 'Net income', value: netIncome },
+          { id: 'revenue', label: 'Revenue', value: revenue, unit: '$k' },
+          { id: 'gross-profit', label: 'Gross profit', value: grossProfit, unit: '$k' },
+          { id: 'ebitda', label: 'EBITDA', value: ebitda, unit: '$k' },
+          { id: 'net-income', label: 'Net income', value: netIncome, unit: '$k' },
         ],
       },
       {
@@ -86,14 +87,14 @@ const mission: Mission = {
     return gradeBalance(mission.task, answer, ({ accuracy, wrongIds }) => {
       if (accuracy === 1) {
         return {
-          verdict: 'Fine. Do not let it go to your head.',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Gross margin is gross profit divided by revenue: ${grossProfit.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${grossMarginPct}%. EBITDA margin is EBITDA divided by revenue: ${ebitda.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${ebitdaMarginPct}%. Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%. Every margin uses the same divisor, revenue, so they only ever compare against another company's margins in the same industry.`,
         }
       }
       if (accuracy === 0) {
         return {
-          verdict: 'Did you even open the file?',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Nothing lined up. Gross margin is gross profit divided by revenue: ${grossProfit.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${grossMarginPct}%. EBITDA margin is EBITDA divided by revenue: ${ebitda.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${ebitdaMarginPct}%. Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%. Every one of them divides by the same number: revenue.`,
         }
@@ -112,14 +113,8 @@ const mission: Mission = {
           `Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%.`,
         )
       hints.push('Same divisor every time, revenue, so a margin only means something next to a same-industry peer.')
-      const verdict =
-        accuracy >= 0.75
-          ? 'Close. "Close" is what we say at the deposition.'
-          : accuracy >= 0.5
-            ? 'pls fix.'
-            : 'This is not going in the pitch book.'
       return {
-        verdict,
+        verdict: mdVerdict(accuracy, mission.id),
         explanation: hints.join(' '),
       }
     })

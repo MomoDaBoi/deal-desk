@@ -63,7 +63,7 @@ const mission: Mission = {
       }
       if (accuracy === 0) {
         return {
-          verdict: 'Did you even open the file?',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             'None of the bars landed. Total debt ($60,000k) is added because buying the company means taking on what it owes lenders. Cash ($30,000k) is subtracted because a buyer could use it to pay debt down immediately. Minority interest is 0 because Ledgerly owns 100% of its subsidiaries. Preferred stock is 0 because none has been issued. 370,000 + 60,000 − 30,000 + 0 + 0 = 400,000 — your bars do not reconcile to enterprise value.',
         }

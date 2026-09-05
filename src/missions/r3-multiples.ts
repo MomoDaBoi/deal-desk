@@ -42,7 +42,8 @@ const money = (n: number) => n.toLocaleString('en-US')
 const EV_EBITDA_LINE = `EV/EBITDA divides enterprise value by EBITDA, both figures every financier (lenders included) has a claim on: ${money(BH_EV)} ÷ ${money(BH_EBITDA)} = ${BH_EV_EBITDA}x.`
 const EV_REVENUE_LINE = `EV/Revenue divides enterprise value by revenue, the same pairing logic one level up the income statement: ${money(BH_EV)} ÷ ${money(BH_REVENUE)} = ${BH_EV_REVENUE}x.`
 const BH_PE_LINE = `P/E divides market cap (equity value, not EV) by net income, since net income is already after interest was paid to lenders: ${money(BH_MARKET_CAP)} ÷ ${money(BH_NET_INCOME)} = ${BH_PE}x.`
-const LD_PE_LINE = `Ledgerly's P/E is the same equity-value-over-net-income divide: ${money(LD_MARKET_CAP)} ÷ ${money(LD_NET_INCOME)} = ${LD_PE}x. That number looks absurd because it is: a thin profit line under a much larger price stretches the ratio, not a mistake to fix, just what a low-margin growth story looks like as a multiple.`
+const LD_GROSS_MARGIN_PCT = Math.round((LEDGERLY.income.grossProfit / LEDGERLY.income.revenue) * 100)
+const LD_PE_LINE = `Ledgerly's P/E is the same equity-value-over-net-income divide: ${money(LD_MARKET_CAP)} ÷ ${money(LD_NET_INCOME)} = ${LD_PE}x. That number looks absurd because it is: a ${LD_GROSS_MARGIN_PCT}% gross-margin business whose net income line is thin — interest of ${money(LEDGERLY.income.interest)} and D&A of ${money(LEDGERLY.income.da ?? 0)} leave only ${money(LD_NET_INCOME)} of an ${money(LEDGERLY.income.ebit)} EBIT — so the P/E says almost nothing. This is the case where you reach for EV/EBITDA or EV/Revenue instead.`
 
 const mission: Mission = {
   id: MISSION_ID,
@@ -76,13 +77,13 @@ const mission: Mission = {
         label: 'Inputs ($k)',
         role: 'neutral',
         lines: [
-          { id: 'brickhouse-ev', label: 'Brickhouse enterprise value', value: BH_EV },
-          { id: 'brickhouse-ebitda', label: 'Brickhouse EBITDA', value: BH_EBITDA },
-          { id: 'brickhouse-revenue', label: 'Brickhouse revenue', value: BH_REVENUE },
-          { id: 'brickhouse-market-cap', label: 'Brickhouse market cap', value: BH_MARKET_CAP },
-          { id: 'brickhouse-net-income', label: 'Brickhouse net income', value: BH_NET_INCOME },
-          { id: 'ledgerly-market-cap', label: 'Ledgerly market cap', value: LD_MARKET_CAP },
-          { id: 'ledgerly-net-income', label: 'Ledgerly net income', value: LD_NET_INCOME },
+          { id: 'brickhouse-ev', label: 'Brickhouse enterprise value', value: BH_EV, unit: '$k' },
+          { id: 'brickhouse-ebitda', label: 'Brickhouse EBITDA', value: BH_EBITDA, unit: '$k' },
+          { id: 'brickhouse-revenue', label: 'Brickhouse revenue', value: BH_REVENUE, unit: '$k' },
+          { id: 'brickhouse-market-cap', label: 'Brickhouse market cap', value: BH_MARKET_CAP, unit: '$k' },
+          { id: 'brickhouse-net-income', label: 'Brickhouse net income', value: BH_NET_INCOME, unit: '$k' },
+          { id: 'ledgerly-market-cap', label: 'Ledgerly market cap', value: LD_MARKET_CAP, unit: '$k' },
+          { id: 'ledgerly-net-income', label: 'Ledgerly net income', value: LD_NET_INCOME, unit: '$k' },
         ],
       },
       {

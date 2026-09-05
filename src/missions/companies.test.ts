@@ -240,6 +240,8 @@ describe('precedent transactions', () => {
       { target: 'Trestle Foods', acquirer: 'Copperline Markets', year: 2024, evEbitda: 9.2, premiumPct: 32 },
       { target: 'Verdant Grocers', acquirer: 'a private-equity sponsor', year: 2023, evEbitda: 8.4, premiumPct: 25 },
       { target: 'Marrow Fabrication', acquirer: 'Palisade Doors & Docks', year: 2025, evEbitda: 7.8, premiumPct: 21 },
+      { target: 'Anchor Bay Dock Equipment', acquirer: 'Girder & Vale Industries', year: 2024, evEbitda: 9.6, premiumPct: 28 },
+      { target: 'Corbel Industrial Doors', acquirer: 'a private-equity sponsor', year: 2023, evEbitda: 8.9, premiumPct: 24 },
     ])
   })
 
@@ -253,5 +255,19 @@ describe('precedent transactions', () => {
     expect(PRECEDENTS[0].evEbitda).toBeGreaterThan(trestleTrading)
     expect(PRECEDENTS[1].evEbitda).toBeGreaterThan(verdantTrading)
     expect(PRECEDENTS[2].evEbitda).toBeGreaterThan(marrowTrading)
+  })
+
+  it('has three industrial precedents, each priced above the cheapest genuine industrial trading peer', () => {
+    // Brickhouse (industrial) must be valued off industrial precedents, not
+    // the grocery deals above. All three run higher than the cheapest
+    // genuine industrial trading comp (Marrow Fabrication, 6.2x) — the
+    // minimum a control buyer would ever pay over the trading floor.
+    const industrialPrecedents = PRECEDENTS.filter((p) => ['Marrow Fabrication', 'Anchor Bay Dock Equipment', 'Corbel Industrial Doors'].includes(p.target))
+    expect(industrialPrecedents).toHaveLength(3)
+    const genuinePeerMultiples = INDUSTRIAL_PEERS.filter((p) => !p.trap).map((p) => p.evEbitda!)
+    const cheapestPeerMultiple = Math.min(...genuinePeerMultiples)
+    for (const precedent of industrialPrecedents) {
+      expect(precedent.evEbitda).toBeGreaterThan(cheapestPeerMultiple)
+    }
   })
 })

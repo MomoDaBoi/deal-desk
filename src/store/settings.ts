@@ -8,14 +8,21 @@ import { persist, createJSONStorage } from 'zustand/middleware'
  */
 export const SETTINGS_KEY = 'deal-desk:settings'
 
+/** Model ids the Mentor may use. Keep in sync with src/lib/pricing.ts. */
+export type MentorModel = 'claude-opus-5' | 'claude-sonnet-5' | 'claude-haiku-4-5'
+export const DEFAULT_MENTOR_MODEL: MentorModel = 'claude-opus-5'
+
 interface SettingsState {
   apiKey: string
   /** Player-chosen. Only honoured when an API key is present. */
   mentorEnabled: boolean
+  /** Which Claude model the Mentor calls. */
+  model: MentorModel
   soundOn: boolean
   setApiKey: (k: string) => void
   setMentorEnabled: (v: boolean) => void
   setSoundOn: (v: boolean) => void
+  setModel: (m: MentorModel) => void
 }
 
 export const useSettings = create<SettingsState>()(
@@ -23,10 +30,12 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       apiKey: '',
       mentorEnabled: true,
+      model: DEFAULT_MENTOR_MODEL,
       soundOn: false,
       setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
       setMentorEnabled: (mentorEnabled) => set({ mentorEnabled }),
       setSoundOn: (soundOn) => set({ soundOn }),
+      setModel: (model) => set({ model }),
     }),
     { name: SETTINGS_KEY, storage: createJSONStorage(() => localStorage) },
   ),

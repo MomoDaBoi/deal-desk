@@ -1,5 +1,6 @@
 import type { Mission } from '../engine/types'
 import { gradeBalance } from '../engine/graders/balance'
+import { mdVerdict } from '../engine/voice'
 import { LEDGERLY, cagr, growth } from './companies'
 
 /**
@@ -49,14 +50,14 @@ const mission: Mission = {
     sections: [
       {
         id: 'inputs',
-        label: 'Income statement',
+        label: 'Income statement ($k)',
         role: 'revenue',
         lines: [
-          { id: 'revenue-2024', label: 'Revenue, FY2024', value: REVENUE_2024 },
-          { id: 'revenue-2025', label: 'Revenue, FY2025', value: REVENUE_2025 },
-          { id: 'gross-profit-2024', label: 'Gross profit, FY2024', value: GROSS_PROFIT_2024 },
-          { id: 'gross-profit-2025', label: 'Gross profit, FY2025', value: GROSS_PROFIT_2025 },
-          { id: 'revenue-3yr-ago', label: 'Revenue, FY2022 (three years ago)', value: REVENUE_3YR_AGO },
+          { id: 'revenue-2024', label: 'Revenue, FY2024', value: REVENUE_2024, unit: '$k' },
+          { id: 'revenue-2025', label: 'Revenue, FY2025', value: REVENUE_2025, unit: '$k' },
+          { id: 'gross-profit-2024', label: 'Gross profit, FY2024', value: GROSS_PROFIT_2024, unit: '$k' },
+          { id: 'gross-profit-2025', label: 'Gross profit, FY2025', value: GROSS_PROFIT_2025, unit: '$k' },
+          { id: 'revenue-3yr-ago', label: 'Revenue, FY2022 (three years ago)', value: REVENUE_3YR_AGO, unit: '$k' },
         ],
       },
       {
@@ -92,14 +93,14 @@ const mission: Mission = {
     return gradeBalance(mission.task, answer, ({ accuracy, wrongIds }) => {
       if (accuracy === 1) {
         return {
-          verdict: 'Fine. Do not let it go to your head.',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Revenue growth is FY2025 ÷ FY2024 − 1: ${REVENUE_2025.toLocaleString()} ÷ ${REVENUE_2024.toLocaleString()} − 1 = 1.25 − 1 = ${REVENUE_GROWTH}%. Gross profit growth is the same formula on gross profit: ${GROSS_PROFIT_2025.toLocaleString()} ÷ ${GROSS_PROFIT_2024.toLocaleString()} − 1 ≈ 1.2658 − 1 = ${GROSS_PROFIT_GROWTH}%. The 3-year CAGR compounds from the oldest year: (${REVENUE_2025.toLocaleString()} ÷ ${REVENUE_3YR_AGO.toLocaleString()})^(1/3) − 1 = 1.953125^(1/3) − 1 = 1.25 − 1 = ${REVENUE_CAGR}%. Every denominator is the earlier year.`,
         }
       }
       if (accuracy === 0) {
         return {
-          verdict: 'Did you even open the file?',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Nothing lined up. Revenue growth is FY2025 ÷ FY2024 − 1: ${REVENUE_2025.toLocaleString()} ÷ ${REVENUE_2024.toLocaleString()} − 1 = ${REVENUE_GROWTH}%. Gross profit growth is ${GROSS_PROFIT_2025.toLocaleString()} ÷ ${GROSS_PROFIT_2024.toLocaleString()} − 1 = ${GROSS_PROFIT_GROWTH}%. The 3-year CAGR is (${REVENUE_2025.toLocaleString()} ÷ ${REVENUE_3YR_AGO.toLocaleString()})^(1/3) − 1 = ${REVENUE_CAGR}%. In every case the denominator is the OLDER year — the base you grew from, not the year you ended up in.`,
         }
@@ -118,14 +119,8 @@ const mission: Mission = {
           `The 3-year CAGR is not simple growth divided by three years — it compounds: (${REVENUE_2025.toLocaleString()} ÷ ${REVENUE_3YR_AGO.toLocaleString()})^(1/3) − 1 = 1.953125^(1/3) − 1 = ${REVENUE_CAGR}%, the constant yearly rate that gets from ${REVENUE_3YR_AGO.toLocaleString()} to ${REVENUE_2025.toLocaleString()} in three compounding steps.`,
         )
       hints.push('Every growth rate here divides by the earlier year — the base you grew from, never the year you landed on.')
-      const verdict =
-        accuracy >= 0.75
-          ? 'Close. "Close" is what we say at the deposition.'
-          : accuracy >= 0.5
-            ? 'pls fix.'
-            : 'This is not going in the pitch book.'
       return {
-        verdict,
+        verdict: mdVerdict(accuracy, mission.id),
         explanation: hints.join(' '),
       }
     })

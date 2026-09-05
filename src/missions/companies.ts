@@ -442,9 +442,14 @@ export const GROCERY_PEERS: Peer[] = [
  * Precedent transactions: past whole-company acquisitions. They price
  * control, so they run higher than trading multiples, and each carries a
  * premium (the percentage over the pre-deal share price the acquirer paid).
+ * Three are grocery deals (for Nan's Pantry); three are industrial deals
+ * (for Brickhouse) so an industrial target is never priced off grocery
+ * precedents.
  */
 export const PRECEDENTS: Precedent[] = [
   { target: 'Trestle Foods', acquirer: 'Copperline Markets', year: 2024, evEbitda: 9.2, premiumPct: 32 },
   { target: 'Verdant Grocers', acquirer: 'a private-equity sponsor', year: 2023, evEbitda: 8.4, premiumPct: 25 },
   { target: 'Marrow Fabrication', acquirer: 'Palisade Doors & Docks', year: 2025, evEbitda: 7.8, premiumPct: 21 },
+  { target: 'Anchor Bay Dock Equipment', acquirer: 'Girder & Vale Industries', year: 2024, evEbitda: 9.6, premiumPct: 28 },
+  { target: 'Corbel Industrial Doors', acquirer: 'a private-equity sponsor', year: 2023, evEbitda: 8.9, premiumPct: 24 },
 ]

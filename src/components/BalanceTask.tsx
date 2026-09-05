@@ -149,6 +149,7 @@ export function BalanceTask({
             {section.lines.map((line) => {
               const isBlank = line.value === undefined && line.answer !== undefined
               const raw = value[line.id]
+              const lineUnit = line.unit ?? task.unit
               return (
                 <div
                   key={line.id}
@@ -160,13 +161,14 @@ export function BalanceTask({
                       id={line.id}
                       value={raw ?? null}
                       onChange={(n) => setLine(line.id, n)}
+                      unit={lineUnit}
                       disabled={disabled}
                       ariaLabel={line.label}
                     />
                   ) : (
                     <span className="font-mono text-ink">
                       {formatNumber(line.value ?? 0)}
-                      {task.unit ? ` ${task.unit}` : ''}
+                      {lineUnit ? ` ${lineUnit}` : ''}
                     </span>
                   )}
                 </div>

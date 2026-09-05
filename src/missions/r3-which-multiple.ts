@@ -19,11 +19,11 @@ const CHOICES = [
 const QUESTIONS = [
   {
     id: 'q-debt-load',
-    text: `Two grocers post identical revenue, margins, and store counts. One financed its rollout with heavy debt (like ${NANS_PANTRY.name}, carrying $${(NANS_PANTRY.balance!.totalDebt / 1000).toFixed(0)}m of debt); the other has almost none. Which multiple still compares their operating performance fairly?`,
+    text: `Two grocers post similar revenue and store counts but different operating margins. One financed its rollout with heavy debt (like ${NANS_PANTRY.name}, carrying $${(NANS_PANTRY.balance!.totalDebt / 1000).toFixed(0)}m of debt); the other has almost none. Which multiple compares their operating profitability fairly despite the debt gap?`,
     choices: CHOICES,
     correctId: 'evebitda',
     explanation:
-      'EV/EBITDA divides enterprise value (equity plus debt) by EBITDA, a line that sits above interest expense. The debt-loaded grocer\'s bigger interest bill never touches either number, so its EV/EBITDA still lines up with a debt-free twin — the way multiple debt levels can all trade near the same multiple.',
+      'EV/EBITDA divides enterprise value (equity plus debt) by EBITDA, a line that sits above interest expense. The debt-loaded grocer\'s bigger interest bill never touches either number, so its EV/EBITDA still isolates the operating difference. EV/Revenue is equally debt-neutral, but it ignores profitability altogether, so it cannot tell the two apart once their margins differ.',
   },
   {
     id: 'q-no-profit-growth',

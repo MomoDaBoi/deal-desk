@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import type { Role, WaterfallStep, WaterfallTask as WaterfallTaskType } from '../engine/types'
+import { NumberField } from './BalanceTask'
 
 /**
  * Income statement as a bar chart the player fills in. Steps run left to
@@ -22,16 +23,6 @@ const ROLE_BAR: Record<Role, string> = {
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
-}
-
-/** Accepts negatives and thousands separators. Empty input clears the blank. */
-function parseInput(raw: string): number | null {
-  const trimmed = raw.trim()
-  if (trimmed === '') return null
-  const cleaned = trimmed.replace(/,/g, '')
-  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null
-  const n = Number(cleaned)
-  return Number.isNaN(n) ? null : n
 }
 
 interface StepDraw {
@@ -97,7 +88,7 @@ export function WaterfallTask({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto bg-panel border border-line rounded-2xl p-3">
+      <div className="overflow-x-auto bg-panel border border-line rounded-2xl px-3 pb-3 pt-7">
         <div className="relative flex items-stretch gap-2 h-56" style={{ minWidth: `${draws.length * 64}px` }}>
           <div className="absolute left-0 right-0 border-t border-line/60" style={{ top: `${pct(0)}%` }} />
           {draws.map((d) => {
@@ -134,17 +125,15 @@ export function WaterfallTask({
             <div key={step.id} className="flex items-center justify-between gap-3 bg-panel border border-line rounded-xl px-4 py-2">
               <span className="text-ink text-sm">{step.label}</span>
               {isBlank ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    inputMode="decimal"
-                    type="text"
-                    disabled={disabled}
-                    value={raw === null || raw === undefined ? '' : String(raw)}
-                    onChange={(e) => setValue(step.id, parseInput(e.target.value))}
-                    className="min-h-11 w-32 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
-                  />
-                  {task.unit && <span className="text-xs text-muted font-mono">{task.unit}</span>}
-                </div>
+                <NumberField
+                  id={step.id}
+                  value={raw ?? null}
+                  onChange={(n) => setValue(step.id, n)}
+                  unit={task.unit}
+                  disabled={disabled}
+                  ariaLabel={step.label}
+                  className="min-h-11 w-32 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
+                />
               ) : (
                 <span className="font-mono text-ink text-sm">
                   {formatNumber(step.value ?? 0)}

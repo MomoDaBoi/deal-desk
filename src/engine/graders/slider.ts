@@ -1,5 +1,29 @@
 import type { GradeResult, SliderAnswer, SliderTask } from '../types'
 
+type SliderConfig = SliderTask['sliders'][number]
+
+function decimalsOf(step: number): number {
+  const s = String(step)
+  const i = s.indexOf('.')
+  return i === -1 ? 0 : s.length - i - 1
+}
+
+/**
+ * Format a slider value using the precision implied by the slider's own
+ * `step` (so a 0.05 step shows two decimals, not the one-size-fits-all
+ * rounding a naive threshold gives). Currency renders as a prefix
+ * ("$14.75"); every other unit renders as a suffix ("8.2x", "25.0%").
+ */
+export function formatSliderValue(value: number, slider: Pick<SliderConfig, 'step' | 'unit'>): string {
+  const decimals = decimalsOf(slider.step)
+  const s = value.toFixed(decimals)
+  const unit = slider.unit ?? ''
+  if (!unit) return s
+  if (unit === '$') return `$${s}`
+  const sep = unit === 'x' || unit === '%' ? '' : ' '
+  return `${s}${sep}${unit}`
+}
+
 /**
  * Grade a slider task. Each slider scores 1 when the player's value is
  * within `tolerance` of the answer, degrading linearly to 0 at 2x
@@ -26,7 +50,7 @@ export function gradeSlider(
     const err = Math.abs(got - slider.answer)
     const tolerance = slider.tolerance
     const score = err <= tolerance ? 1 : Math.max(0, 1 - (err - tolerance) / tolerance)
-    return { id: slider.id, label: slider.label, expected: slider.answer, got, score, unit: slider.unit ?? '' }
+    return { id: slider.id, label: slider.label, expected: slider.answer, got, score, step: slider.step, unit: slider.unit ?? '' }
   })
 
   const details = results.map((r) => {
@@ -34,7 +58,11 @@ export function gradeSlider(
     return {
       id: r.id,
       ok,
-      ...(ok ? {} : { note: `You set ${r.got}${r.unit}, answer ${r.expected}${r.unit}` }),
+      ...(ok
+        ? {}
+        : {
+            note: `You set ${formatSliderValue(r.got, r)}, answer ${formatSliderValue(r.expected, r)}`,
+          }),
     }
   })
 

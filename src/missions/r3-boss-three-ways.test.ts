@@ -9,8 +9,8 @@ function answer(ranges: FootballFieldAnswer['ranges'], choice: string | null = n
 }
 
 const PERFECT_RANGES: FootballFieldAnswer['ranges'] = {
-  comps: { low: 12.26, high: 17.3 },
-  precedents: { low: 13.22, high: 16.58 },
+  comps: { low: 12.26, high: 15.62 },
+  precedents: { low: 13.22, high: 17.54 },
   market: { low: 12.1, high: 16.4 },
 }
 
@@ -37,7 +37,7 @@ describe('r3-boss-three-ways', () => {
     const result = mission.grade(
       answer(
         {
-          comps: { low: 12.26, high: 17.3 },
+          comps: { low: 12.26, high: 15.62 },
           precedents: { low: 20, high: 20 },
           market: { low: 12.1, high: 16.4 },
         },
@@ -98,10 +98,10 @@ describe('r3-boss-three-ways', () => {
     const precedents = task.rows.find((r) => r.id === 'precedents')!
     const market = task.rows.find((r) => r.id === 'market')!
     expect(comps.lowAnswer).toBeCloseTo(12.26, 5)
-    expect(comps.highAnswer).toBeCloseTo(17.3, 5)
+    expect(comps.highAnswer).toBeCloseTo(15.62, 5)
     expect(comps.tolerance).toBe(0.3)
     expect(precedents.lowAnswer).toBeCloseTo(13.22, 5)
-    expect(precedents.highAnswer).toBeCloseTo(16.58, 5)
+    expect(precedents.highAnswer).toBeCloseTo(17.54, 5)
     expect(precedents.tolerance).toBe(0.3)
     expect(market.lowAnswer).toBeCloseTo(12.1, 5)
     expect(market.highAnswer).toBeCloseTo(16.4, 5)

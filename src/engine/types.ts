@@ -94,6 +94,8 @@ export interface BalanceLine {
   note?: string
   /** Render as a subtotal/total row. */
   total?: boolean
+  /** Per-line unit override (e.g. a $k input line inside a % drill). */
+  unit?: string
 }
 
 /** Multiple choice, optionally timed. Boss fights use this. */
@@ -197,7 +199,25 @@ export interface FootballFieldTask {
   }
 }
 
-export type Task = OrderTask | SortTask | BalanceTask | QuizTask | SliderTask | WaterfallTask | BridgeTask | FootballFieldTask
+/**
+ * Free text graded by the MD over the API. Missions of this kind are always
+ * mentorOnly. The pure grade() returns accuracy 0 with a "Mentor mode
+ * required" explanation; the real grading happens in Mission.gradeAsync.
+ */
+export interface WrittenTask {
+  kind: 'written'
+  prompt: string
+  /** Client-side truncation limit before the answer is sent. */
+  wordLimit: number
+  /** Scoring criteria shown to the grader (and, after grading, to the player). */
+  rubric: string[]
+  /** A model answer the grader compares against. Never shown before grading. */
+  modelAnswer: string
+  /** Optional list of questions for multi-turn formats like the mock interview. */
+  questions?: { id: string; text: string; rubric: string[]; modelAnswer: string }[]
+}
+
+export type Task = OrderTask | SortTask | BalanceTask | QuizTask | SliderTask | WaterfallTask | BridgeTask | FootballFieldTask | WrittenTask
 
 /** What the player submitted. Shape follows the task kind. */
 export type OrderAnswer = { kind: 'order'; orderedIds: string[] }
@@ -221,7 +241,11 @@ export type FootballFieldAnswer = {
   choice?: string | null
 }
 
+/** Free text. For multi-question tasks, `answers` maps questionId -> text. */
+export type WrittenAnswer = { kind: 'written'; text: string; answers?: Record<string, string> }
+
 export type Answer =
+  | WrittenAnswer
   | OrderAnswer
   | SortAnswer
   | BalanceAnswer
@@ -260,4 +284,24 @@ export interface Mission {
   lesson: Lesson
   task: Task
   grade: (answer: Answer) => GradeResult
+  /**
+   * Async grading over the Mentor API. Only written missions define it.
+   * `mentor` is created by src/lib/anthropic.ts from the player's key.
+   */
+  gradeAsync?: (answer: Answer, mentor: MentorClient) => Promise<GradeResult>
+}
+
+/**
+ * The surface a written mission needs from the API client. Kept here so the
+ * engine folder never imports the SDK. Implemented in src/lib/anthropic.ts.
+ */
+export interface MentorClient {
+  gradeWritten(input: {
+    missionTitle: string
+    question: string
+    rubric: string[]
+    modelAnswer: string
+    answer: string
+    wordLimit: number
+  }): Promise<{ score: number; verdict: string; explanation: string; missed: string[] }>
 }

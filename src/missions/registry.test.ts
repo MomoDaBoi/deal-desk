@@ -17,14 +17,15 @@ describe('mission registry', () => {
 
   it('has positive comp and par on every mission', () => {
     for (const m of MISSIONS) {
-      expect(m.baseComp, m.id).toBeGreaterThan(0)
+      if (m.mentorOnly) expect(m.baseComp, m.id).toBe(0)
+      else expect(m.baseComp, m.id).toBeGreaterThan(0)
       expect(m.parSeconds, m.id).toBeGreaterThan(0)
     }
   })
 
   it('has at most one boss per rung, and the boss is last', () => {
     for (const rung of [1, 2, 3, 4, 5] as Rung[]) {
-      const ms = missionsForRung(rung, true)
+      const ms = missionsForRung(rung, false)
       const bosses = ms.filter((m) => m.boss)
       expect(bosses.length).toBeLessThanOrEqual(1)
       if (bosses.length === 1) expect(ms[ms.length - 1].id).toBe(bosses[0].id)

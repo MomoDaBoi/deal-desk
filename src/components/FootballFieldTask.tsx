@@ -55,6 +55,15 @@ export function FootballFieldTask({
     return value.ranges[id] ?? { low: axis.min, high: axis.min }
   }
 
+  function snapToGrid(n: number): number {
+    const factor = Math.pow(10, decimals)
+    return Math.round(n * factor) / factor
+  }
+
+  function clampToAxis(n: number): number {
+    return Math.min(axis.max, Math.max(axis.min, n))
+  }
+
   function setLow(id: string, low: number) {
     if (disabled) return
     const cur = rangeFor(id)
@@ -109,36 +118,76 @@ export function FootballFieldTask({
                     <span className="text-xs uppercase tracking-wide text-muted font-semibold">Low</span>
                     <span className="font-mono text-sm text-ink">{formatValue(low, decimals, task.unit)}</span>
                   </div>
-                  <input
-                    type="range"
-                    aria-label={`${row.label} low`}
-                    min={axis.min}
-                    max={axis.max}
-                    step={axis.step}
-                    value={low}
-                    disabled={disabled}
-                    onChange={(e) => setLow(row.id, Number(e.target.value))}
-                    className="w-full min-h-11 disabled:opacity-60"
-                    style={{ accentColor: accent }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={`Decrease ${row.label} low`}
+                      disabled={disabled}
+                      onClick={() => setLow(row.id, clampToAxis(snapToGrid(low - axis.step)))}
+                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="range"
+                      aria-label={`${row.label} low`}
+                      min={axis.min}
+                      max={axis.max}
+                      step={axis.step}
+                      value={low}
+                      disabled={disabled}
+                      onChange={(e) => setLow(row.id, Number(e.target.value))}
+                      className="w-full min-h-11 flex-1 disabled:opacity-60"
+                      style={{ accentColor: accent }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase ${row.label} low`}
+                      disabled={disabled}
+                      onClick={() => setLow(row.id, clampToAxis(snapToGrid(low + axis.step)))}
+                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase tracking-wide text-muted font-semibold">High</span>
                     <span className="font-mono text-sm text-ink">{formatValue(high, decimals, task.unit)}</span>
                   </div>
-                  <input
-                    type="range"
-                    aria-label={`${row.label} high`}
-                    min={axis.min}
-                    max={axis.max}
-                    step={axis.step}
-                    value={high}
-                    disabled={disabled}
-                    onChange={(e) => setHigh(row.id, Number(e.target.value))}
-                    className="w-full min-h-11 disabled:opacity-60"
-                    style={{ accentColor: accent }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label={`Decrease ${row.label} high`}
+                      disabled={disabled}
+                      onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high - axis.step)))}
+                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="range"
+                      aria-label={`${row.label} high`}
+                      min={axis.min}
+                      max={axis.max}
+                      step={axis.step}
+                      value={high}
+                      disabled={disabled}
+                      onChange={(e) => setHigh(row.id, Number(e.target.value))}
+                      className="w-full min-h-11 flex-1 disabled:opacity-60"
+                      style={{ accentColor: accent }}
+                    />
+                    <button
+                      type="button"
+                      aria-label={`Increase ${row.label} high`}
+                      disabled={disabled}
+                      onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high + axis.step)))}
+                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

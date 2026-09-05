@@ -68,7 +68,7 @@ const mission: Mission = {
         return {
           verdict: mdVerdict(1, 'r3-peer-set'),
           explanation:
-            'The five industrials stay in and the two traps stay out. ' +
+            `The ${REAL_PEERS.length} industrials stay in and the ${TRAP_PEERS.length} traps stay out. ` +
             [...REAL_PEERS, ...TRAP_PEERS].map((p) => `${p.name}: ${REASON[slug(p.name)]}`).join(' '),
         }
       }

@@ -1,22 +1,38 @@
 import { useRef, useState } from 'react'
 import { useNav } from '../store/nav'
 import { useProgress } from '../store/progress'
-import { looksLikeAnthropicKey, useSettings } from '../store/settings'
+import { looksLikeAnthropicKey, useSettings, type MentorModel } from '../store/settings'
+import { useUsage } from '../store/usage'
 import { formatComp } from '../engine/scoring'
 import { Button, Eyebrow, Page, Panel } from '../components/ui'
+import { MODELS, mentorFromSettings } from '../lib/anthropic'
+import { PRICES, PRICING_CHECKED_ON, estimateCallCost, formatUsd } from '../lib/pricing'
 
 export function Settings() {
   const go = useNav((s) => s.go)
-  const { apiKey, mentorEnabled, soundOn, setApiKey, setMentorEnabled, setSoundOn } = useSettings()
+  const { apiKey, mentorEnabled, model, soundOn, setApiKey, setMentorEnabled, setModel, setSoundOn } = useSettings()
   const progress = useProgress()
+  const usage = useUsage()
   const [draftKey, setDraftKey] = useState(apiKey)
   const [showKey, setShowKey] = useState(false)
   const [msg, setMsg] = useState<{ tone: 'ok' | 'err'; text: string } | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [keyTest, setKeyTest] = useState<{ state: 'idle' | 'testing' | 'ok' | 'err'; text: string }>({ state: 'idle', text: '' })
   const fileRef = useRef<HTMLInputElement>(null)
 
   const hasKey = apiKey.length > 0
   const totalComp = Object.values(progress.best).reduce((a, b) => a + b, 0)
+
+  async function testKey() {
+    setKeyTest({ state: 'testing', text: '' })
+    const mentor = mentorFromSettings()
+    if (!mentor) {
+      setKeyTest({ state: 'err', text: 'No key saved yet.' })
+      return
+    }
+    const r = await mentor.testKey()
+    setKeyTest(r.ok ? { state: 'ok', text: 'Key works.' } : { state: 'err', text: r.error })
+  }
 
   function saveKey() {
     const k = draftKey.trim()
@@ -127,7 +143,61 @@ export function Settings() {
             <Toggle checked={mentorEnabled} onChange={setMentorEnabled} />
           </label>
         )}
-        {hasKey && <p className="mt-3 text-xs text-debt">Mentor features ship in Milestone 4. For now the key just sits here, unused.</p>}
+        {hasKey && (
+          <p className="mt-3 text-xs text-muted">
+            Mentor mode adds written-answer missions the MD grades, plus an Ask the MD button on result screens.
+          </p>
+        )}
+
+        {hasKey && (
+          <div className="mt-4 border-t border-line pt-4">
+            <div className="text-sm font-semibold">Which MD grades you</div>
+            <div className="mt-2 grid gap-2">
+              {MODELS.map((m) => {
+                const price = PRICES[m.id]
+                const selected = model === m.id
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setModel(m.id as MentorModel)}
+                    className={`min-h-11 text-left rounded-xl border px-3 py-2 transition ${
+                      selected ? 'border-revenue bg-revenue/10' : 'border-line bg-panel-2 hover:bg-line/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-sm">{m.label}</span>
+                      <span className="text-xs text-muted">
+                        ${price.inputPerM.toFixed(0)} in / ${price.outputPerM.toFixed(0)} out per M tok
+                      </span>
+                    </div>
+                    <div className="text-xs text-muted">{m.blurb}</div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="mt-3 text-xs text-muted">
+              About {formatUsd(estimateCallCost(model, 900, 700))} per graded answer, {formatUsd(estimateCallCost(model, 600, 500))} per Ask the MD,
+              at prices checked on {PRICING_CHECKED_ON}.
+            </p>
+
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <Button variant="ghost" onClick={testKey} disabled={keyTest.state === 'testing'}>
+                {keyTest.state === 'testing' ? 'Testing…' : 'Test key'}
+              </Button>
+              {keyTest.state === 'ok' && <span className="text-sm text-revenue">Key works</span>}
+              {keyTest.state === 'err' && <span className="text-sm text-cost">{keyTest.text}</span>}
+            </div>
+
+            <p className="mt-3 text-xs text-muted">
+              {usage.calls} calls this session, about {formatUsd(usage.cost)} total.{' '}
+              <button type="button" onClick={() => useUsage.getState().reset()} className="underline hover:text-ink">
+                Reset
+              </button>
+            </p>
+          </div>
+        )}
       </Panel>
 
       <Panel className="mt-4">

@@ -1,5 +1,6 @@
 import type { Mission } from '../engine/types'
 import { gradeBalance } from '../engine/graders/balance'
+import { mdVerdict } from '../engine/voice'
 
 /**
  * Rung 1, mission 3. Pucker Up Lemonade Co.'s balance sheet, smudged by an
@@ -71,14 +72,14 @@ const mission: Mission = {
     return gradeBalance(mission.task, answer, ({ accuracy, wrongIds }) => {
       if (accuracy === 1) {
         return {
-          verdict: 'Fine. Do not let it go to your head.',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             'Total assets is the sum of the four asset lines: 150 cash + 90 receivables + 60 inventory + 500 PP&E = 800. Long-term debt is total liabilities minus accounts payable: 400 − 70 = 330. Shareholders’ equity is total assets minus total liabilities: 800 − 400 = 400. Both sides land on 800, so the sheet balances.',
         }
       }
       if (accuracy === 0) {
         return {
-          verdict: 'Did you even open the file?',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             'Nothing lined up. Total assets is the sum of the four asset lines: 150 cash + 90 receivables + 60 inventory + 500 PP&E = 800. Long-term debt is total liabilities minus accounts payable: 400 − 70 = 330. Shareholders’ equity is total assets minus total liabilities: 800 − 400 = 400. Both sides must land on the same number, 800, or the sheet does not balance.',
         }
@@ -97,14 +98,8 @@ const mission: Mission = {
           "Shareholders' equity is total assets minus total liabilities: 800 − 400 = 400. It is what would be left for the founder if every debt were paid off today.",
         )
       hints.push('Total assets (800) must equal total liabilities plus equity (400 + 400 = 800), always.')
-      const verdict =
-        accuracy >= 0.75
-          ? 'Close. "Close" is what we say at the deposition.'
-          : accuracy >= 0.5
-            ? 'pls fix.'
-            : 'This is not going in the pitch book.'
       return {
-        verdict,
+        verdict: mdVerdict(accuracy, mission.id),
         explanation: hints.join(' '),
       }
     })

@@ -1,4 +1,5 @@
 import type { BridgeTask as BridgeTaskType, Role } from '../engine/types'
+import { NumberField } from './BalanceTask'
 
 /**
  * Two-anchor bridge: a start bar, one row per adjustment (input + a floating
@@ -18,16 +19,6 @@ const SOLID_BG: Record<Role, string> = {
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US')
-}
-
-/** Accepts negatives and thousands separators. Empty input clears the blank. */
-function parseInput(raw: string): number | null {
-  const trimmed = raw.trim()
-  if (trimmed === '') return null
-  const cleaned = trimmed.replace(/,/g, '')
-  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null
-  const n = Number(cleaned)
-  return Number.isNaN(n) ? null : n
 }
 
 /** Position on the [0, scale] track as a clamped percentage. */
@@ -65,6 +56,7 @@ export function BridgeTask({
   const tolerance = task.tolerance ?? 0
   const diff = runningTotal - task.end.value
   const reconciled = Math.abs(diff) <= tolerance
+  const anyBlank = task.adjustments.some((a) => (value[a.id] ?? null) === null)
 
   return (
     <div className="flex flex-col gap-4">
@@ -96,14 +88,24 @@ export function BridgeTask({
                 <span className="text-ink text-sm font-semibold">{adj.label}</span>
                 {adj.hint && <span className="text-muted text-xs">{adj.hint}</span>}
               </div>
-              <input
-                inputMode="decimal"
-                type="text"
-                disabled={disabled}
-                value={got === null ? '' : String(got)}
-                onChange={(e) => setAdjustment(adj.id, parseInput(e.target.value))}
-                className="min-h-11 w-28 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
-              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={disabled || got === null}
+                  onClick={() => setAdjustment(adj.id, got === null ? null : -got)}
+                  aria-label={`Flip sign for ${adj.label}`}
+                  className="min-w-11 min-h-11 flex items-center justify-center font-mono text-ink bg-panel-2 border border-line rounded-lg disabled:opacity-60"
+                >
+                  {positive ? '+' : '−'}
+                </button>
+                <NumberField
+                  id={adj.id}
+                  value={got}
+                  onChange={(n) => setAdjustment(adj.id, n)}
+                  ariaLabel={adj.label}
+                  disabled={disabled}
+                />
+              </div>
             </div>
             <div className="relative h-4 rounded-full bg-panel-2 overflow-hidden">
               <div
@@ -119,8 +121,8 @@ export function BridgeTask({
       <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-wide text-muted font-semibold">{task.end.label}</span>
-          <span className={`text-sm font-semibold ${reconciled ? 'text-revenue' : 'text-cost'}`}>
-            {reconciled ? 'Reconciled' : `Off by ${formatNumber(Math.abs(diff))}${unit}`}
+          <span className={`text-sm font-semibold ${anyBlank ? 'text-muted' : reconciled ? 'text-revenue' : 'text-cost'}`}>
+            {anyBlank ? 'Fill in every bar' : reconciled ? 'Reconciled' : `Off by ${formatNumber(Math.abs(diff))}${unit}`}
           </span>
         </div>
         <div className="flex flex-col gap-2">

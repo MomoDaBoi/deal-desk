@@ -1,5 +1,6 @@
 import type { Mission } from '../engine/types'
 import { gradeBalance } from '../engine/graders/balance'
+import { mdVerdict } from '../engine/voice'
 import { LEDGERLY } from './companies'
 
 /**
@@ -80,14 +81,14 @@ const mission: Mission = {
 
       if (accuracy === 1) {
         return {
-          verdict: 'Fine. Do not let it go to your head.',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Net debt is total debt minus cash: ${totalDebt.toLocaleString()} − ${cash.toLocaleString()} = ${NET_DEBT.toLocaleString()}. With $10,000k of cash restricted, only ${(cash - RESTRICTED).toLocaleString()} is left to offset debt: ${totalDebt.toLocaleString()} − ${(cash - RESTRICTED).toLocaleString()} = ${NET_DEBT_RESTRICTED.toLocaleString()}.`,
         }
       }
       if (accuracy === 0) {
         return {
-          verdict: 'Did you even open the file?',
+          verdict: mdVerdict(accuracy, mission.id),
           explanation:
             `Neither blank landed. Net debt is total debt minus cash, never plus: ${totalDebt.toLocaleString()} − ${cash.toLocaleString()} = ${NET_DEBT.toLocaleString()}. Restricted cash cannot be used to repay debt, so it drops out of the offset: with $10,000k restricted, only ${(cash - RESTRICTED).toLocaleString()} of cash still counts, giving ${totalDebt.toLocaleString()} − ${(cash - RESTRICTED).toLocaleString()} = ${NET_DEBT_RESTRICTED.toLocaleString()}.`,
         }
@@ -108,14 +109,8 @@ const mission: Mission = {
         hints.push(
           `Restricted cash cannot be used to repay debt, so it stays out of the offset. Only ${(cash - RESTRICTED).toLocaleString()} of the ${cash.toLocaleString()} cash is unrestricted, so net debt is ${totalDebt.toLocaleString()} − ${(cash - RESTRICTED).toLocaleString()} = ${NET_DEBT_RESTRICTED.toLocaleString()}.`,
         )
-      const verdict =
-        accuracy >= 0.75
-          ? 'Close. "Close" is what we say at the deposition.'
-          : accuracy >= 0.5
-            ? 'pls fix.'
-            : 'This is not going in the pitch book.'
       return {
-        verdict,
+        verdict: mdVerdict(accuracy, mission.id),
         explanation: hints.join(' '),
       }
     })

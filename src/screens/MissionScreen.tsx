@@ -17,6 +17,9 @@ import { SliderTask } from '../components/SliderTask'
 import { WaterfallTask } from '../components/WaterfallTask'
 import { BridgeTask } from '../components/BridgeTask'
 import { FootballFieldTask } from '../components/FootballFieldTask'
+import { WrittenTask } from '../components/WrittenTask'
+import { AskMd } from '../components/AskMd'
+import { mentorFromSettings, MentorError } from '../lib/anthropic'
 
 type Phase =
   | { name: 'lesson' }
@@ -24,6 +27,8 @@ type Phase =
   | { name: 'result'; grade: GradeResult; comp: CompBreakdown; newBest: boolean; elapsed: number; answer: Answer }
   | { name: 'review'; grade: GradeResult }
   | { name: 'bonus' }
+  | { name: 'grading' }
+  | { name: 'gradeError'; message: string }
 
 /**
  * Mission engine: lesson card -> task -> result -> (review | bonus | back).
@@ -64,7 +69,23 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     submitted.current = true
     const elapsed = (performance.now() - startedAt.current) / 1000
     const answer = state.buildAnswer(opts.timedOut ?? false)
-    const grade = mission.grade(answer)
+    const mentorClient = mission.gradeAsync && mentor ? mentorFromSettings() : null
+    if (mission.gradeAsync && mentorClient) {
+      setPhase({ name: 'grading' })
+      mission
+        .gradeAsync(answer, mentorClient)
+        .then((grade) => finishGrade(grade, elapsed, answer))
+        .catch((e: unknown) => {
+          submitted.current = false
+          const message = e instanceof MentorError ? e.message : 'The MD did not answer. Try again.'
+          setPhase({ name: 'gradeError', message })
+        })
+      return
+    }
+    finishGrade(mission.grade(answer), elapsed, answer)
+  }
+
+  function finishGrade(grade: GradeResult, elapsed: number, answer: Answer) {
     const comp = computeComp(mission, grade.accuracy, elapsed)
     const { newBest, needsReview } = recordAttempt({
       missionId: mission.id,
@@ -134,6 +155,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         {task.kind === 'waterfall' && <WaterfallTask task={task} value={state.waterfall} onChange={state.setWaterfall} />}
         {task.kind === 'bridge' && <BridgeTask task={task} value={state.bridge} onChange={state.setBridge} />}
         {task.kind === 'footballfield' && <FootballFieldTask task={task} value={state.ff} onChange={state.setFf} />}
+        {task.kind === 'written' && <WrittenTask task={task} value={state.written} onChange={state.setWritten} />}
         <BottomBar>
           <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
             Lesson
@@ -190,11 +212,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
           </Panel>
         )}
 
-        {mentor && (
-          <Panel className="mt-3 text-sm text-muted">
-            <span className="text-debt font-semibold">Ask the MD</span> arrives in Milestone 4.
-          </Panel>
-        )}
+        {mentor && <div className="mt-3"><AskMd mission={mission} grade={grade} /></div>}
 
         <BottomBar>
           <Button variant="ghost" onClick={retry}>
@@ -202,6 +220,37 @@ export function MissionScreen({ mission }: { mission: Mission }) {
           </Button>
           <Button className="flex-1" onClick={finish}>
             {comp.passed ? 'Continue' : 'Back to rung'}
+          </Button>
+        </BottomBar>
+      </Page>
+    )
+  }
+
+  if (phase.name === 'grading') {
+    return (
+      <Page title={mission.title}>
+        <div className="text-center mt-16">
+          <div className="text-5xl">📠</div>
+          <Eyebrow>Sent upstairs</Eyebrow>
+          <h1 className="text-2xl font-black mt-1">The MD is reading it.</h1>
+          <p className="mt-2 text-muted">Usually a few seconds. Occasionally a few seconds and a sigh.</p>
+        </div>
+      </Page>
+    )
+  }
+
+  if (phase.name === 'gradeError') {
+    return (
+      <Page title={mission.title} onBack={back}>
+        <Eyebrow>No reply</Eyebrow>
+        <h1 className="text-2xl font-black mt-1 text-cost">{phase.message}</h1>
+        <p className="mt-2 text-muted">Your answer is still here. Check the key in Settings if this keeps happening.</p>
+        <BottomBar>
+          <Button variant="ghost" onClick={() => go({ name: 'settings' })}>
+            Settings
+          </Button>
+          <Button className="flex-1" onClick={() => { setPhase({ name: 'task' }) }}>
+            Back to my answer
           </Button>
         </BottomBar>
       </Page>
@@ -270,6 +319,7 @@ function useTaskState(task: Task, seed: number) {
   const [waterfall, setWaterfall] = useState<Record<string, number | null>>({})
   const [bridge, setBridge] = useState<Record<string, number | null>>({})
   const [ff, setFf] = useState<{ ranges: Record<string, { low: number; high: number }>; choice: string | null }>({ ranges: {}, choice: null })
+  const [written, setWritten] = useState<{ text: string; answers: Record<string, string> }>({ text: '', answers: {} })
 
   useEffect(() => setOrder(orderShuffled), [orderShuffled])
 
@@ -281,6 +331,7 @@ function useTaskState(task: Task, seed: number) {
     setWaterfall({})
     setBridge({})
     setFf({ ranges: {}, choice: null })
+    setWritten({ text: '', answers: {} })
   }
 
   function buildAnswer(timedOut: boolean): Answer {
@@ -301,12 +352,14 @@ function useTaskState(task: Task, seed: number) {
         return { kind: 'bridge', values: bridge }
       case 'footballfield':
         return { kind: 'footballfield', ranges: ff.ranges, choice: ff.choice }
+      case 'written':
+        return { kind: 'written', text: written.text, answers: written.answers }
     }
   }
 
   return {
     order, setOrder, sortItems, sort, setSort, balance, setBalance, quiz, setQuiz,
-    slider, setSlider, waterfall, setWaterfall, bridge, setBridge, ff, setFf,
+    slider, setSlider, waterfall, setWaterfall, bridge, setBridge, ff, setFf, written, setWritten,
     reset, buildAnswer,
   }
 }
@@ -344,9 +397,11 @@ function labelFor(task: Task, id: string): string {
     case 'waterfall':
       return task.steps.find((x) => x.id === id)?.label ?? id
     case 'bridge':
-      return task.adjustments.find((x) => x.id === id)?.label ?? id
+      return id === 'reconcile' ? `Bars reconcile to ${task.end.label}` : (task.adjustments.find((x) => x.id === id)?.label ?? id)
     case 'footballfield':
       return id === 'question' ? (task.question?.text ?? id) : (task.rows.find((x) => x.id === id)?.label ?? id)
+    case 'written':
+      return task.questions?.find((q) => q.id === id)?.text ?? id
   }
 }
 
@@ -368,6 +423,8 @@ function detailsTitle(task: Task): string {
       return 'The bridge'
     case 'footballfield':
       return 'The ranges'
+    case 'written':
+      return 'What the MD marked'
   }
 }
 

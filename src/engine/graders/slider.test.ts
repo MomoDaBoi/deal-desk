@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { gradeSlider } from './slider'
+import { formatSliderValue, gradeSlider } from './slider'
 import type { SliderTask } from '../types'
 
 const noop = () => ({ verdict: 'v', explanation: 'e' })
@@ -107,5 +107,51 @@ describe('gradeSlider', () => {
     gradeSlider(t, { kind: 'slider', values: { a: 90, b: 10 } }, explain)
     const arg = explain.mock.calls[0]![0]
     expect(arg.wrongIds).toEqual(['a'])
+  })
+
+  it('formats a details note with step-derived decimals and a prefixed currency unit', () => {
+    const t: SliderTask = {
+      kind: 'slider',
+      prompt: 'Set the offer price.',
+      sliders: [
+        { id: 'price', label: 'Offer price', min: 10, max: 20, step: 0.05, answer: 14.75, tolerance: 0.1, unit: '$' },
+      ],
+    }
+    const result = gradeSlider(t, { kind: 'slider', values: { price: 12 } }, noop)
+    expect(result.details).toEqual([{ id: 'price', ok: false, note: 'You set $12.00, answer $14.75' }])
+  })
+
+  it('rounds off floating-point drift in the note instead of printing raw precision', () => {
+    const t: SliderTask = {
+      kind: 'slider',
+      prompt: 'Set the offer price.',
+      sliders: [
+        { id: 'price', label: 'Offer price', min: 10, max: 20, step: 0.05, answer: 14.75, tolerance: 0.1, unit: '$' },
+      ],
+    }
+    // simulates the accumulated float error the +/- nudge buttons can produce
+    const result = gradeSlider(t, { kind: 'slider', values: { price: 12.399999999999999 } }, noop)
+    expect(result.details).toEqual([{ id: 'price', ok: false, note: 'You set $12.40, answer $14.75' }])
+  })
+})
+
+describe('formatSliderValue', () => {
+  it('derives decimal places from the step', () => {
+    expect(formatSliderValue(14.75, { step: 0.05 })).toBe('14.75')
+    expect(formatSliderValue(50, { step: 1 })).toBe('50')
+    expect(formatSliderValue(8.2, { step: 0.1 })).toBe('8.2')
+  })
+
+  it('prefixes a currency unit', () => {
+    expect(formatSliderValue(14.75, { step: 0.05, unit: '$' })).toBe('$14.75')
+  })
+
+  it('suffixes a multiplier or percent unit with no space', () => {
+    expect(formatSliderValue(8.2, { step: 0.1, unit: 'x' })).toBe('8.2x')
+    expect(formatSliderValue(25, { step: 1, unit: '%' })).toBe('25%')
+  })
+
+  it('suffixes any other unit with a leading space', () => {
+    expect(formatSliderValue(5, { step: 1, unit: 'yrs' })).toBe('5 yrs')
   })
 })

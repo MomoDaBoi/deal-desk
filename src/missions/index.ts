@@ -16,6 +16,8 @@ import r3PeerSet from './r3-peer-set'
 import r3Precedents from './r3-precedents'
 import r3FootballField from './r3-football-field'
 import r3BossThreeWays from './r3-boss-three-ways'
+import m2WrittenEv from './m2-written-ev'
+import m3WrittenPeers from './m3-written-peers'
 
 /** Register every mission here. Order within a rung comes from `mission.order`. */
 export const MISSIONS: Mission[] = [
@@ -36,6 +38,8 @@ export const MISSIONS: Mission[] = [
   r3Precedents,
   r3FootballField,
   r3BossThreeWays,
+  m2WrittenEv,
+  m3WrittenPeers,
 ].sort((a, b) => a.rung - b.rung || a.order - b.order)
 
 export function missionsForRung(rung: Rung, mentor: boolean): Mission[] {
