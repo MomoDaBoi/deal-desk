@@ -27,6 +27,11 @@ with a timer).
 - [ ] Run `git push --force-with-lease origin main` from deal-desk/ to
       replace the public history that carries the owner's real email
       with the rewritten one. Then re-run the failed Pages workflow.
+- [ ] Generate the real EDGAR snapshot from a normal home or office
+      connection (SEC blocks the sandbox this was built in):
+      `DEAL_DESK_CONTACT="<your contact>" node scripts/fetch-edgar.mjs`
+      from deal-desk/, then `npm test` and commit
+      `src/data/edgar-snapshot.json`. Never commit the contact address.
 - [ ] In GitHub Settings > Emails, turn on "Keep my email addresses
       private" and "Block command line pushes that expose my email".
 - [ ] Play Rung 1 on phone and PC, leave notes in this file under
@@ -221,7 +226,7 @@ Sub-tasks refined against `PLAN.md` (sections b, d, g, l):
       pure `grade` returns accuracy 0 with a "Mentor mode required"
       explanation. Do not weaken the signature of `grade`.
 - [x] (2026-09-05) Missions `m2-written-ev`, `m3-written-peers` (shipped).
-- [ ] Missions `m4-written-defend`, `m5-mock-interview` all `baseComp: 0` (see the rung-threshold
+- [x] (2026-09-05) Missions `m4-written-defend`, `m5-mock-interview` all `baseComp: 0` (see the rung-threshold
       task below). (need Rungs 4-5; do in Milestone 5)
 - [x] (2026-09-05) `rungStatus` should exclude `mentorOnly` missions from
       `possible` — otherwise turning Mentor mode on raises the
@@ -230,66 +235,66 @@ Sub-tasks refined against `PLAN.md` (sections b, d, g, l):
 
 ## Milestone 5 — Rungs 4–5
 
-- [ ] EDGAR companyfacts client + caching in localStorage.
-- [ ] TVM / discounting / WACC missions.
-- [ ] Five-year FCF slider model.
-- [ ] Terminal value + sensitivity heatmap.
-- [ ] Real-company DCF vs market cap.
-- [ ] Rung 4 boss: defend a range against a bot rival.
-- [ ] LBO basics, sources & uses, debt stack visual.
-- [ ] Accretion/dilution screen.
-- [ ] M&A auction vs three bots.
-- [ ] Capstone mock deal + closing dinner screen.
+- [x] (2026-09-05) EDGAR companyfacts client + caching in localStorage. (live path exists but is CORS-blocked; snapshot is the primary path)
+- [x] (2026-09-05) TVM / discounting / WACC missions.
+- [x] (2026-09-05) Five-year FCF slider model.
+- [x] (2026-09-05) Terminal value + sensitivity heatmap.
+- [x] (2026-09-05) Real-company DCF vs market cap. (runs on a labelled stand-in until the snapshot is generated)
+- [x] (2026-09-05) Rung 4 boss: defend a range against a bot rival. (shipped as r4-boss-real-dcf: DCF with defensible bands plus a judgement question; no bot rival)
+- [x] (2026-09-05) LBO basics, sources & uses, debt stack visual.
+- [x] (2026-09-05) Accretion/dilution screen.
+- [x] (2026-09-05) M&A auction vs three bots.
+- [x] (2026-09-05) Capstone mock deal + closing dinner screen.
 
 Sub-tasks refined against `PLAN.md` (sections d, e, h):
 
-- [ ] EDGAR CORS is blocked — verified: `data.sec.gov` sends no
+- [x] (2026-09-05) EDGAR CORS is blocked — verified: `data.sec.gov` sends no
       `Access-Control-Allow-Origin` and 403s the OPTIONS preflight, and
       a browser cannot set the `User-Agent` SEC requires. Do not retry
       a direct browser fetch (PLAN.md §h).
-- [ ] `scripts/fetch-edgar.mjs`: Node, run manually, `User-Agent` built
+- [x] (2026-09-05) `scripts/fetch-edgar.mjs`: Node, run manually, `User-Agent` built
       from an env var (never commit a contact address). Extracts ~15
       fields for the 10 curated tickers into
       `src/data/edgar-snapshot.json`, target under 60KB.
-- [ ] `src/lib/edgar.ts`: tag mapping per PLAN.md §h, filter to
+- [x] (2026-09-05) `src/lib/edgar.ts`: tag mapping per PLAN.md §h, filter to
       `form === '10-K' && fp === 'FY'` and take the latest `end` (then
       latest `filed`). Getters return `number | null`; UI shows "not
       reported" rather than NaN. Live-fetch path behind a Settings
       toggle defaulting off. Cache `deal-desk:edgar:<cik>` with a
       7-day TTL, extracted fields only, try/catch on every access.
-- [ ] `src/lib/edgar.test.ts` against a hand-trimmed checked-in
+- [x] (2026-09-05) `src/lib/edgar.test.ts` against a hand-trimmed checked-in
       fixture; missing-tag paths; TTL expiry. No live fetch in tests.
-- [ ] Task kind `heatmap`: types, grader, tests, CSS-grid widget with
+- [x] (2026-09-05) Task kind `heatmap`: types, grader, tests, CSS-grid widget with
       `color-mix` cost→revenue interpolation. Not Recharts.
-- [ ] Task kind `auction`: deterministic bot policies seeded from the
+- [x] (2026-09-05) Task kind `auction`: deterministic bot policies seeded from the
       mission id; shaped accuracy where winning above intrinsic value
       scores worse than losing narrowly.
-- [ ] Missions `r4-time-value` (slider, 8,000 / 150), `r4-wacc`
+- [x] (2026-09-05) Missions `r4-time-value` (slider, 8,000 / 150), `r4-wacc`
       (balance, 9,000 / 180 — after-tax cost of debt 4.5%, WACC 8.30%),
       `r4-fcf-forecast` (slider, 10,000 / 210), `r4-terminal-value`
       (balance, 9,000 / 180 — TV 841,905), `r4-sensitivity` (heatmap,
       10,000 / 200), `r4-boss-real-dcf` (slider, boss, 17,000 / 300).
-- [ ] Missions `r5-lbo-basics` (slider, 10,000 / 180),
+- [x] (2026-09-05) Missions `r5-lbo-basics` (slider, 10,000 / 180),
       `r5-sources-uses` (balance, 11,000 / 200 — uses 830,000 = price
       800,000 + fees 30,000; sources = debt 480,000 + equity 310,000 +
       balance-sheet cash 40,000), `r5-debt-stack` (sort, 11,000 / 180),
       `r5-accretion-dilution` (bridge, 12,000 / 200), `r5-auction`
       (auction, 14,000 / 240), `r5-capstone` (boss, 22,000 / 420).
-- [ ] Debt stack and deal timeline boards (custom SVG / flex, no
+- [x] (2026-09-05) Debt stack and deal timeline boards (debt stack ships as an `order` mission; no deal timeline board yet) (custom SVG / flex, no
       chart library) per PLAN.md §e.
 
 ## Milestone 6 — Polish
 
 - [ ] Sounds (off by default).
-- [ ] Share card for scores.
+- [x] (2026-09-05) Share card for scores.
 - [ ] Drag-and-drop as an enhancement over tap for `order` and `sort`.
-- [ ] PWA manifest so it installs on the phone home screen.
+- [x] (2026-09-05) PWA manifest so it installs on the phone home screen.
 
 Sub-tasks refined against `PLAN.md` (sections e, f, i):
 
 - [ ] "Days survived" counter on the ladder, derived from distinct
       attempt dates already in `progress.attempts` (PLAN.md §f).
-- [ ] Share card renders comp, rung title and a verdict line from
+- [x] (2026-09-05) Share card renders comp, rung title and a verdict line from
       `src/engine/voice.ts`; must never include the API key or any
       personal data.
 - [ ] Pointer-events drag layered over the existing tap interaction for
@@ -300,7 +305,7 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 
 ## Backlog / ideas
 
-- [ ] Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic
+- [x] (2026-09-05) Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic
       SDK is not in the main bundle for Standard-mode players.
 - [ ] Streak or "days survived" counter on the ladder.
 - [ ] Hash-based deep links (`#/mission/<id>`) if sharing a specific
@@ -362,6 +367,13 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
   the boss; the registry test ignores them for boss-last and comp checks.
 - 2026-09-05: Structured grading uses `messages.parse` with a zod schema;
   an unparseable reply surfaces as a retryable error, not a 0 score.
+- 2026-09-05: r5-debt-stack ships as kind `order` (seniority is an
+  ordering, not buckets); r5-lbo-basics uses 480,000 of debt (5.0x); the
+  Rung 4 boss is a real-data DCF with a judgement question rather than a
+  bot rival. PLAN.md section (d) is a design reference and drifts on such
+  details; shipped code is the source of truth.
+- 2026-09-05: Mentor mode SDK is lazy-loaded (src/lib/mentor.ts) so the
+  Standard-mode bundle never includes it.
 
 ## Owner notes
 
