@@ -155,9 +155,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             startedAt={startedAt.current}
           />
         )}
-        {task.kind === 'slider' && (
-          <SliderTask task={task} value={state.slider.values} onChange={(values) => state.setSlider({ ...state.slider, values })} />
-        )}
+        {task.kind === 'slider' && <SliderTask task={task} value={state.slider} onChange={state.setSlider} />}
         {task.kind === 'waterfall' && <WaterfallTask task={task} value={state.waterfall} onChange={state.setWaterfall} />}
         {task.kind === 'bridge' && <BridgeTask task={task} value={state.bridge} onChange={state.setBridge} />}
         {task.kind === 'footballfield' && <FootballFieldTask task={task} value={state.ff} onChange={state.setFf} />}

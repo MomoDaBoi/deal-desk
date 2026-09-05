@@ -6,6 +6,7 @@ import { useNav } from '../store/nav'
 import { useProgress } from '../store/progress'
 import { useMentorMode } from '../store/settings'
 import { Eyebrow, Page, Panel } from '../components/ui'
+import { ShareCard } from '../components/ShareCard'
 
 const RUNGS: Rung[] = [5, 4, 3, 2, 1]
 
@@ -99,8 +100,11 @@ export function Ladder() {
         })}
       </ol>
 
-      <Panel className="mt-6 text-sm text-muted">
-        Pass a rung at 70% comp to unlock the next one. Perfect rung = bonus season.
+      <Panel className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted flex-1 min-w-[16rem]">
+          Pass a rung at 70% comp to unlock the next one. Perfect rung = bonus season.
+        </p>
+        <ShareCard />
       </Panel>
 
       <footer className="mt-8 text-xs text-muted/70 text-center">
