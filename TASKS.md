@@ -81,10 +81,10 @@ with a timer).
 
 Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
 
-- [ ] `src/missions/companies.ts`: typed constants for Pucker Up
+- [x] (2026-09-05) `src/missions/companies.ts`: typed constants for Pucker Up
       Lemonade Co. (PLAN.md §c). Every Rung 1 mission reads from it; no
       mission hardcodes a figure.
-- [ ] `src/missions/companies.test.ts`: bible invariants — assets =
+- [x] (2026-09-05) `src/missions/companies.test.ts`: bible invariants — assets =
       liabilities + equity (800), gross profit = revenue − COGS (720),
       EBIT = gross profit − opex (300), EBITDA = EBIT + D&A (340),
       cash flow ties to +40.
@@ -127,61 +127,61 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
 
 ## Milestone 3 — Rungs 2–3
 
-- [ ] Waterfall chart game board (income statement → EBITDA → net income).
-- [ ] Margins and growth mission.
-- [ ] EV vs equity value bridge with sliders (`slider` task kind).
-- [ ] Net debt mission.
-- [ ] Rung 2 boss: EV bridge with sliders.
-- [ ] Trading multiples mission.
-- [ ] Peer set picking mission.
-- [ ] Precedent transactions / control premium mission.
-- [ ] Football field chart assembled from ranges.
-- [ ] Rung 3 boss: value a fictional target three ways.
+- [x] (2026-09-05) Waterfall chart game board (income statement → EBITDA → net income).
+- [x] (2026-09-05) Margins and growth mission.
+- [x] (2026-09-05) EV vs equity value bridge with sliders (`slider` task kind).
+- [x] (2026-09-05) Net debt mission.
+- [x] (2026-09-05) Rung 2 boss: EV bridge with sliders.
+- [x] (2026-09-05) Trading multiples mission.
+- [x] (2026-09-05) Peer set picking mission.
+- [x] (2026-09-05) Precedent transactions / control premium mission.
+- [x] (2026-09-05) Football field chart assembled from ranges.
+- [x] (2026-09-05) Rung 3 boss: value a fictional target three ways.
 
 Sub-tasks refined against `PLAN.md` (sections b, c, d, e):
 
-- [ ] Add Ledgerly Inc. (SaaS), Brickhouse Industrial Corp., Nan's
+- [x] (2026-09-05) Add Ledgerly Inc. (SaaS), Brickhouse Industrial Corp., Nan's
       Pantry Markets Inc., the two peer sets and the three precedent
       transactions to `src/missions/companies.ts` (PLAN.md §c). Extend
       `companies.test.ts`: EV = market cap + net debt, net debt = total
       debt − cash, every stated multiple within 0.05x of computed.
-- [ ] Task kind `waterfall`: types, grader (blanks within tolerance),
+- [x] (2026-09-05) Task kind `waterfall`: types, grader (blanks within tolerance),
       tests, widget. Recharts `BarChart` with a transparent base bar +
       visible delta bar sharing a `stackId`, one `<Cell>` per bar.
-- [ ] Task kind `bridge`: waterfall plus `start`/`end` anchors;
+- [x] (2026-09-05) Task kind `bridge`: waterfall plus `start`/`end` anchors;
       accuracy = 75% bars + 25% reconciliation to the end anchor.
-- [ ] Task kind `slider`: types, grader with partial credit inside
+- [x] (2026-09-05) Task kind `slider`: types, grader with partial credit inside
       2× tolerance, tests, widget (44px thumb, live value readout).
-- [ ] Task kind `footballfield`: types, grader (mean of low/high hit
+- [x] (2026-09-05) Task kind `footballfield`: types, grader (mean of low/high hit
       rates per row), tests, custom-SVG widget with 44px drag handles.
 - [ ] `src/components/charts/`: shared x-scale helper, role→token
       colour map, a responsive wrapper that stays legible at 360px.
       Keep Recharts out of `src/engine/`.
-- [ ] Mission `r2-waterfall-ebitda` (waterfall, 6,000 / 150): four
+- [x] (2026-09-05) Mission `r2-waterfall-ebitda` (waterfall, 6,000 / 150): four
       blank bars — gross profit 60,000, EBIT 8,000, EBITDA 12,000,
       net income 3,750.
-- [ ] Mission `r2-margins` (balance, 6,000 / 150): gross 75.0%,
+- [x] (2026-09-05) Mission `r2-margins` (balance, 6,000 / 150): gross 75.0%,
       EBITDA 15.0%, net 4.7%. `tolerance: 0.1` percentage points.
-- [ ] Mission `r2-growth-rates` (balance, 5,000 / 120): +25.0%,
+- [x] (2026-09-05) Mission `r2-growth-rates` (balance, 5,000 / 120): +25.0%,
       +26.6%, 3-year CAGR +25.0%.
-- [ ] Mission `r2-net-debt` (balance, 6,000 / 120): net debt 30,000,
+- [x] (2026-09-05) Mission `r2-net-debt` (balance, 6,000 / 120): net debt 30,000,
       then 40,000 with 10,000 of cash restricted.
-- [ ] Mission `r2-ev-vs-equity` (sort, 6,000 / 120): 8 claims into
+- [x] (2026-09-05) Mission `r2-ev-vs-equity` (sort, 6,000 / 120): 8 claims into
       "true of EV" / "true of equity value".
-- [ ] Mission `r2-boss-ev-bridge` (bridge, boss, 11,000 / 180):
+- [x] (2026-09-05) Mission `r2-boss-ev-bridge` (bridge, boss, 11,000 / 180):
       370,000 + debt 60,000 − cash 30,000 = EV 400,000, with two
       zero-value adjustments that must be left at zero.
-- [ ] Mission `r3-multiples` (balance, 7,000 / 160): Brickhouse 8.3x,
+- [x] (2026-09-05) Mission `r3-multiples` (balance, 7,000 / 160): Brickhouse 8.3x,
       1.25x, 16.8x plus Ledgerly P/E 98.7x.
-- [ ] Mission `r3-which-multiple` (quiz, 6,000 / 120): 6 untimed
+- [x] (2026-09-05) Mission `r3-which-multiple` (quiz, 6,000 / 120): 6 untimed
       questions on when each multiple fits.
-- [ ] Mission `r3-peer-set` (sort, 7,000 / 150): 7 candidates in/out;
+- [x] (2026-09-05) Mission `r3-peer-set` (sort, 7,000 / 150): 7 candidates in/out;
       Halcyon Data Centres and Brickhouse Holdings Pty stay out.
-- [ ] Mission `r3-precedents` (slider, 7,000 / 150): offer price
+- [x] (2026-09-05) Mission `r3-precedents` (slider, 7,000 / 150): offer price
       $14.75 at a 25% premium, implied EV/EBITDA 8.2x.
-- [ ] Mission `r3-football-field` (footballfield, 9,000 / 200): peer
+- [x] (2026-09-05) Mission `r3-football-field` (footballfield, 9,000 / 200): peer
       row $9.88–$12.76, precedent row $15.16–$17.08, tol $0.25.
-- [ ] Mission `r3-boss-three-ways` (footballfield, boss, 14,000 / 240):
+- [x] (2026-09-05) Mission `r3-boss-three-ways` (footballfield, boss, 14,000 / 240):
       three ranges on Brickhouse plus one embedded defend-your-range
       question, each worth 25%.
 
@@ -343,6 +343,14 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
   is anchored to the attempt start, not widget mount.
 - 2026-09-05: A third consecutive fail still shows the explanation (the
   performance review screen carries the grade).
+- 2026-09-05: The pipeline that builds missions per task kind must give
+  every kind a non-null first stage; a null result drops the item. The
+  seven Rung 2-3 missions on existing kinds were written in a follow-up
+  batch for that reason.
+- 2026-09-05: `derived()` in companies.ts rounds EV/Revenue to 2 decimals
+  (1.25x, 0.42x) and everything else to 1 decimal, matching PLAN.md.
+- 2026-09-05: Ledgerly's revenue three years ago (40,960) lives only in
+  r2-growth-rates as a local constant; companies.ts carries one prior year.
 
 ## Owner notes
 
