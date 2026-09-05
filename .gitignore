@@ -22,3 +22,32 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ---- Privacy: never commit any of these ----
+# Environment files and anything that could hold keys or tokens
+.env
+.env.*
+*.env
+*.key
+*.pem
+*.p12
+*.token
+secrets*
+*secret*
+*.credentials
+credentials*
+
+# Game save exports (contain the owner's play history; keep local)
+deal-desk-save-*.json
+*.save.json
+saves/
+
+# Local notes and scratch that may contain personal info
+notes/
+*.local.md
+TODO.local.md
+
+# OS / editor junk that can leak paths or usernames
+Thumbs.db
+desktop.ini
+.history/

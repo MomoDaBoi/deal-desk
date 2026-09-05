@@ -22,6 +22,37 @@ curriculum, tone, or the two game modes.
 5. Update the "Project state" block at the top of `TASKS.md` before ending a
    session so the next one knows where things stand.
 
+## Privacy rules (non-negotiable, the repo is PUBLIC)
+
+The repo at github.com/MomoDaBoi/deal-desk is public. Nothing personal
+about the owner may ever land in it. Every session must follow these:
+
+- **Never commit secrets or personal data.** No API keys, tokens, `.env`
+  files, email addresses, phone numbers, real names beyond the GitHub
+  handle, local IP addresses, machine names, or absolute local paths
+  (`C:\Users\...`) in code, docs, comments, commit messages, or TASKS.md.
+  Refer to the owner as "the owner" in docs.
+- **Commit identity is the GitHub noreply address**, set in this repo's
+  local git config (`git config user.email` shows
+  `...@users.noreply.github.com`). Never set a real email. If a commit
+  ever shows a real address, stop and tell the owner before pushing.
+- **The Anthropic API key exists only in the player's browser
+  localStorage** (`deal-desk:settings`). It is never written to a file,
+  never logged, never included in the progress export, never sent
+  anywhere but `api.anthropic.com`. No code path may serialise it.
+- **Game save exports are the owner's play history.** They match
+  `deal-desk-save-*.json` and are gitignored. Never commit one, even as a
+  test fixture; make synthetic fixtures instead.
+- `.gitignore` has a "Privacy" block. Extend it when adding any new file
+  type that could hold personal data. Never remove entries from it.
+- GitHub secret scanning and push protection are enabled on the repo. If
+  a push is rejected for a detected secret, do not bypass it; remove the
+  secret and tell the owner.
+- Before every push, run `git grep -n -i "@gmail\|192\.168\|C:\\\\Users"`
+  (or an equivalent) on the tree and confirm it comes back empty.
+- Screenshots or logs pasted into docs must be checked for the above
+  before committing.
+
 ## Stack and layout
 
 - Vite + React 19 + TypeScript, Tailwind v4 (via `@tailwindcss/vite`,
