@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0b0f17;
+  --color-panel: #131a26;
+  --color-panel-2: #1b2433;
+  --color-line: #263145;
+  --color-ink: #e6edf7;
+  --color-muted: #8b98ad;
+
+  /* Brief: revenue green, costs red, debt amber, equity blue, cash teal */
+  --color-revenue: #22c55e;
+  --color-cost: #ef4444;
+  --color-debt: #f59e0b;
+  --color-equity: #3b82f6;
+  --color-cash: #14b8a6;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+button { touch-action: manipulation; }
