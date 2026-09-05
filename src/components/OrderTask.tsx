@@ -67,7 +67,7 @@ export function OrderTask({
                 aria-label={`Move ${it.label} up`}
                 onClick={() => move(i, i - 1)}
                 disabled={disabled || i === 0}
-                className="h-[calc(50%-2px)] min-w-10 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
+                className="min-h-11 min-w-11 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
               >
                 ▲
               </button>
@@ -76,7 +76,7 @@ export function OrderTask({
                 aria-label={`Move ${it.label} down`}
                 onClick={() => move(i, i + 1)}
                 disabled={disabled || i === items.length - 1}
-                className="h-[calc(50%-2px)] min-w-10 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
+                className="min-h-11 min-w-11 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
               >
                 ▼
               </button>

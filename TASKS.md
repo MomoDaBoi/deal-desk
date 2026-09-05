@@ -21,8 +21,15 @@ with a timer).
 ## Owner to-dos (admin, not code)
 
 - [ ] Create a GitHub repo, push `deal-desk/`, enable Pages with source
-      "GitHub Actions". Confirm the site opens on phone.
-- [ ] Play Milestone 1 on phone and PC, leave notes in this file under
+      "GitHub Actions". Confirm the site opens on phone. (Repo exists and
+      is public as of 2026-09-05; Pages not yet enabled; blocked on the
+      force-push below.)
+- [ ] Run `git push --force-with-lease origin main` from deal-desk/ to
+      replace the public history that carries the owner's real email
+      with the rewritten one. Then re-run the failed Pages workflow.
+- [ ] In GitHub Settings > Emails, turn on "Keep my email addresses
+      private" and "Block command line pushes that expose my email".
+- [ ] Play Rung 1 on phone and PC, leave notes in this file under
       "Owner notes".
 
 ## Milestone 1 — Skeleton
@@ -53,21 +60,21 @@ with a timer).
 
 ## Milestone 2 — Rung 1 complete
 
-- [ ] Task kind `sort`: drag/tap items into 2–3 buckets. Grader + tests.
-- [ ] Task kind `balance`: number entry to fix a broken balance sheet.
+- [x] (2026-09-05) Task kind `sort`: drag/tap items into 2–3 buckets. Grader + tests.
+- [x] (2026-09-05) Task kind `balance`: number entry to fix a broken balance sheet.
       Grader with tolerance + tests.
-- [ ] Task kind `quiz`: timed multiple choice for boss fights. Grader +
+- [x] (2026-09-05) Task kind `quiz`: timed multiple choice for boss fights. Grader +
       tests.
-- [ ] Mission: "What is a company / the three statements" (intro, likely
+- [x] (2026-09-05) Mission: "What is a company / the three statements" (intro, likely
       `quiz` or `sort`).
 - [ ] Mission: Income statement order (replace or upgrade the placeholder
       with real lesson art).
-- [ ] Mission: Balance sheet, assets = liabilities + equity (`balance`).
-- [ ] Mission: Cash flow statement, sort into operating / investing /
+- [x] (2026-09-05) Mission: Balance sheet, assets = liabilities + equity (`balance`).
+- [x] (2026-09-05) Mission: Cash flow statement, sort into operating / investing /
       financing (`sort`).
-- [ ] Boss fight: Lemonade empire, five "which statement tells you X"
+- [x] (2026-09-05) Boss fight: Lemonade empire, five "which statement tells you X"
       questions under time pressure (`quiz`, `boss: true`).
-- [ ] Establish the humor voice: a shared bank of MD verdict lines by
+- [x] (2026-09-05) Establish the humor voice: a shared bank of MD verdict lines by
       accuracy band in `src/engine/voice.ts` so missions can reuse them.
 - [ ] Lesson card visuals: one small chart per concept (Recharts).
 - [ ] Owner plays Rung 1 and gives notes.
@@ -81,40 +88,40 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
       liabilities + equity (800), gross profit = revenue − COGS (720),
       EBIT = gross profit − opex (300), EBITDA = EBIT + D&A (340),
       cash flow ties to +40.
-- [ ] `gradeSort` in `src/engine/graders.ts`: accuracy = fraction of
+- [x] (2026-09-05) `gradeSort` in `src/engine/graders.ts`: accuracy = fraction of
       items in the correct bucket, unplaced counts wrong. Tests for
       all-right / all-wrong / partial / unplaced.
-- [ ] `gradeBalance`: accuracy = fraction of blanks within `tolerance`,
+- [x] (2026-09-05) `gradeBalance`: accuracy = fraction of blanks within `tolerance`,
       null counts wrong. Tests for both tolerance boundaries.
-- [ ] `gradeQuiz`: accuracy = fraction correct, unanswered counts wrong,
+- [x] (2026-09-05) `gradeQuiz`: accuracy = fraction correct, unanswered counts wrong,
       `timedOut` submits whatever is answered. Tests including timeout.
-- [ ] `SortTask` widget (`src/components/SortTask.tsx`): tap item, tap
+- [x] (2026-09-05) `SortTask` widget (`src/components/SortTask.tsx`): tap item, tap
       bucket. 44px targets, role colours, unplaced tray.
-- [ ] `BalanceTask` widget: numeric inputs with `inputMode="decimal"`,
+- [x] (2026-09-05) `BalanceTask` widget: numeric inputs with `inputMode="decimal"`,
       unit label, subtotal rows styled as totals.
-- [ ] `QuizTask` widget: one question per screen, optional countdown
+- [x] (2026-09-05) `QuizTask` widget: one question per screen, optional countdown
       driven by `timeLimitSeconds`.
-- [ ] `MissionScreen`: `case` per new kind in the task phase and the
+- [x] (2026-09-05) `MissionScreen`: `case` per new kind in the task phase and the
       submit handler; move the `order`-specific shuffle into a
       per-kind setup helper.
-- [ ] Mission `r1-three-statements` (sort, base 4,000, par 100): 9 line
+- [x] (2026-09-05) Mission `r1-three-statements` (sort, base 4,000, par 100): 9 line
       items into income statement / balance sheet / cash flow.
-- [ ] Mission `r1-balance-sheet` (balance, base 6,000, par 150): 4
+- [x] (2026-09-05) Mission `r1-balance-sheet` (balance, base 6,000, par 150): 4
       blanks — total assets 800, total liabilities 400, equity 400,
       inventory 60. `tolerance: 0`, `unit: '$k'`.
-- [ ] Mission `r1-cash-flow-sort` (sort, base 6,000, par 140): 8 items
+- [x] (2026-09-05) Mission `r1-cash-flow-sort` (sort, base 6,000, par 140): 8 items
       into operating / investing / financing, incl. two distractors.
-- [ ] Mission `r1-boss-lemonade` (quiz, boss, base 9,000, par 150,
+- [x] (2026-09-05) Mission `r1-boss-lemonade` (quiz, boss, base 9,000, par 150,
       `timeLimitSeconds: 120`): five "which statement tells you X"
       questions on the full Pucker Up set.
 - [ ] Upgrade `r1-income-statement-order` lesson visual to a small
       waterfall; keep id, items, and grading unchanged.
-- [ ] `src/engine/voice.ts`: verdict banks by accuracy band (PLAN.md
+- [x] (2026-09-05) `src/engine/voice.ts`: verdict banks by accuracy band (PLAN.md
       §i), deterministic pick from (missionId, accuracy). Promotion,
       bonus-season, and performance-review lines.
-- [ ] `src/missions/registry.test.ts`: unique ids, contiguous `order`
+- [x] (2026-09-05) `src/missions/registry.test.ts`: unique ids, contiguous `order`
       per rung, `baseComp > 0`, `parSeconds > 0`, one boss per rung.
-- [ ] Per-mission tests: correct answer grades 1.0, two perturbations
+- [x] (2026-09-05) Per-mission tests: correct answer grades 1.0, two perturbations
       grade below 1.0, explanation for a wrong answer asserts on a
       concept substring.
 
@@ -314,6 +321,28 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 - 2026-09-05: Dark theme only, hardcoded.
 - 2026-09-05: Tests excluded from `tsc -b` (tsconfig.app.json); Vitest
   handles them.
+
+- 2026-09-05: Rung 1 shipped with different comp/par/blank counts than
+  PLAN.md section (d) lists (all five missions at 5,000 base except the
+  boss at 10,000; balance sheet has 3 blanks; cash flow sort has 9
+  items). The shipped values are the source of truth; PLAN.md is a
+  design reference and may drift on such details.
+- 2026-09-05: Peeking at the lesson mid-task keeps the clock running
+  (`startedAt` only resets on a fresh attempt or retry). Boss quiz timer
+  is anchored to the attempt start, not widget mount.
+- 2026-09-05: A third consecutive fail still shows the explanation (the
+  performance review screen carries the grade).
+
+- 2026-09-05: Rung 1 shipped with different comp/par/blank counts than
+  PLAN.md section (d) lists (all five missions at 5,000 base except the
+  boss at 10,000; balance sheet has 3 blanks; cash flow sort has 9
+  items). The shipped values are the source of truth; PLAN.md is a
+  design reference and may drift on such details.
+- 2026-09-05: Peeking at the lesson mid-task keeps the clock running
+  (`startedAt` only resets on a fresh attempt or retry). Boss quiz timer
+  is anchored to the attempt start, not widget mount.
+- 2026-09-05: A third consecutive fail still shows the explanation (the
+  performance review screen carries the grade).
 
 ## Owner notes
 

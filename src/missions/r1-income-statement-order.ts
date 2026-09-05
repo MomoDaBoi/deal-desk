@@ -1,14 +1,11 @@
 import type { Mission } from '../engine/types'
 import { gradeOrder } from '../engine/graders'
 
-/**
- * Milestone 1 placeholder mission. Real Rung 1 content lands in Milestone 2;
- * this one exists so the engine has something to run end to end.
- */
+/** Rung 1, mission 2: reassemble the income statement top to bottom. */
 const mission: Mission = {
   id: 'r1-income-statement-order',
   rung: 1,
-  order: 1,
+  order: 2,
   title: 'Top to bottom',
   tagline: 'Put the income statement back in order before the MD notices.',
   baseComp: 5_000,

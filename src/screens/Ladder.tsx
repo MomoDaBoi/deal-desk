@@ -1,5 +1,6 @@
 import { RUNG_SUBTITLES, RUNG_TITLES, type Rung } from '../engine/types'
 import { formatComp, rungStatus } from '../engine/scoring'
+import { promotionLine } from '../engine/voice'
 import { missionsForRung } from '../missions'
 import { useNav } from '../store/nav'
 import { useProgress } from '../store/progress'
@@ -39,11 +40,12 @@ export function Ladder() {
       <div className="mb-6">
         <Eyebrow>Career ladder</Eyebrow>
         <h1 className="text-2xl font-black mt-1">
-          You are {RUNG_TITLES[currentRung] === 'Intern' ? 'an' : 'a'} <span className="text-revenue">{RUNG_TITLES[currentRung]}</span>.
+          You are {currentRung === 4 ? 'a' : 'an'} <span className="text-revenue">{RUNG_TITLES[currentRung]}</span>.
         </h1>
         <p className="text-muted mt-1">
           Lifetime comp: <span className="font-mono text-ink">{formatComp(totalComp)}</span>. Survive the year to get promoted.
         </p>
+        {currentRung > 1 && <p className="text-sm text-debt mt-1">{promotionLine((currentRung - 1) as Rung)}</p>}
       </div>
 
       <ol className="flex flex-col gap-3">

@@ -11,43 +11,59 @@ export function QuizTask({
   onChange,
   onTimeout,
   disabled,
+  startedAt,
 }: {
   task: QuizTaskType
   value: Record<string, string | null>
   onChange: (next: Record<string, string | null>) => void
   onTimeout?: () => void
   disabled?: boolean
+  /**
+   * performance.now() timestamp for when this attempt began. When provided,
+   * the countdown is derived from `limit - (now - startedAt) / 1000` on every
+   * tick, so unmounting and remounting this widget (e.g. the player peeks at
+   * the lesson) does not restart the clock. When absent, the clock starts
+   * from this component's own mount time, as before.
+   */
+  startedAt?: number
 }) {
   const questions = task.questions
   const [index, setIndex] = useState(0)
   const current = questions[index]
 
   const limit = task.timeLimitSeconds
-  const [remaining, setRemaining] = useState(limit ?? 0)
-  const startRef = useRef<number | null>(null)
+  const [remaining, setRemaining] = useState(() => {
+    if (!limit) return 0
+    if (startedAt != null) return Math.max(0, limit - (performance.now() - startedAt) / 1000)
+    return limit
+  })
   const firedRef = useRef(false)
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onTimeoutRef = useRef(onTimeout)
+  useEffect(() => {
+    onTimeoutRef.current = onTimeout
+  })
 
   useEffect(() => {
     if (!limit || disabled) return
-    startRef.current = performance.now()
+    const start = startedAt ?? performance.now()
     firedRef.current = false
-    setRemaining(limit)
-    const id = setInterval(() => {
-      const start = startRef.current
-      if (start === null) return
+
+    const tick = () => {
       const elapsed = (performance.now() - start) / 1000
       const left = Math.max(0, limit - elapsed)
       setRemaining(left)
       if (left <= 0 && !firedRef.current) {
         firedRef.current = true
-        clearInterval(id)
-        onTimeout?.()
+        onTimeoutRef.current?.()
       }
-    }, 250)
+    }
+
+    tick()
+    if (firedRef.current) return
+    const id = setInterval(tick, 250)
     return () => clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [limit, disabled])
+  }, [limit, disabled, startedAt])
 
   useEffect(() => {
     return () => {
@@ -131,7 +147,14 @@ export function QuizTask({
               type="button"
               aria-label={`Go to question ${i + 1}`}
               aria-current={isCurrent}
-              onClick={() => !disabled && setIndex(i)}
+              onClick={() => {
+                if (disabled) return
+                if (advanceTimer.current) {
+                  clearTimeout(advanceTimer.current)
+                  advanceTimer.current = null
+                }
+                setIndex(i)
+              }}
               disabled={disabled}
               className="min-h-11 min-w-11 flex items-center justify-center"
             >

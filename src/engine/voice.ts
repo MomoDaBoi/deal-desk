@@ -78,7 +78,7 @@ const FAIL_LINES = [
   'This is not going in the pitch book.',
   "Let's take this offline. Far offline.",
   'The MD read this at 2am and is not happy.',
-  'Rough. The intern did better last year.',
+  "I've seen this exact mistake print in a pitch book. We do not discuss it.",
   'This needs a full redline, not a fix.',
   "That's not comps, that's chaos.",
   'You have discovered a new way to be wrong.',
@@ -90,12 +90,12 @@ const ZERO_LINES = [
   'Did you even open the file?',
   'This is a blank page with extra steps.',
   'The MD wants to see you. Now.',
-  'Zero. As in, update-your-resume zero.',
+  'Delete this and start again from the lesson card.',
   'Not one thing here is right. Impressive, in a way.',
   'This is the reason performance reviews exist.',
   'Somewhere, a compliance officer just felt a chill.',
   'You have achieved a perfect score. The wrong kind.',
-  'This is why some internships are unpaid.',
+  'Nothing in here balances, including my patience.',
   'Total wipeout. HR has been notified. (Kidding. Mostly.)',
 ] as const
 
@@ -126,7 +126,10 @@ const PROMOTION_LINES: Record<Rung, string> = {
   5: "No rung above this one. You're an MD until the next reorg.",
 }
 
-/** One line per rung, framed as surviving another year on the desk. */
+/**
+ * One line per rung, framed as surviving another year on the desk. Screens
+ * wire this into the rung-clear moment; this module only owns the copy.
+ */
 export function promotionLine(rung: Rung): string {
   return PROMOTION_LINES[rung]
 }
@@ -142,7 +145,10 @@ const BONUS_LINES = [
   "The bonus spreadsheet got 'accidentally' shared with everyone.",
 ] as const
 
-/** Bonus-season one-liner. Deterministic per salt. */
+/**
+ * Bonus-season one-liner. Deterministic per salt. Callers pass the mission
+ * or rung id as salt; this module only owns the copy, not where it's shown.
+ */
 export function bonusLine(salt: string): string {
   return pick(BONUS_LINES, `bonus:${salt}`)
 }
@@ -158,12 +164,18 @@ const REVIEW_LINES = [
   'Performance review unlocked. Not the achievement you frame.',
 ] as const
 
-/** Performance-review one-liner, shown after consecutive fails. */
+/**
+ * Performance-review one-liner, shown after consecutive fails. This module
+ * only owns the copy; callers pass the mission id as salt.
+ */
 export function reviewLine(salt: string): string {
   return pick(REVIEW_LINES, `review:${salt}`)
 }
 
-/** Short speed-bonus flavour line. Only two states, so no salt needed. */
+/**
+ * Short speed-bonus flavour line. Only two states, so no salt needed. This
+ * module only owns the copy; callers decide where it's shown.
+ */
 export function speedLine(underPar: boolean): string {
   return underPar
     ? 'Under par. The MD almost looks impressed.'

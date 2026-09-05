@@ -22,12 +22,12 @@ describe('r1-cash-flow-sort mission', () => {
     expect(result.explanation.length).toBeGreaterThan(0)
   })
 
-  it('scores 8/9 and explains depreciation when it is misfiled into investing', () => {
+  it('scores 7/8 and explains depreciation when it is misfiled into investing', () => {
     const placements = correctPlacements()
     placements.depreciation = 'investing'
     const answer: Answer = { kind: 'sort', placements }
     const result = mission.grade(answer)
-    expect(result.accuracy).toBeCloseTo(8 / 9)
+    expect(result.accuracy).toBeCloseTo(7 / 8)
     expect(result.explanation).toContain('Depreciation')
     expect(result.explanation.toLowerCase()).toContain('operating')
     expect(result.explanation.toLowerCase()).toContain('non-cash')
@@ -38,8 +38,8 @@ describe('r1-cash-flow-sort mission', () => {
     placements.dividends = 'operating'
     const answer: Answer = { kind: 'sort', placements }
     const result = mission.grade(answer)
-    expect(result.accuracy).toBeCloseTo(8 / 9)
-    expect(result.explanation).toContain('Dividends to founder')
+    expect(result.accuracy).toBeCloseTo(7 / 8)
+    expect(result.explanation).toContain('Dividends to the founder')
     expect(result.explanation.toLowerCase()).toContain('financing')
   })
 
@@ -68,9 +68,9 @@ describe('r1-cash-flow-sort mission', () => {
     expect(new Set(itemIds).size).toBe(itemIds.length)
   })
 
-  it('has exactly the 9 specified items', () => {
+  it('has exactly the 8 specified items', () => {
     const t = task()
-    expect(t.items).toHaveLength(9)
+    expect(t.items).toHaveLength(8)
   })
 
   it('has every item bucketId pointing at a real bucket', () => {

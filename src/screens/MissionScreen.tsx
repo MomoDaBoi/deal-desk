@@ -3,6 +3,7 @@ import type { Answer, GradeResult, Mission, OrderItem, Task } from '../engine/ty
 import { RUNG_TITLES } from '../engine/types'
 import { computeComp, formatComp, rungStatus, type CompBreakdown } from '../engine/scoring'
 import { shuffle } from '../engine/graders'
+import { bonusLine, reviewLine } from '../engine/voice'
 import { missionsForRung } from '../missions'
 import { useNav } from '../store/nav'
 import { useProgress } from '../store/progress'
@@ -17,7 +18,7 @@ type Phase =
   | { name: 'lesson' }
   | { name: 'task' }
   | { name: 'result'; grade: GradeResult; comp: CompBreakdown; newBest: boolean; elapsed: number; answer: Answer }
-  | { name: 'review' }
+  | { name: 'review'; grade: GradeResult }
   | { name: 'bonus' }
 
 /**
@@ -41,7 +42,8 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   const state = useTaskState(task, seed)
 
   function startTask() {
-    startedAt.current = performance.now()
+    // Peeking at the lesson mid-task must not reset the clock.
+    if (startedAt.current === 0) startedAt.current = performance.now()
     submitted.current = false
     setPhase({ name: 'task' })
   }
@@ -49,6 +51,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   function retry() {
     setSeed(Date.now())
     state.reset()
+    startedAt.current = 0
     startTask()
   }
 
@@ -65,7 +68,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
       comp: comp.total,
       elapsedSeconds: elapsed,
     })
-    if (needsReview) return setPhase({ name: 'review' })
+    if (needsReview) return setPhase({ name: 'review', grade })
     setPhase({ name: 'result', grade, comp, newBest, elapsed, answer })
   }
 
@@ -115,7 +118,13 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         {task.kind === 'sort' && <SortTask task={task} items={state.sortItems} value={state.sort} onChange={state.setSort} />}
         {task.kind === 'balance' && <BalanceTask task={task} value={state.balance} onChange={state.setBalance} />}
         {task.kind === 'quiz' && (
-          <QuizTask task={task} value={state.quiz} onChange={state.setQuiz} onTimeout={() => submit({ timedOut: true })} />
+          <QuizTask
+            task={task}
+            value={state.quiz}
+            onChange={state.setQuiz}
+            onTimeout={() => submit({ timedOut: true })}
+            startedAt={startedAt.current}
+          />
         )}
         <BottomBar>
           <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
@@ -195,8 +204,12 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     return (
       <Page title="Performance review" onBack={back}>
         <Eyebrow>HR would like a word</Eyebrow>
-        <h1 className="text-2xl font-black mt-1 text-cost">Three misses in a row.</h1>
-        <p className="mt-2 text-muted">Nobody is getting fired. Read the lesson again, slowly this time, then have another go.</p>
+        <h1 className="text-2xl font-black mt-1 text-cost">{reviewLine(mission.id)}</h1>
+        <p className="mt-2 text-muted">Three misses in a row. Nobody is getting fired. Here is what went wrong, then the lesson again.</p>
+        <Panel className="mt-4">
+          <Eyebrow>Why</Eyebrow>
+          <p className="mt-2 leading-relaxed">{phase.grade.explanation}</p>
+        </Panel>
         <Panel className="mt-4">
           <div className="font-bold mb-2">{mission.lesson.title}</div>
           <p className="leading-relaxed">{mission.lesson.body}</p>
@@ -223,7 +236,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         <Eyebrow>Bonus season</Eyebrow>
         <h1 className="text-3xl font-black mt-1">Perfect rung.</h1>
         <p className="mt-2 text-muted">
-          Every {RUNG_TITLES[mission.rung]} mission at full comp. The MD said "ok" in Slack, which is the most anyone has ever gotten.
+          Every {RUNG_TITLES[mission.rung]} mission at full comp. {bonusLine(mission.id)}
         </p>
         <div className="mt-6 font-mono text-3xl text-revenue">{formatComp(st.earned)}</div>
       </div>
@@ -245,6 +258,10 @@ function useTaskState(task: Task, seed: number) {
   const [sort, setSort] = useState<Record<string, string>>({})
   const [balance, setBalance] = useState<Record<string, number | null>>({})
   const [quiz, setQuiz] = useState<Record<string, string | null>>({})
+  const [slider, setSlider] = useState<Record<string, number>>({})
+  const [waterfall, setWaterfall] = useState<Record<string, number | null>>({})
+  const [bridge, setBridge] = useState<Record<string, number | null>>({})
+  const [ff, setFf] = useState<{ ranges: Record<string, { low: number; high: number }>; choice: string | null }>({ ranges: {}, choice: null })
 
   useEffect(() => setOrder(orderShuffled), [orderShuffled])
 
@@ -252,6 +269,10 @@ function useTaskState(task: Task, seed: number) {
     setSort({})
     setBalance({})
     setQuiz({})
+    setSlider({})
+    setWaterfall({})
+    setBridge({})
+    setFf({ ranges: {}, choice: null })
   }
 
   function buildAnswer(timedOut: boolean): Answer {
@@ -264,10 +285,22 @@ function useTaskState(task: Task, seed: number) {
         return { kind: 'balance', values: balance }
       case 'quiz':
         return { kind: 'quiz', choices: quiz, timedOut }
+      case 'slider':
+        return { kind: 'slider', values: slider }
+      case 'waterfall':
+        return { kind: 'waterfall', values: waterfall }
+      case 'bridge':
+        return { kind: 'bridge', values: bridge }
+      case 'footballfield':
+        return { kind: 'footballfield', ranges: ff.ranges, choice: ff.choice }
     }
   }
 
-  return { order, setOrder, sortItems, sort, setSort, balance, setBalance, quiz, setQuiz, reset, buildAnswer }
+  return {
+    order, setOrder, sortItems, sort, setSort, balance, setBalance, quiz, setQuiz,
+    slider, setSlider, waterfall, setWaterfall, bridge, setBridge, ff, setFf,
+    reset, buildAnswer,
+  }
 }
 
 function LessonBullets({ mission }: { mission: Mission }) {
@@ -298,6 +331,14 @@ function labelFor(task: Task, id: string): string {
       return id
     case 'quiz':
       return task.questions.find((q) => q.id === id)?.text ?? id
+    case 'slider':
+      return task.sliders.find((x) => x.id === id)?.label ?? id
+    case 'waterfall':
+      return task.steps.find((x) => x.id === id)?.label ?? id
+    case 'bridge':
+      return task.adjustments.find((x) => x.id === id)?.label ?? id
+    case 'footballfield':
+      return id === 'question' ? (task.question?.text ?? id) : (task.rows.find((x) => x.id === id)?.label ?? id)
   }
 }
 
@@ -311,6 +352,14 @@ function detailsTitle(task: Task): string {
       return 'The blanks'
     case 'quiz':
       return 'Question by question'
+    case 'slider':
+      return 'Where the dials landed'
+    case 'waterfall':
+      return 'The bars'
+    case 'bridge':
+      return 'The bridge'
+    case 'footballfield':
+      return 'The ranges'
   }
 }
 

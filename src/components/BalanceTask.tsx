@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { BalanceLine, BalanceTask as BalanceTaskType } from '../engine/types'
 import { ROLE_BG } from './ui'
 
@@ -30,6 +31,77 @@ function lineValue(line: BalanceLine, value: Record<string, number | null>): num
   return value[line.id] ?? 0
 }
 
+/** Characters that can ever appear while typing a valid number, including mid-edit states
+ * like a lone "-", a trailing ".", or a thousands separator. Anything else is rejected. */
+const IN_PROGRESS_NUMBER = /^-?[\d,]*\.?\d*$/
+
+/**
+ * Controlled numeric text input that keeps exactly what the player typed on screen,
+ * even mid-edit (a bare "-", a trailing ".", digits not yet followed by more digits),
+ * while still reporting the parsed number (or null) up to the parent on every change.
+ * The visible text only resyncs to `value` when that value changes for a reason other
+ * than this field's own last `onChange` call — e.g. the parent resetting the mission.
+ */
+export function NumberField({
+  id,
+  value,
+  onChange,
+  unit,
+  disabled,
+  ariaLabel,
+  className,
+}: {
+  id: string
+  value: number | null
+  onChange: (n: number | null) => void
+  unit?: string
+  disabled?: boolean
+  ariaLabel?: string
+  className?: string
+}) {
+  const [text, setText] = useState(value === null || value === undefined ? '' : String(value))
+  const lastEmitted = useRef(value)
+
+  useEffect(() => {
+    if (value !== lastEmitted.current) {
+      lastEmitted.current = value
+      setText(value === null || value === undefined ? '' : String(value))
+    }
+  }, [value])
+
+  function handleChange(raw: string) {
+    if (!IN_PROGRESS_NUMBER.test(raw)) return
+    setText(raw)
+    const n = parseInput(raw)
+    lastEmitted.current = n
+    onChange(n)
+  }
+
+  const input = (
+    <input
+      id={id}
+      inputMode="decimal"
+      type="text"
+      disabled={disabled}
+      aria-label={ariaLabel}
+      value={text}
+      onChange={(e) => handleChange(e.target.value)}
+      className={
+        className ?? 'min-h-11 w-28 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60'
+      }
+    />
+  )
+
+  if (!unit) return input
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      {input}
+      <span className="text-muted text-sm">{unit}</span>
+    </span>
+  )
+}
+
 export function BalanceTask({
   task,
   value,
@@ -56,6 +128,9 @@ export function BalanceTask({
     else if (id.includes('equity')) equityTotal += sectionTotal
   }
   const liabEquityTotal = liabTotal + equityTotal
+  // Only a real balance sheet gets the meter; ratio drills (margins, growth) do not.
+  const ids = task.sections.map((sec) => sec.id.toLowerCase())
+  const isBalanceSheet = ids.some((id) => id.includes('asset')) && ids.some((id) => id.includes('liab') || id.includes('equity'))
   const denom = Math.max(Math.abs(assetsTotal), Math.abs(liabEquityTotal), 1)
   const assetsPct = Math.min(100, Math.max(0, (assetsTotal / denom) * 100))
   const liabPct = Math.min(100, Math.max(0, (liabTotal / denom) * 100))
@@ -81,13 +156,12 @@ export function BalanceTask({
                 >
                   <span className="text-ink">{line.label}</span>
                   {isBlank ? (
-                    <input
-                      inputMode="decimal"
-                      type="text"
+                    <NumberField
+                      id={line.id}
+                      value={raw ?? null}
+                      onChange={(n) => setLine(line.id, n)}
                       disabled={disabled}
-                      value={raw === null || raw === undefined ? '' : String(raw)}
-                      onChange={(e) => setLine(line.id, parseInput(e.target.value))}
-                      className="min-h-11 w-28 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
+                      ariaLabel={line.label}
                     />
                   ) : (
                     <span className="font-mono text-ink">
@@ -102,6 +176,7 @@ export function BalanceTask({
         </div>
       ))}
 
+      {isBalanceSheet && (
       <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase tracking-wide text-muted font-semibold">Balance check</span>
@@ -119,6 +194,7 @@ export function BalanceTask({
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }

@@ -112,7 +112,92 @@ export interface QuizTask {
   }[]
 }
 
-export type Task = OrderTask | SortTask | BalanceTask | QuizTask
+/**
+ * One or more sliders, each with a target. Accuracy per slider: 1 inside
+ * `tolerance`, degrading linearly to 0 at 2x tolerance. Mean across sliders.
+ */
+export interface SliderTask {
+  kind: 'slider'
+  prompt: string
+  sliders: {
+    id: string
+    label: string
+    min: number
+    max: number
+    step: number
+    answer: number
+    tolerance: number
+    /** Display unit, e.g. "$", "x", "%". Rendered next to the value. */
+    unit?: string
+    role?: Role
+    hint?: string
+  }[]
+}
+
+/**
+ * The income statement as a bar chart the player fills in. Steps run top to
+ * bottom. A `total` step shows the running total (absolute value); other
+ * steps are signed deltas. Known steps carry `value`; blanks carry `answer`.
+ * Graded like `balance`: fraction of blanks within `tolerance`.
+ */
+export interface WaterfallTask {
+  kind: 'waterfall'
+  prompt: string
+  unit?: string
+  tolerance?: number
+  steps: WaterfallStep[]
+}
+
+export interface WaterfallStep {
+  id: string
+  label: string
+  role?: Role
+  /** Known value: absolute for totals, signed delta otherwise. */
+  value?: number
+  /** Correct value for a blank (same sign convention as `value`). */
+  answer?: number
+  total?: boolean
+  note?: string
+}
+
+/**
+ * Two-anchor bridge: start at a known number, apply adjustments, land on a
+ * known target. Every adjustment is a blank (some correct answers are 0).
+ * Accuracy = 0.75 * fraction of adjustments within tolerance
+ *          + 0.25 * (start + sum(adjustments) reconciles to end).
+ */
+export interface BridgeTask {
+  kind: 'bridge'
+  prompt: string
+  unit?: string
+  tolerance?: number
+  start: { label: string; value: number; role?: Role }
+  end: { label: string; value: number; role?: Role }
+  adjustments: { id: string; label: string; answer: number; role?: Role; hint?: string; note?: string }[]
+}
+
+/**
+ * Football field: the player sets the low and high end of valuation ranges.
+ * Accuracy = mean over rows of (lowHit + highHit) / 2, where a hit is within
+ * `tolerance`. If `question` is present it takes `question.weight` (default
+ * 0.25) of the accuracy and the rows share the rest.
+ */
+export interface FootballFieldTask {
+  kind: 'footballfield'
+  prompt: string
+  unit?: string
+  axis: { min: number; max: number; step: number }
+  rows: { id: string; label: string; lowAnswer: number; highAnswer: number; tolerance: number; role?: Role; hint?: string; note?: string }[]
+  question?: {
+    text: string
+    choices: { id: string; label: string }[]
+    correctId: string
+    explanation: string
+    weight?: number
+  }
+}
+
+export type Task = OrderTask | SortTask | BalanceTask | QuizTask | SliderTask | WaterfallTask | BridgeTask | FootballFieldTask
 
 /** What the player submitted. Shape follows the task kind. */
 export type OrderAnswer = { kind: 'order'; orderedIds: string[] }
@@ -123,7 +208,28 @@ export type BalanceAnswer = { kind: 'balance'; values: Record<string, number | n
 /** questionId -> choiceId. Missing or null = unanswered (counts as wrong). */
 export type QuizAnswer = { kind: 'quiz'; choices: Record<string, string | null>; timedOut?: boolean }
 
-export type Answer = OrderAnswer | SortAnswer | BalanceAnswer | QuizAnswer
+/** sliderId -> value. Missing = treated as the slider's min (wrong). */
+export type SliderAnswer = { kind: 'slider'; values: Record<string, number> }
+/** stepId -> typed number for blanks. */
+export type WaterfallAnswer = { kind: 'waterfall'; values: Record<string, number | null> }
+/** adjustmentId -> typed number. Missing = null (wrong). */
+export type BridgeAnswer = { kind: 'bridge'; values: Record<string, number | null> }
+/** rowId -> {low, high}; `choice` answers the embedded question if any. */
+export type FootballFieldAnswer = {
+  kind: 'footballfield'
+  ranges: Record<string, { low: number; high: number }>
+  choice?: string | null
+}
+
+export type Answer =
+  | OrderAnswer
+  | SortAnswer
+  | BalanceAnswer
+  | QuizAnswer
+  | SliderAnswer
+  | WaterfallAnswer
+  | BridgeAnswer
+  | FootballFieldAnswer
 
 export interface GradeResult {
   /** 0..1 accuracy. */

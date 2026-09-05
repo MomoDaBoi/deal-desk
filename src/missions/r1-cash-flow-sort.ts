@@ -5,7 +5,9 @@ import { mdVerdict } from '../engine/voice'
 /**
  * Rung 1. Sort Pucker Up's fiscal 2025 cash flow lines into the section of
  * the cash flow statement they actually belong in: operating, investing, or
- * financing. See DEAL_DESK_BRIEF.md / the Rung 1 company bible for the
+ * financing. Six lines are the company's real FY2025 statement (indirect
+ * method); two are clearly-labelled hypotheticals used only to test the
+ * sorting rule. See DEAL_DESK_BRIEF.md / the Rung 1 company bible for the
  * underlying figures.
  */
 
@@ -16,18 +18,16 @@ const REASON: Record<string, string> = {
     'Depreciation is a non-cash expense — it already reduced net income on the income statement, but no cash actually left the building, so operating adds it back.',
   working_capital:
     'The change in working capital (cash tied up or freed up by unpaid customer bills, inventory, and unpaid supplier bills) is a day-to-day timing effect, so it is an operating adjustment.',
-  supplier_cash:
-    'Cash paid to lemon suppliers buys the ingredient that goes straight into what Pucker Up sells today — a day-to-day operating cost, not a long-term investment or a financing flow.',
   capex_stands:
     'Buying new stands is capital expenditure: spending cash on a long-lived asset the business will use for years. That is exactly what investing tracks.',
-  van_sale:
-    'Selling an old delivery van is disposing of a long-lived asset. The cash it brings in sits in investing, right alongside the cash spent buying new ones.',
   debt_repayment:
     'Repaying debt sends cash back to a lender. That is a financing flow, not a cost of running the stands.',
   dividends:
     'A dividend is cash paid out to an owner, not an expense of the business. Money moving between the company and its owners is exactly what financing tracks.',
-  new_loan:
-    'A new bank loan brings cash in from a lender — financing, the mirror image of repaying one.',
+  hyp_loan:
+    "A new bank loan brings cash in from a lender — financing, the mirror image of repaying one. Pucker Up did not actually take out this loan in FY2025; it is a hypothetical to test the sorting rule, not a real line on this year's statement.",
+  hyp_van_sale:
+    "Selling an old delivery van is disposing of a long-lived asset, so any cash it brings in sits in investing, right alongside cash spent buying new ones. Pucker Up did not actually sell a van in FY2025; it is a hypothetical to test the sorting rule, not a real line on this year's statement.",
 }
 
 const mission: Mission = {
@@ -53,7 +53,8 @@ const mission: Mission = {
   },
   task: {
     kind: 'sort',
-    prompt: "Sort Pucker Up's fiscal 2025 cash flow lines into the section they belong in.",
+    prompt:
+      "Six of these lines are Pucker Up's real fiscal 2025 cash flow statement. Two are hypotheticals the founder is curious about — sort every line into the section it belongs in either way.",
     buckets: [
       { id: 'operating', label: 'Operating', role: 'cash', hint: 'Cash from running the stands, day to day.' },
       { id: 'investing', label: 'Investing', role: 'neutral', hint: 'Buying or selling long-lived stuff.' },
@@ -63,12 +64,11 @@ const mission: Mission = {
       { id: 'net_income', label: 'Net income', bucketId: 'operating', role: 'cash' },
       { id: 'depreciation', label: 'Depreciation', bucketId: 'operating', role: 'cash' },
       { id: 'working_capital', label: 'Change in working capital', bucketId: 'operating', role: 'cash' },
-      { id: 'supplier_cash', label: 'Cash paid to lemon suppliers', bucketId: 'operating', role: 'cost' },
       { id: 'capex_stands', label: 'Purchase of new stands', bucketId: 'investing', role: 'cost' },
-      { id: 'van_sale', label: 'Sale of an old delivery van', bucketId: 'investing', role: 'cash' },
       { id: 'debt_repayment', label: 'Debt repayment', bucketId: 'financing', role: 'debt' },
-      { id: 'dividends', label: 'Dividends to founder', bucketId: 'financing', role: 'equity' },
-      { id: 'new_loan', label: 'New bank loan', bucketId: 'financing', role: 'debt' },
+      { id: 'dividends', label: 'Dividends to the founder', bucketId: 'financing', role: 'equity' },
+      { id: 'hyp_loan', label: 'Suppose the company also took out a new bank loan', bucketId: 'financing', role: 'debt' },
+      { id: 'hyp_van_sale', label: 'Suppose the company also sold an old delivery van', bucketId: 'investing', role: 'cash' },
     ],
   },
   grade(answer) {
@@ -79,14 +79,14 @@ const mission: Mission = {
         return {
           verdict: 'Every dollar in its drawer. The MD is suspicious of you now.',
           explanation:
-            'You sorted it exactly right. Operating (net income of 200, plus depreciation of 40 added back, plus the 20 working-capital swing, minus cash paid to suppliers) nets to cash from operations of 260. Investing is negative 120: buying new stands costs cash up front, partly offset by selling the old van. Financing nets to negative 100: borrowing, repaying debt, and paying the founder his dividend. Three drawers, one honest cash balance.',
+            "You sorted it exactly right. Operating is the day job: net income of 200, plus depreciation of 40 added back because no cash left the building, plus the 20 working-capital swing, nets to cash from operations of 260. Investing is negative 120: buying new stands is the only real investing line this year. Financing nets to negative 100: repaying debt cost 60 and the founder's dividend cost another 40. The hypothetical loan and van sale never happened this year — they still belong in their drawers, but they are not part of these totals.",
         }
       }
       if (accuracy === 0) {
         return {
           verdict: mdVerdict(0, 'r1-cash-flow-sort'),
           explanation:
-            "Not one line landed in its drawer. Operating is cash from the day-to-day business (net income, depreciation added back, working capital, cash paid to suppliers). Investing is cash spent on or earned from long-lived assets (new stands, the old van). Financing is cash to and from lenders and owners (the bank loan, debt repayment, the founder's dividend). " +
+            "Not one line landed in its drawer. Operating is cash from the day-to-day business (net income, depreciation added back, working capital). Investing is cash spent on or earned from long-lived assets (new stands, and the hypothetical van). Financing is cash to and from lenders and owners (debt repayment, the founder's dividend, and the hypothetical loan). " +
             wrongIds.map((id) => `${itemLabel(id)}: ${REASON[id] ?? ''}`).join(' '),
         }
       }

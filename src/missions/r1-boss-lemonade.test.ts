@@ -66,6 +66,24 @@ describe('r1-boss-lemonade mission', () => {
     expect(result.explanation.toLowerCase()).toContain('cash flow')
   })
 
+  it('tells the player the clock ran out, not that every answer was wrong, on a nothing-answered timeout', () => {
+    const result = mission.grade({ kind: 'quiz', choices: {}, timedOut: true })
+    expect(result.accuracy).toBe(0)
+    expect(result.verdict.toLowerCase()).toContain('time')
+    expect(result.explanation.toLowerCase()).toContain('ran out')
+    expect(result.explanation.toLowerCase()).not.toContain('every single one was wrong')
+  })
+
+  it('still uses the all-wrong copy when every question is answered and every answer is wrong, timeout or not', () => {
+    const allWrong: Record<string, string> = {}
+    for (const q of task.questions) {
+      allWrong[q.id] = q.choices.find((c) => c.id !== q.correctId)!.id
+    }
+    const result = mission.grade({ kind: 'quiz', choices: allWrong, timedOut: true })
+    expect(result.accuracy).toBe(0)
+    expect(result.explanation.toLowerCase()).toContain('every single one was wrong')
+  })
+
   it('throws when given the wrong answer kind', () => {
     const badAnswer = { kind: 'order' } as unknown as Answer
     expect(() => mission.grade(badAnswer)).toThrow('wrong answer kind')
