@@ -28,25 +28,15 @@ import { gradePrompt, askPrompt, type AskPromptInput } from './prompts'
 export type { MentorModel } from '../store/settings'
 
 /** Model picker copy for Settings. */
-export const MODELS: { id: MentorModel; label: string; blurb: string }[] = [
-  { id: 'claude-opus-5', label: 'Opus 5', blurb: 'best grader' },
-  { id: 'claude-sonnet-5', label: 'Sonnet 5', blurb: 'cheaper, still sharp' },
-  { id: 'claude-haiku-4-5', label: 'Haiku 4.5', blurb: 'cheapest, fine for Ask the MD' },
-]
+export { MODELS } from './pricing'
 
 /** Haiku 4.5 has no adaptive-thinking / effort knob; sending it errors. */
 function supportsEffort(model: MentorModel): boolean {
   return model === 'claude-opus-5' || model === 'claude-sonnet-5'
 }
 
-export class MentorError extends Error {
-  kind: 'auth' | 'ratelimit' | 'network' | 'refusal' | 'other'
-  constructor(kind: MentorError['kind'], message: string) {
-    super(message)
-    this.name = 'MentorError'
-    this.kind = kind
-  }
-}
+export { MentorError } from './mentor-error'
+import { MentorError } from './mentor-error'
 
 /** Strip the literal key out of any text before it can reach an error message. */
 function redact(message: string, apiKey: string): string {

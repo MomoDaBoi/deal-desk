@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Answer, GradeResult, Mission, OrderItem, Task } from '../engine/types'
+import type { Answer, GradeResult, Mission, MultiAnswer, OrderItem, Task } from '../engine/types'
 import { RUNG_TITLES } from '../engine/types'
 import { computeComp, formatComp, rungStatus, type CompBreakdown } from '../engine/scoring'
 import { shuffle } from '../engine/graders'
@@ -19,7 +19,8 @@ import { BridgeTask } from '../components/BridgeTask'
 import { FootballFieldTask } from '../components/FootballFieldTask'
 import { WrittenTask } from '../components/WrittenTask'
 import { AskMd } from '../components/AskMd'
-import { mentorFromSettings, MentorError } from '../lib/anthropic'
+import { MentorError } from '../lib/mentor-error'
+import { loadMentor } from '../lib/mentor'
 
 type Phase =
   | { name: 'lesson' }
@@ -69,11 +70,14 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     submitted.current = true
     const elapsed = (performance.now() - startedAt.current) / 1000
     const answer = state.buildAnswer(opts.timedOut ?? false)
-    const mentorClient = mission.gradeAsync && mentor ? mentorFromSettings() : null
-    if (mission.gradeAsync && mentorClient) {
+    const gradeAsync = mission.gradeAsync
+    if (gradeAsync && mentor) {
       setPhase({ name: 'grading' })
-      mission
-        .gradeAsync(answer, mentorClient)
+      loadMentor()
+        .then((client) => {
+          if (!client) throw new MentorError('auth', 'No key saved. Add one in Settings.')
+          return gradeAsync(answer, client)
+        })
         .then((grade) => finishGrade(grade, elapsed, answer))
         .catch((e: unknown) => {
           submitted.current = false
@@ -151,7 +155,9 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             startedAt={startedAt.current}
           />
         )}
-        {task.kind === 'slider' && <SliderTask task={task} value={state.slider} onChange={state.setSlider} />}
+        {task.kind === 'slider' && (
+          <SliderTask task={task} value={state.slider.values} onChange={(values) => state.setSlider({ ...state.slider, values })} />
+        )}
         {task.kind === 'waterfall' && <WaterfallTask task={task} value={state.waterfall} onChange={state.setWaterfall} />}
         {task.kind === 'bridge' && <BridgeTask task={task} value={state.bridge} onChange={state.setBridge} />}
         {task.kind === 'footballfield' && <FootballFieldTask task={task} value={state.ff} onChange={state.setFf} />}
@@ -171,10 +177,23 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'result') {
     const { grade, comp, newBest, elapsed } = phase
     const pct = Math.round(grade.accuracy * 100)
+    const finale = comp.passed && mission.finale ? mission.finale : null
     return (
       <Page title={mission.title} onBack={back}>
-        <Eyebrow>{comp.passed ? 'Result' : 'Result · fail'}</Eyebrow>
-        <h1 className={`text-2xl font-black mt-1 ${comp.passed ? '' : 'text-cost'}`}>{grade.verdict}</h1>
+        {finale ? (
+          <div className="text-center mb-4">
+            <div className="text-6xl">{finale.emoji ?? '🥂'}</div>
+            <Eyebrow>{finale.eyebrow}</Eyebrow>
+            <h1 className="text-3xl font-black mt-1">{finale.title}</h1>
+            <p className="mt-2 text-muted">{finale.body}</p>
+            <p className="mt-3 font-semibold">{grade.verdict}</p>
+          </div>
+        ) : (
+          <>
+            <Eyebrow>{comp.passed ? 'Result' : 'Result · fail'}</Eyebrow>
+            <h1 className={`text-2xl font-black mt-1 ${comp.passed ? '' : 'text-cost'}`}>{grade.verdict}</h1>
+          </>
+        )}
 
         <Panel className="mt-4">
           <div className="grid grid-cols-3 gap-3 text-center">
@@ -315,11 +334,14 @@ function useTaskState(task: Task, seed: number) {
   const [sort, setSort] = useState<Record<string, string>>({})
   const [balance, setBalance] = useState<Record<string, number | null>>({})
   const [quiz, setQuiz] = useState<Record<string, string | null>>({})
-  const [slider, setSlider] = useState<Record<string, number>>({})
+  const [slider, setSlider] = useState<{ values: Record<string, number>; choice: string | null }>({ values: {}, choice: null })
   const [waterfall, setWaterfall] = useState<Record<string, number | null>>({})
   const [bridge, setBridge] = useState<Record<string, number | null>>({})
   const [ff, setFf] = useState<{ ranges: Record<string, { low: number; high: number }>; choice: string | null }>({ ranges: {}, choice: null })
   const [written, setWritten] = useState<{ text: string; answers: Record<string, string> }>({ text: '', answers: {} })
+  const [heatmap, setHeatmap] = useState<{ values: Record<string, number | null>; tapped: string | null }>({ values: {}, tapped: null })
+  const [auction, setAuction] = useState<{ bids: number[] }>({ bids: [] })
+  const [multi, setMulti] = useState<{ answers: Record<string, Exclude<Answer, MultiAnswer>>; stageIndex: number }>({ answers: {}, stageIndex: 0 })
 
   useEffect(() => setOrder(orderShuffled), [orderShuffled])
 
@@ -327,11 +349,14 @@ function useTaskState(task: Task, seed: number) {
     setSort({})
     setBalance({})
     setQuiz({})
-    setSlider({})
+    setSlider({ values: {}, choice: null })
     setWaterfall({})
     setBridge({})
     setFf({ ranges: {}, choice: null })
     setWritten({ text: '', answers: {} })
+    setHeatmap({ values: {}, tapped: null })
+    setAuction({ bids: [] })
+    setMulti({ answers: {}, stageIndex: 0 })
   }
 
   function buildAnswer(timedOut: boolean): Answer {
@@ -345,7 +370,7 @@ function useTaskState(task: Task, seed: number) {
       case 'quiz':
         return { kind: 'quiz', choices: quiz, timedOut }
       case 'slider':
-        return { kind: 'slider', values: slider }
+        return { kind: 'slider', values: slider.values, choice: slider.choice }
       case 'waterfall':
         return { kind: 'waterfall', values: waterfall }
       case 'bridge':
@@ -354,12 +379,19 @@ function useTaskState(task: Task, seed: number) {
         return { kind: 'footballfield', ranges: ff.ranges, choice: ff.choice }
       case 'written':
         return { kind: 'written', text: written.text, answers: written.answers }
+      case 'heatmap':
+        return { kind: 'heatmap', values: heatmap.values, tapped: heatmap.tapped }
+      case 'auction':
+        return { kind: 'auction', bids: auction.bids }
+      case 'multi':
+        return { kind: 'multi', answers: multi.answers }
     }
   }
 
   return {
     order, setOrder, sortItems, sort, setSort, balance, setBalance, quiz, setQuiz,
     slider, setSlider, waterfall, setWaterfall, bridge, setBridge, ff, setFf, written, setWritten,
+    heatmap, setHeatmap, auction, setAuction, multi, setMulti,
     reset, buildAnswer,
   }
 }
@@ -393,7 +425,7 @@ function labelFor(task: Task, id: string): string {
     case 'quiz':
       return task.questions.find((q) => q.id === id)?.text ?? id
     case 'slider':
-      return task.sliders.find((x) => x.id === id)?.label ?? id
+      return id === 'question' ? (task.question?.text ?? id) : (task.sliders.find((x) => x.id === id)?.label ?? id)
     case 'waterfall':
       return task.steps.find((x) => x.id === id)?.label ?? id
     case 'bridge':
@@ -402,6 +434,17 @@ function labelFor(task: Task, id: string): string {
       return id === 'question' ? (task.question?.text ?? id) : (task.rows.find((x) => x.id === id)?.label ?? id)
     case 'written':
       return task.questions?.find((q) => q.id === id)?.text ?? id
+    case 'heatmap': {
+      if (id === 'tap') return task.tap?.prompt ?? id
+      const [r, c] = id.split(':')
+      const row = task.rows.find((x) => x.id === r)?.label ?? r
+      const col = task.cols.find((x) => x.id === c)?.label ?? c
+      return `${task.rowsLabel} ${row}, ${task.colsLabel} ${col}`
+    }
+    case 'auction':
+      return id === 'outcome' ? 'Outcome' : `Round ${id.replace('round', '')}`
+    case 'multi':
+      return task.stages.find((x) => x.id === id)?.title ?? id
   }
 }
 
@@ -425,6 +468,12 @@ function detailsTitle(task: Task): string {
       return 'The ranges'
     case 'written':
       return 'What the MD marked'
+    case 'heatmap':
+      return 'The cells'
+    case 'auction':
+      return 'Round by round'
+    case 'multi':
+      return 'Stage by stage'
   }
 }
 

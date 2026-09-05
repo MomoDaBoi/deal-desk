@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { GradeResult, Mission } from '../engine/types'
-import { MentorError, mentorFromSettings } from '../lib/anthropic'
+import { MentorError } from '../lib/mentor-error'
+import { loadMentor } from '../lib/mentor'
+import { useMentorMode } from '../store/settings'
 import { formatUsd } from '../lib/pricing'
 import { useUsage } from '../store/usage'
 import { Button } from './ui'
@@ -19,8 +21,7 @@ interface QaPair {
  * transcript, to keep each call cheap.
  */
 export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult }) {
-  // Built once per mount from whatever key/model are in settings right now.
-  const mentor = useMemo(() => mentorFromSettings(), [])
+  const mentorOn = useMentorMode()
 
   const [question, setQuestion] = useState('')
   const [lastQuestion, setLastQuestion] = useState('')
@@ -30,7 +31,7 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
   const [errorMsg, setErrorMsg] = useState('')
   const [lastCost, setLastCost] = useState<number | null>(null)
 
-  if (!mentor) return null
+  if (!mentorOn) return null
 
   async function ask(q: string) {
     const trimmed = q.trim()
@@ -44,7 +45,9 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
     // session, so we snapshot before/after to show the cost of THIS call.
     const before = useUsage.getState().cost
     try {
-      const result = await mentor!.ask(
+      const mentor = await loadMentor()
+      if (!mentor) throw new MentorError('auth', 'No key saved. Add one in Settings.')
+      const result = await mentor.ask(
         {
           missionTitle: mission.title,
           lesson: mission.lesson.body,

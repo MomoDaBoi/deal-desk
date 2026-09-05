@@ -5,7 +5,8 @@ import { looksLikeAnthropicKey, useSettings, type MentorModel } from '../store/s
 import { useUsage } from '../store/usage'
 import { formatComp } from '../engine/scoring'
 import { Button, Eyebrow, Page, Panel } from '../components/ui'
-import { MODELS, mentorFromSettings } from '../lib/anthropic'
+import { MODELS } from '../lib/pricing'
+import { loadMentor } from '../lib/mentor'
 import { PRICES, PRICING_CHECKED_ON, estimateCallCost, formatUsd } from '../lib/pricing'
 
 export function Settings() {
@@ -25,7 +26,7 @@ export function Settings() {
 
   async function testKey() {
     setKeyTest({ state: 'testing', text: '' })
-    const mentor = mentorFromSettings()
+    const mentor = await loadMentor()
     if (!mentor) {
       setKeyTest({ state: 'err', text: 'No key saved yet.' })
       return

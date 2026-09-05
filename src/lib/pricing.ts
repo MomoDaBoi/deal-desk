@@ -6,6 +6,13 @@
 
 import type { MentorModel } from '../store/settings'
 
+/** Models the Mentor may use, with the labels Settings shows. */
+export const MODELS: { id: MentorModel; label: string; blurb: string }[] = [
+  { id: 'claude-opus-5', label: 'Opus 5', blurb: 'best grader' },
+  { id: 'claude-sonnet-5', label: 'Sonnet 5', blurb: 'cheaper, still sharp' },
+  { id: 'claude-haiku-4-5', label: 'Haiku 4.5', blurb: 'cheapest, fine for Ask the MD' },
+]
+
 export const PRICING_CHECKED_ON = '2026-09-05'
 
 /** USD per million tokens, at `PRICING_CHECKED_ON`. */

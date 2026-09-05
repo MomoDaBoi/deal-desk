@@ -134,6 +134,24 @@ export interface SliderTask {
     role?: Role
     hint?: string
   }[]
+  /**
+   * Live derived numbers shown under the sliders (e.g. year-5 free cash
+   * flow, IRR, implied EV). Pure functions of the current slider values.
+   */
+  readouts?: { id: string; label: string; unit?: string; role?: Role; compute: (values: Record<string, number>) => number }[]
+  /** Optional mini bar chart recomputed live from the slider values. */
+  chart?: { label: string; unit?: string; series: (values: Record<string, number>) => { label: string; value: number; role?: Role }[] }
+  /**
+   * Optional judgement question after the sliders. Takes `weight` (default
+   * 0.4) of the accuracy; the sliders share the rest.
+   */
+  question?: {
+    text: string
+    choices: { id: string; label: string }[]
+    correctId: string
+    explanation: string
+    weight?: number
+  }
 }
 
 /**
@@ -217,7 +235,72 @@ export interface WrittenTask {
   questions?: { id: string; text: string; rubric: string[]; modelAnswer: string }[]
 }
 
-export type Task = OrderTask | SortTask | BalanceTask | QuizTask | SliderTask | WaterfallTask | BridgeTask | FootballFieldTask | WrittenTask
+/**
+ * Sensitivity table. Rows and columns are the two inputs (e.g. WACC and
+ * terminal growth); `cells` holds every value keyed "rowId:colId". The
+ * player types the cells listed in `blanks` and, if `tap` is set, taps the
+ * cell that answers `tap.prompt`. Accuracy = (blanks within tolerance +
+ * tap correct) / (blanks + 1 if tap).
+ */
+export interface HeatmapTask {
+  kind: 'heatmap'
+  prompt: string
+  unit?: string
+  tolerance?: number
+  rows: { id: string; label: string }[]
+  cols: { id: string; label: string }[]
+  rowsLabel: string
+  colsLabel: string
+  cells: Record<string, number>
+  blanks: string[]
+  tap?: { prompt: string; answer: string }
+}
+
+/**
+ * Auction against scripted bots. The player bids once per round; bots
+ * respond from deterministic policies (see src/engine/graders/auction.ts)
+ * so a replay is reproducible and the grader can re-simulate from the bids.
+ * Accuracy is shaped: winning below intrinsic value scores ~1, losing
+ * narrowly scores mid, winning above intrinsic value falls off steeply.
+ */
+export interface AuctionTask {
+  kind: 'auction'
+  prompt: string
+  /** The one-page teaser the player reads before bidding. */
+  teaser: string
+  unit?: string
+  /** What the target is actually worth to a disciplined buyer. Never shown. */
+  intrinsicValue: number
+  rounds: number
+  bidMin: number
+  bidMax: number
+  bidStep: number
+  bots: { id: string; name: string; style: 'strategic' | 'sponsor' | 'overbidder'; blurb: string }[]
+}
+
+/**
+ * Several tasks played in sequence (the capstone). Each stage is a normal
+ * task; the mission's grade() combines the stage results.
+ */
+export interface MultiTask {
+  kind: 'multi'
+  prompt: string
+  stages: { id: string; title: string; intro?: string; task: Exclude<Task, MultiTask> }[]
+}
+
+export type Task =
+  | OrderTask
+  | SortTask
+  | BalanceTask
+  | QuizTask
+  | SliderTask
+  | WaterfallTask
+  | BridgeTask
+  | FootballFieldTask
+  | WrittenTask
+  | HeatmapTask
+  | AuctionTask
+  | MultiTask
 
 /** What the player submitted. Shape follows the task kind. */
 export type OrderAnswer = { kind: 'order'; orderedIds: string[] }
@@ -228,8 +311,14 @@ export type BalanceAnswer = { kind: 'balance'; values: Record<string, number | n
 /** questionId -> choiceId. Missing or null = unanswered (counts as wrong). */
 export type QuizAnswer = { kind: 'quiz'; choices: Record<string, string | null>; timedOut?: boolean }
 
-/** sliderId -> value. Missing = treated as the slider's min (wrong). */
-export type SliderAnswer = { kind: 'slider'; values: Record<string, number> }
+/** sliderId -> value. Missing = treated as the slider's min (wrong). `choice` answers the embedded question if any. */
+export type SliderAnswer = { kind: 'slider'; values: Record<string, number>; choice?: string | null }
+/** "rowId:colId" -> typed number for blanks; `tapped` is the tapped cell key. */
+export type HeatmapAnswer = { kind: 'heatmap'; values: Record<string, number | null>; tapped?: string | null }
+/** One bid per round, in order. Fewer bids than rounds = the player dropped out. */
+export type AuctionAnswer = { kind: 'auction'; bids: number[] }
+/** stageId -> that stage's answer. */
+export type MultiAnswer = { kind: 'multi'; answers: Record<string, Exclude<Answer, MultiAnswer>> }
 /** stepId -> typed number for blanks. */
 export type WaterfallAnswer = { kind: 'waterfall'; values: Record<string, number | null> }
 /** adjustmentId -> typed number. Missing = null (wrong). */
@@ -246,6 +335,9 @@ export type WrittenAnswer = { kind: 'written'; text: string; answers?: Record<st
 
 export type Answer =
   | WrittenAnswer
+  | HeatmapAnswer
+  | AuctionAnswer
+  | MultiAnswer
   | OrderAnswer
   | SortAnswer
   | BalanceAnswer
@@ -279,6 +371,8 @@ export interface Mission {
   /** Seconds. Finishing under par earns a speed bonus. */
   parSeconds: number
   boss?: boolean
+  /** Shown instead of the plain result header when the mission is passed (e.g. the closing dinner). */
+  finale?: { eyebrow: string; title: string; body: string; emoji?: string }
   /** Requires Mentor mode (API key). Hidden in Standard mode. */
   mentorOnly?: boolean
   lesson: Lesson
