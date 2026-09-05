@@ -91,26 +91,26 @@ export function MultiTask({
               : 'bg-panel border-line text-muted'
           const pill = (
             <span
-              className="font-mono tabular-nums opacity-70"
+              className="font-mono tabular-nums opacity-70 shrink-0"
               aria-hidden={true}
             >
               {i + 1}
             </span>
           )
           return (
-            <li key={s.id} aria-current={current ? 'step' : undefined}>
+            <li key={s.id} aria-current={current ? 'step' : undefined} className="min-w-0 max-w-full">
               {canJump ? (
                 <button
                   type="button"
                   onClick={() => goto(i)}
                   disabled={disabled}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}
+                  className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}
                 >
                   {pill}
                   <span className="truncate">{s.title}</span>
                 </button>
               ) : (
-                <span className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}>
+                <span className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}>
                   {pill}
                   <span className="truncate">{s.title}</span>
                 </span>
@@ -122,8 +122,8 @@ export function MultiTask({
 
       {/* Current stage */}
       <div className="flex flex-col gap-1">
-        <h3 className="text-lg font-bold text-ink">{stage.title}</h3>
-        {stage.intro && <p className="text-sm text-muted">{stage.intro}</p>}
+        <h3 className="text-lg font-bold text-ink break-words">{stage.title}</h3>
+        {stage.intro && <p className="text-sm text-muted break-words">{stage.intro}</p>}
       </div>
 
       {stageTask.kind === 'bridge' ? (

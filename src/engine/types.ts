@@ -21,13 +21,24 @@ export const RUNG_SUBTITLES: Record<Rung, string> = {
   5: 'Deals',
 }
 
+/**
+ * Lesson visuals. `bullets` is a numbered list; `bars` is a small horizontal
+ * bar chart (one bar per item, coloured by role); `waterfall` is a compact
+ * running-total chart where totals are absolute and other items are deltas.
+ */
+export type LessonVisual =
+  | { kind: 'bullets'; items: string[] }
+  | { kind: 'bars'; unit?: string; items: { label: string; value: number; role?: Role }[] }
+  | { kind: 'waterfall'; unit?: string; items: { label: string; value: number; total?: boolean; role?: Role }[] }
+  | { kind: 'none' }
+
 /** One-visual, under-120-word lesson card shown before the task. */
 export interface Lesson {
   title: string
   /** Plain prose. Keep under 120 words. */
   body: string
   /** Optional visual hint rendered by the Lesson component. */
-  visual?: { kind: 'bullets'; items: string[] } | { kind: 'none' }
+  visual?: LessonVisual
 }
 
 /**

@@ -106,4 +106,16 @@ describe('r2-margins mission', () => {
     const wordCount = mission.lesson.body.trim().split(/\s+/).length
     expect(wordCount).toBeLessThan(120)
   })
+
+  it('shows a bars visual matching the Ledgerly income statement', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('$k')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel.Revenue).toBe(80_000)
+    expect(byLabel['Gross profit']).toBe(60_000)
+    expect(byLabel.EBITDA).toBe(12_000)
+    expect(byLabel['Net income']).toBe(3_750)
+  })
 })

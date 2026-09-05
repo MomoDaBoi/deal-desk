@@ -82,6 +82,17 @@ describe('r2-ev-vs-equity mission', () => {
     }
   })
 
+  it('shows a bars visual of market cap, net debt, and enterprise value', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('$k')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel['Market cap']).toBe(370_000)
+    expect(byLabel['Net debt']).toBe(30_000)
+    expect(byLabel['Enterprise value']).toBe(400_000)
+  })
+
   it('has basic mission metadata matching the spec', () => {
     expect(mission.id).toBe('r2-ev-vs-equity')
     expect(mission.rung).toBe(2)

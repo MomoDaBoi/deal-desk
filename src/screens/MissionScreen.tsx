@@ -21,6 +21,7 @@ import { WrittenTask } from '../components/WrittenTask'
 import { HeatmapTask } from '../components/HeatmapTask'
 import { AuctionTask } from '../components/AuctionTask'
 import { MultiTask } from '../components/MultiTask'
+import { LessonVisual } from '../components/LessonVisual'
 import { AskMd } from '../components/AskMd'
 import { MentorError } from '../lib/mentor-error'
 import { loadMentor } from '../lib/mentor'
@@ -418,18 +419,7 @@ function useTaskState(task: Task, seed: number) {
 }
 
 function LessonBullets({ mission }: { mission: Mission }) {
-  const v = mission.lesson.visual
-  if (!v || v.kind !== 'bullets') return null
-  return (
-    <ul className="mt-4 flex flex-col gap-2">
-      {v.items.map((b, i) => (
-        <li key={i} className="flex gap-3 text-sm">
-          <span className="font-mono text-muted w-4 text-right shrink-0">{i + 1}</span>
-          <span>{b}</span>
-        </li>
-      ))}
-    </ul>
-  )
+  return <LessonVisual visual={mission.lesson.visual} />
 }
 
 function labelFor(task: Task, id: string): string {

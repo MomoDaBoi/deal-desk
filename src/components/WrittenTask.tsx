@@ -27,8 +27,8 @@ function RubricList({ rubric }: { rubric: string[] }) {
       <ul className="flex flex-col gap-1 text-sm text-ink/90">
         {rubric.map((item, i) => (
           <li key={i} className="flex gap-2">
-            <span className="text-muted">•</span>
-            <span>{item}</span>
+            <span className="text-muted shrink-0">•</span>
+            <span className="min-w-0 break-words">{item}</span>
           </li>
         ))}
       </ul>
@@ -80,7 +80,7 @@ export function WrittenTask({
           <div key={q.id} className="flex flex-col gap-2 bg-panel border border-line rounded-2xl p-4">
             <div className="flex gap-2">
               <span className="text-muted font-semibold shrink-0">{i + 1}.</span>
-              <p className="font-semibold text-ink">{q.text}</p>
+              <p className="font-semibold text-ink min-w-0 break-words">{q.text}</p>
             </div>
             <textarea
               className={TEXTAREA_CLASS}

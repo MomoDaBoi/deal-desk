@@ -82,7 +82,7 @@ remaining Milestone 6 items (360px pass, deep links) and owner notes.
       tests.
 - [x] (2026-09-05) Mission: "What is a company / the three statements" (intro, likely
       `quiz` or `sort`).
-- [ ] Mission: Income statement order (replace or upgrade the placeholder
+- [x] (2026-09-05) Mission: Income statement order (replace or upgrade the placeholder (waterfall lesson visual shipped)
       with real lesson art).
 - [x] (2026-09-05) Mission: Balance sheet, assets = liabilities + equity (`balance`).
 - [x] (2026-09-05) Mission: Cash flow statement, sort into operating / investing /
@@ -91,7 +91,7 @@ remaining Milestone 6 items (360px pass, deep links) and owner notes.
       questions under time pressure (`quiz`, `boss: true`).
 - [x] (2026-09-05) Establish the humor voice: a shared bank of MD verdict lines by
       accuracy band in `src/engine/voice.ts` so missions can reuse them.
-- [ ] Lesson card visuals: one small chart per concept (Recharts).
+- [x] (2026-09-05) Lesson card visuals: one small chart per concept (Recharts). (plain-div bars/waterfall visuals; no Recharts needed)
 - [ ] Owner plays Rung 1 and gives notes.
 
 Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
@@ -129,7 +129,7 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
 - [x] (2026-09-05) Mission `r1-boss-lemonade` (quiz, boss, base 9,000, par 150,
       `timeLimitSeconds: 120`): five "which statement tells you X"
       questions on the full Pucker Up set.
-- [ ] Upgrade `r1-income-statement-order` lesson visual to a small
+- [x] (2026-09-05) Upgrade `r1-income-statement-order` lesson visual to a small
       waterfall; keep id, items, and grading unchanged.
 - [x] (2026-09-05) `src/engine/voice.ts`: verdict banks by accuracy band (PLAN.md
       §i), deterministic pick from (missionId, accuracy). Promotion,
@@ -169,7 +169,7 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, e):
       2× tolerance, tests, widget (44px thumb, live value readout).
 - [x] (2026-09-05) Task kind `footballfield`: types, grader (mean of low/high hit
       rates per row), tests, custom-SVG widget with 44px drag handles.
-- [ ] `src/components/charts/`: shared x-scale helper, role→token
+- [x] (2026-09-05) `src/components/charts/`: shared x-scale helper, role→token (superseded: widgets are self-contained; LessonVisual covers lesson charts)
       colour map, a responsive wrapper that stays legible at 360px.
       Keep Recharts out of `src/engine/`.
 - [x] (2026-09-05) Mission `r2-waterfall-ebitda` (waterfall, 6,000 / 150): four
@@ -208,7 +208,7 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, e):
       settings, only talks to api.anthropic.com.
 - [x] (2026-09-05) Task kind `written`, graded 1–10 by the MD with feedback.
 - [x] (2026-09-05) "Ask the MD" button on result screens.
-- [ ] Mock interview: five IB technical questions.
+- [x] (2026-09-05) Mock interview: five IB technical questions. (m5-mock-interview)
 - [x] (2026-09-05) Cost display: rough tokens/cost per call in Settings.
 
 Sub-tasks refined against `PLAN.md` (sections b, d, g, l):
@@ -310,7 +310,7 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 - [x] (2026-09-05) Pointer-events drag layered over the existing tap interaction for
       `order`, `sort`, and the football-field handles. Tap must keep
       working unchanged.
-- [ ] Pass over every chart board at 360px width; move any overflowing
+- [x] (2026-09-05) Pass over every chart board at 360px width; move any overflowing
       Recharts axis or legend to custom SVG.
 
 ## Backlog / ideas
@@ -318,7 +318,7 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 - [x] (2026-09-05) Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic
       SDK is not in the main bundle for Standard-mode players.
 - [x] (2026-09-05) Streak or "days survived" counter on the ladder.
-- [ ] Hash-based deep links (`#/mission/<id>`) if sharing a specific
+- [x] (2026-09-05) Hash-based deep links (`#/mission/<id>`) if sharing a specific
       mission ever matters.
 
 ## Decisions (brief left these open)
@@ -391,6 +391,12 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
   the player's own slider values, never a fixed textbook point.
 - 2026-09-05: Capstone stage navigation lives in the sticky bottom bar;
   Submit only appears on the last stage.
+- 2026-09-05: Lesson charts are plain divs (`LessonVisual`: bullets,
+  bars, waterfall). Recharts stays installed but unused; remove it if
+  nothing adopts it by Milestone 6 sign-off.
+- 2026-09-05: Hash deep links (#/mission/<id>, #/rung/<n>, #/settings)
+  do not bypass rung locking in the UI but a locked rung is reachable by
+  hash; acceptable for a game.
 
 ## Owner notes
 

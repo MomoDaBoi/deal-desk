@@ -125,4 +125,15 @@ describe('r3-multiples mission', () => {
     const wordCount = mission.lesson.body.trim().split(/\s+/).length
     expect(wordCount).toBeLessThan(120)
   })
+
+  it('shows a bars visual of EV/EBITDA for the three bible companies', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('x')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel.Ledgerly).toBe(33.3)
+    expect(byLabel.Brickhouse).toBe(8.3)
+    expect(byLabel["Nan's Pantry"]).toBe(7.0)
+  })
 })

@@ -25,4 +25,13 @@ describe('r1-income-statement-order mission', () => {
     const badAnswer = { kind: 'quiz' } as unknown as Answer
     expect(() => mission.grade(badAnswer)).toThrow('wrong answer kind')
   })
+
+  it('has a waterfall lesson visual that reconciles to net income', () => {
+    const visual = mission.lesson.visual
+    if (!visual || visual.kind !== 'waterfall') throw new Error('expected a waterfall visual')
+    const net = visual.items.find((i) => i.label === 'Net income')
+    expect(net?.value).toBe(200)
+    expect(net?.total).toBe(true)
+    expect(visual.items.find((i) => i.label === 'Revenue')?.value).toBe(1_200)
+  })
 })

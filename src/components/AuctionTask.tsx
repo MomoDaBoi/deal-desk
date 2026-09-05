@@ -62,9 +62,9 @@ export function AuctionTask({
         <p className="text-ink text-sm leading-relaxed">{task.teaser}</p>
         <div className="flex flex-col gap-2 mt-2">
           {task.bots.map((bot) => (
-            <div key={bot.id} className="flex items-baseline gap-2 text-sm">
-              <span className="font-semibold text-ink">{bot.name}</span>
-              <span className="text-muted">{bot.blurb}</span>
+            <div key={bot.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+              <span className="font-semibold text-ink shrink-0">{bot.name}</span>
+              <span className="text-muted min-w-0 break-words">{bot.blurb}</span>
             </div>
           ))}
         </div>
@@ -74,7 +74,7 @@ export function AuctionTask({
         <div className="bg-panel border border-line rounded-2xl overflow-hidden">
           <div className="px-4 py-2 border-b border-line text-xs font-semibold uppercase tracking-wide text-muted">Rounds so far</div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-muted text-xs uppercase tracking-wide">
                   <th className="text-left px-4 py-2">Round</th>
@@ -118,11 +118,13 @@ export function AuctionTask({
         <div className="bg-panel-2 border border-line rounded-2xl p-4 text-center text-ink font-semibold">Bidding closed. Tap Submit.</div>
       ) : (
         <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-ink font-semibold">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <span className="text-ink font-semibold min-w-0">
               Round {currentRoundNumber} of {task.rounds}
             </span>
-            <span className="font-mono text-2xl text-ink tabular-nums">{formatUnit(currentBid, task.unit)}</span>
+            <span className="font-mono text-xl sm:text-2xl text-ink tabular-nums shrink-0 whitespace-nowrap">
+              {formatUnit(currentBid, task.unit)}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -131,7 +133,7 @@ export function AuctionTask({
               aria-label="Decrease bid"
               disabled={disabled}
               onClick={() => nudge(-1)}
-              className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+              className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
             >
               −
             </button>
@@ -145,30 +147,30 @@ export function AuctionTask({
               disabled={disabled}
               onChange={(e) => setCurrentBid(Number(e.target.value))}
               style={{ accentColor: 'var(--color-equity)' }}
-              className="h-11 flex-1 disabled:opacity-40"
+              className="h-11 flex-1 min-w-0 disabled:opacity-40"
             />
             <button
               type="button"
               aria-label="Increase bid"
               disabled={disabled}
               onClick={() => nudge(1)}
-              className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+              className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
             >
               +
             </button>
           </div>
 
-          <div className="flex items-center justify-between text-xs text-muted font-mono">
-            <span>{formatUnit(bidFloor, task.unit)}</span>
-            <span>{formatUnit(task.bidMax, task.unit)}</span>
+          <div className="flex items-center justify-between gap-2 text-xs text-muted font-mono tabular-nums">
+            <span className="truncate">{formatUnit(bidFloor, task.unit)}</span>
+            <span className="truncate">{formatUnit(task.bidMax, task.unit)}</span>
           </div>
 
-          <div className="flex gap-3 mt-1">
+          <div className="flex flex-wrap gap-3 mt-1">
             <button
               type="button"
               disabled={disabled}
               onClick={placeBid}
-              className="flex-1 min-h-11 rounded-xl bg-revenue text-bg font-semibold disabled:opacity-40 active:scale-[0.98]"
+              className="flex-1 basis-32 min-h-11 px-3 rounded-xl bg-revenue text-bg font-semibold disabled:opacity-40 active:scale-[0.98]"
             >
               Place bid
             </button>
@@ -176,7 +178,7 @@ export function AuctionTask({
               type="button"
               disabled={disabled}
               onClick={walkAway}
-              className="flex-1 min-h-11 rounded-xl bg-panel-2 border border-line text-ink font-semibold disabled:opacity-40 active:scale-[0.98]"
+              className="flex-1 basis-32 min-h-11 px-3 rounded-xl bg-panel-2 border border-line text-ink font-semibold disabled:opacity-40 active:scale-[0.98]"
             >
               Walk away
             </button>

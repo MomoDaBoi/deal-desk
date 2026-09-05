@@ -182,17 +182,17 @@ export function OrderTask({
               onPointerCancel={(e) => endPointer(e, false)}
               disabled={disabled}
               aria-pressed={isHeld}
-              className={`flex-1 min-h-12 px-4 rounded-xl border text-left font-medium flex items-center gap-3 transition select-none
+              className={`flex-1 min-w-0 min-h-12 px-4 py-2 rounded-xl border text-left font-medium flex flex-wrap items-center gap-x-3 gap-y-1 transition select-none
                 ${ROLE_BG[it.role ?? 'neutral']}
                 ${isHeld ? 'ring-2 ring-ink scale-[1.02] shadow-lg' : ''}
                 ${isDraggingThis ? 'relative z-10 scale-105 shadow-lg touch-none' : ''}
                 ${held !== null && !isHeld ? 'opacity-90' : ''}`}
             >
-              <span className="w-6 text-xs font-mono text-muted tabular-nums">{i + 1}</span>
-              <span className="text-ink">{it.label}</span>
-              {isHeld && <span className="ml-auto text-xs text-muted">tap another to swap</span>}
+              <span className="w-6 shrink-0 text-xs font-mono text-muted tabular-nums">{i + 1}</span>
+              <span className="min-w-0 break-words text-ink">{it.label}</span>
+              {isHeld && <span className="ml-auto shrink-0 text-xs text-muted">tap another to swap</span>}
             </button>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 shrink-0">
               <button
                 type="button"
                 aria-label={`Move ${it.label} up`}

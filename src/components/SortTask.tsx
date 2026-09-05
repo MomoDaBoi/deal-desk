@@ -217,9 +217,9 @@ export function SortTask({
               className={ROLE_BG[bucket.role ?? 'neutral']}
               zoneRef={(el) => registerZone(bucket.id, el)}
             >
-              <div className="w-full">
-                <div className="font-semibold">{bucket.label}</div>
-                {bucket.hint && <div className="text-xs text-muted font-normal">{bucket.hint}</div>}
+              <div className="w-full min-w-0">
+                <div className="font-semibold break-words">{bucket.label}</div>
+                {bucket.hint && <div className="text-xs text-muted font-normal break-words">{bucket.hint}</div>}
               </div>
               <div className="flex flex-wrap gap-2 min-h-11 w-full">
                 {bucketItems.length === 0 && <span className="text-xs text-muted font-normal">Empty</span>}
@@ -286,7 +286,7 @@ function DropZone({
           onDrop()
         }
       }}
-      className={`min-h-11 w-full text-left rounded-xl border p-3 flex flex-col flex-wrap gap-2 items-start transition
+      className={`min-h-11 w-full min-w-0 text-left rounded-xl border p-3 flex flex-col flex-wrap gap-2 items-start transition
         ${className}
         ${active ? 'ring-2 ring-ink/40 cursor-pointer' : ''}
         ${hovered ? 'ring-2 ring-ink' : ''}`}
@@ -330,7 +330,7 @@ function Chip({
       onPointerCancel={onPointerCancel}
       disabled={disabled}
       aria-pressed={held}
-      className={`inline-flex items-center min-h-11 px-3 rounded-lg border text-sm font-medium transition select-none
+      className={`inline-flex items-center min-h-11 max-w-full px-3 py-1.5 rounded-lg border text-sm font-medium text-left break-words transition select-none
         ${ROLE_BG[item.role ?? 'neutral']}
         ${held ? 'ring-2 ring-ink scale-[1.04] shadow-lg' : ''}
         ${dragging ? 'relative z-10 scale-105 shadow-lg touch-none' : ''}`}

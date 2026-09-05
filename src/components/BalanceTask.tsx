@@ -87,7 +87,7 @@ export function NumberField({
       value={text}
       onChange={(e) => handleChange(e.target.value)}
       className={
-        className ?? 'min-h-11 w-28 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60'
+        className ?? 'min-h-11 w-28 max-w-full shrink-0 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60'
       }
     />
   )
@@ -95,7 +95,7 @@ export function NumberField({
   if (!unit) return input
 
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1 shrink-0 max-w-full">
       {input}
       <span className="text-muted text-sm">{unit}</span>
     </span>
@@ -153,9 +153,9 @@ export function BalanceTask({
               return (
                 <div
                   key={line.id}
-                  className={`flex items-center justify-between gap-3 px-4 py-2 ${line.total ? 'font-bold border-t-2 border-line' : ''}`}
+                  className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 ${line.total ? 'font-bold border-t-2 border-line' : ''}`}
                 >
-                  <span className="text-ink">{line.label}</span>
+                  <span className="min-w-0 break-words text-ink">{line.label}</span>
                   {isBlank ? (
                     <NumberField
                       id={line.id}
@@ -166,7 +166,7 @@ export function BalanceTask({
                       ariaLabel={line.label}
                     />
                   ) : (
-                    <span className="font-mono text-ink">
+                    <span className="font-mono text-ink shrink-0 whitespace-nowrap tabular-nums">
                       {formatNumber(line.value ?? 0)}
                       {lineUnit ? ` ${lineUnit}` : ''}
                     </span>
@@ -180,9 +180,9 @@ export function BalanceTask({
 
       {isBalanceSheet && (
       <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wide text-muted font-semibold">Balance check</span>
-          <span className={`text-sm font-semibold ${balanced ? 'text-revenue' : 'text-cost'}`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">Balance check</span>
+          <span className={`text-sm font-semibold min-w-0 break-words ${balanced ? 'text-revenue' : 'text-cost'}`}>
             {balanced ? 'Balanced' : `Off by ${formatNumber(Math.abs(diff))}${task.unit ? ` ${task.unit}` : ''}`}
           </span>
         </div>

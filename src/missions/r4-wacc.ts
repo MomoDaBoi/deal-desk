@@ -66,11 +66,12 @@ const mission: Mission = {
     body:
       'WACC (weighted average cost of capital) is the blended rate a company pays for every dollar it uses, whether it came from shareholders or lenders. Cost of equity is the return shareholders demand for the risk of owning the stock. Cost of debt is the interest rate lenders charge. Debt is cheaper than it looks: interest is tax-deductible, so part of it is subsidized by the tax shield — multiply the pre-tax cost of debt by (1 − tax rate) first. Then weight each cost by its share of total capital (equity value plus debt) and add them. Forget the tax shield and WACC comes out too high, understating value in every DCF built on it.',
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: '%',
       items: [
-        'Cost of equity: 10.0% — what shareholders demand',
-        'Pre-tax cost of debt: 6.0% — what lenders charge',
-        'Tax shield: interest is tax-deductible, so debt gets cheaper after tax',
+        { label: 'Cost of equity', value: COST_OF_EQUITY_PCT, role: 'equity' },
+        { label: 'After-tax cost of debt', value: AFTER_TAX_COST_OF_DEBT, role: 'debt' },
+        { label: 'WACC', value: WACC_PCT, role: 'neutral' },
       ],
     },
   },

@@ -52,8 +52,14 @@ export function HeatmapTask({
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-panel">
-        <div className="grid w-max" style={{ gridTemplateColumns: `repeat(${task.cols.length + 1}, minmax(64px, 1fr))` }}>
-          <div className="sticky left-0 z-10 min-h-11 min-w-16 flex items-center justify-center text-center text-[11px] leading-tight text-muted font-semibold bg-panel-2 border-b border-r border-line px-1">
+        {/* The header corner is its own fixed track: left in the `1fr` set its
+            long "rows \ cols" label would win the equalisation and blow every
+            data column out to match it, which at 360px means a wall of scroll. */}
+        <div
+          className="grid w-max"
+          style={{ gridTemplateColumns: `5rem repeat(${task.cols.length}, minmax(64px, 1fr))` }}
+        >
+          <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center text-center text-[11px] leading-tight text-muted font-semibold bg-panel-2 border-b border-r border-line px-1 break-words">
             {task.rowsLabel} \ {task.colsLabel}
           </div>
 
@@ -68,7 +74,7 @@ export function HeatmapTask({
 
           {task.rows.map((row) => (
             <Fragment key={row.id}>
-              <div className="sticky left-0 z-10 min-h-11 min-w-16 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-r border-line px-1 text-center">
+              <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-r border-line px-1 text-center">
                 {row.label}
               </div>
 

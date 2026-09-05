@@ -81,6 +81,14 @@ describe('r1-cash-flow-sort mission', () => {
     }
   })
 
+  it('has a waterfall lesson visual that reconciles to the net change in cash', () => {
+    const visual = mission.lesson.visual
+    if (!visual || visual.kind !== 'waterfall') throw new Error('expected a waterfall visual')
+    const netChange = visual.items.find((i) => i.label === 'Net change in cash')
+    expect(netChange?.value).toBe(40)
+    expect(netChange?.total).toBe(true)
+  })
+
   it('has basic mission metadata matching the spec', () => {
     expect(mission.id).toBe('r1-cash-flow-sort')
     expect(mission.rung).toBe(1)

@@ -80,4 +80,15 @@ describe('r4-wacc mission', () => {
     const ids = task.sections.flatMap((s) => s.lines.map((l) => l.id))
     expect(new Set(ids).size).toBe(ids.length)
   })
+
+  it('shows a bars visual of cost of equity, after-tax cost of debt, and WACC', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('%')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel['Cost of equity']).toBe(10.0)
+    expect(byLabel['After-tax cost of debt']).toBeCloseTo(4.5, 5)
+    expect(byLabel.WACC).toBeCloseTo(8.3, 5)
+  })
 })

@@ -85,9 +85,9 @@ export function FootballFieldTask({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between px-1 text-xs font-mono text-muted">
-        <span>{formatValue(axis.min, decimals, task.unit)}</span>
-        <span>{formatValue(axis.max, decimals, task.unit)}</span>
+      <div className="flex items-center justify-between gap-2 px-1 text-xs font-mono tabular-nums text-muted">
+        <span className="truncate">{formatValue(axis.min, decimals, task.unit)}</span>
+        <span className="truncate">{formatValue(axis.max, decimals, task.unit)}</span>
       </div>
 
       <div className="flex flex-col gap-5">
@@ -100,10 +100,10 @@ export function FootballFieldTask({
 
           return (
             <div key={row.id} className="flex flex-col gap-2">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-ink font-semibold">{row.label}</span>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="text-ink font-semibold min-w-0 break-words">{row.label}</span>
               </div>
-              {row.hint && <p className="text-xs text-muted">{row.hint}</p>}
+              {row.hint && <p className="text-xs text-muted break-words">{row.hint}</p>}
 
               <div className="relative h-3 rounded-full bg-panel-2 overflow-hidden">
                 <div
@@ -114,9 +114,11 @@ export function FootballFieldTask({
 
               <div className="flex flex-col gap-3 pt-1">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase tracking-wide text-muted font-semibold">Low</span>
-                    <span className="font-mono text-sm text-ink">{formatValue(low, decimals, task.unit)}</span>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">Low</span>
+                    <span className="font-mono text-sm text-ink tabular-nums shrink-0 whitespace-nowrap">
+                      {formatValue(low, decimals, task.unit)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -124,7 +126,7 @@ export function FootballFieldTask({
                       aria-label={`Decrease ${row.label} low`}
                       disabled={disabled}
                       onClick={() => setLow(row.id, clampToAxis(snapToGrid(low - axis.step)))}
-                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       −
                     </button>
@@ -137,7 +139,7 @@ export function FootballFieldTask({
                       value={low}
                       disabled={disabled}
                       onChange={(e) => setLow(row.id, Number(e.target.value))}
-                      className="w-full min-h-11 flex-1 disabled:opacity-60"
+                      className="min-h-11 flex-1 min-w-0 disabled:opacity-60"
                       style={{ accentColor: accent }}
                     />
                     <button
@@ -145,16 +147,18 @@ export function FootballFieldTask({
                       aria-label={`Increase ${row.label} low`}
                       disabled={disabled}
                       onClick={() => setLow(row.id, clampToAxis(snapToGrid(low + axis.step)))}
-                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       +
                     </button>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase tracking-wide text-muted font-semibold">High</span>
-                    <span className="font-mono text-sm text-ink">{formatValue(high, decimals, task.unit)}</span>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">High</span>
+                    <span className="font-mono text-sm text-ink tabular-nums shrink-0 whitespace-nowrap">
+                      {formatValue(high, decimals, task.unit)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <button
@@ -162,7 +166,7 @@ export function FootballFieldTask({
                       aria-label={`Decrease ${row.label} high`}
                       disabled={disabled}
                       onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high - axis.step)))}
-                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       −
                     </button>
@@ -175,7 +179,7 @@ export function FootballFieldTask({
                       value={high}
                       disabled={disabled}
                       onChange={(e) => setHigh(row.id, Number(e.target.value))}
-                      className="w-full min-h-11 flex-1 disabled:opacity-60"
+                      className="min-h-11 flex-1 min-w-0 disabled:opacity-60"
                       style={{ accentColor: accent }}
                     />
                     <button
@@ -183,7 +187,7 @@ export function FootballFieldTask({
                       aria-label={`Increase ${row.label} high`}
                       disabled={disabled}
                       onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high + axis.step)))}
-                      className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       +
                     </button>
@@ -208,7 +212,7 @@ export function FootballFieldTask({
                   onClick={() => pickChoice(choice.id)}
                   disabled={disabled}
                   aria-pressed={selected}
-                  className={`min-h-12 px-4 rounded-xl border text-left font-medium bg-panel-2 border-line text-ink transition
+                  className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
                     ${selected ? 'border-ink ring-2 ring-ink' : ''}
                     disabled:opacity-60`}
                 >

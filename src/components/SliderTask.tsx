@@ -83,12 +83,14 @@ export function SliderTask({
 
         return (
           <div key={slider.id} className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
-            <div className="flex items-baseline justify-between gap-2">
-              <div className="flex flex-col">
-                <span className="text-ink font-semibold">{slider.label}</span>
-                {slider.hint && <span className="text-xs text-muted">{slider.hint}</span>}
+            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+              <div className="flex flex-col min-w-0">
+                <span className="text-ink font-semibold break-words">{slider.label}</span>
+                {slider.hint && <span className="text-xs text-muted break-words">{slider.hint}</span>}
               </div>
-              <span className="font-mono text-2xl text-ink tabular-nums">{formatSliderValue(current, slider)}</span>
+              <span className="font-mono text-xl sm:text-2xl text-ink tabular-nums shrink-0 whitespace-nowrap">
+                {formatSliderValue(current, slider)}
+              </span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -97,7 +99,7 @@ export function SliderTask({
                 aria-label={`Decrease ${slider.label}`}
                 disabled={disabled}
                 onClick={() => nudge(-1)}
-                className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
               >
                 −
               </button>
@@ -111,22 +113,22 @@ export function SliderTask({
                 disabled={disabled}
                 onChange={(e) => setSlider(slider.id, Number(e.target.value))}
                 style={{ accentColor: accent }}
-                className="h-11 flex-1 disabled:opacity-40"
+                className="h-11 flex-1 min-w-0 disabled:opacity-40"
               />
               <button
                 type="button"
                 aria-label={`Increase ${slider.label}`}
                 disabled={disabled}
                 onClick={() => nudge(1)}
-                className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
               >
                 +
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-muted font-mono">
-              <span>{formatSliderValue(slider.min, slider)}</span>
-              <span>{formatSliderValue(slider.max, slider)}</span>
+            <div className="flex items-center justify-between gap-2 text-xs text-muted font-mono tabular-nums">
+              <span className="truncate">{formatSliderValue(slider.min, slider)}</span>
+              <span className="truncate">{formatSliderValue(slider.max, slider)}</span>
             </div>
           </div>
         )
@@ -135,10 +137,10 @@ export function SliderTask({
       {task.readouts && (
         <Panel className="flex flex-col gap-2">
           {task.readouts.map((readout) => (
-            <div key={readout.id} className="flex items-center justify-between gap-2">
-              <span className="text-sm text-muted">{readout.label}</span>
+            <div key={readout.id} className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+              <span className="text-sm text-muted min-w-0 break-words">{readout.label}</span>
               <span
-                className="font-mono text-lg tabular-nums text-ink"
+                className="font-mono text-lg tabular-nums text-ink shrink-0 whitespace-nowrap"
                 style={readout.role ? { color: `var(--color-${readout.role})` } : undefined}
               >
                 {formatReadout(readout.compute(currentValues), readout.unit)}
@@ -160,9 +162,11 @@ export function SliderTask({
                 const widthPct = (Math.abs(s.value) / maxAbs) * 100
                 return (
                   <div key={`${s.label}-${i}`} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-xs text-muted">
-                      <span>{s.label}</span>
-                      <span className="font-mono text-ink">{formatReadout(s.value, task.chart!.unit)}</span>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs text-muted">
+                      <span className="min-w-0 break-words">{s.label}</span>
+                      <span className="font-mono text-ink tabular-nums shrink-0 whitespace-nowrap">
+                        {formatReadout(s.value, task.chart!.unit)}
+                      </span>
                     </div>
                     <div className="h-2.5 rounded-full bg-panel-2 overflow-hidden">
                       <div className={`h-full rounded-full ${ROLE_FILL[role]}`} style={{ width: `${widthPct}%` }} />
@@ -188,7 +192,7 @@ export function SliderTask({
                   onClick={() => pickChoice(choice.id)}
                   disabled={disabled}
                   aria-pressed={selected}
-                  className={`min-h-12 px-4 rounded-xl border text-left font-medium bg-panel-2 border-line text-ink transition
+                  className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
                     ${selected ? 'border-ink ring-2 ring-ink' : ''}
                     disabled:opacity-60`}
                 >

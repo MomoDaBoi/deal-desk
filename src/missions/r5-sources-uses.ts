@@ -130,11 +130,13 @@ const mission: Mission = {
     body:
       "A sources & uses table is a deal's one-page ledger of where money goes and comes from. Uses: the purchase price (what the buyer pays the seller) plus fees (legal, advisory, financing costs). Sources: new debt, usually sized as a multiple of EBITDA (earnings before interest, taxes, depreciation and amortization — a proxy for the cash flow lenders will lend against); cash already on the balance sheet; and sponsor equity, the private-equity buyer's own cash and the plug that makes both sides match. Total sources must always equal total uses — every dollar spent came from somewhere. Size the debt first, then solve for the equity plug last.",
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: '$k',
       items: [
-        'Uses: purchase price + fees',
-        'Sources: new debt + cash + sponsor equity',
-        'Both sides must tie to the same total',
+        { label: 'New debt', value: NEW_DEBT, role: 'debt' },
+        { label: 'Cash', value: CASH, role: 'cash' },
+        { label: 'Sponsor equity', value: SPONSOR_EQUITY, role: 'equity' },
+        { label: 'Total uses', value: TOTAL_USES, role: 'neutral' },
       ],
     },
   },

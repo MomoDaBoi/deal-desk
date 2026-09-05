@@ -43,11 +43,17 @@ const mission: Mission = {
     body:
       "Pucker Up's cash flow statement sorts every dollar into three drawers. Operating is cash from running the stands day to day: start at net income, add back non-cash charges like depreciation, and adjust for working capital swings (unpaid bills, unsold inventory). Investing is cash spent on or earned from long-lived stuff — new stands, equipment, whole businesses. Financing is cash moving between the company and its lenders or owners: loans taken out or repaid, dividends paid out. The same dollar amount can sit in any drawer — what matters is what the cash was actually for, not whether it was a plus or a minus.",
     visual: {
-      kind: 'bullets',
+      kind: 'waterfall',
+      unit: '$k',
       items: [
-        'Is it the day job? Operating — net income, depreciation, working capital.',
-        'Is it a long-lived asset? Investing — new stands, equipment, acquisitions.',
-        'Is it a lender or an owner? Financing — loans, repayments, dividends.',
+        { label: 'Net income', value: 200, total: true, role: 'equity' },
+        { label: 'Depreciation', value: 40, role: 'cash' },
+        { label: 'Working capital', value: 20, role: 'cash' },
+        { label: 'Cash from ops', value: 260, total: true, role: 'cash' },
+        { label: 'Capex', value: -120, role: 'cost' },
+        { label: 'Debt repayment', value: -60, role: 'debt' },
+        { label: 'Dividends', value: -40, role: 'equity' },
+        { label: 'Net change in cash', value: 40, total: true, role: 'cash' },
       ],
     },
   },

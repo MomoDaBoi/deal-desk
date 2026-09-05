@@ -45,11 +45,12 @@ const mission: Mission = {
     body:
       'Every company has two price tags. Equity value (market cap) is what the stock market values the shares at: share price times shares outstanding — it is what shareholders own. Enterprise value (EV) is what it would cost to buy the whole business outright: the equity plus the debt you would take on, minus cash you could use to pay that debt down. Ledgerly’s equity value is $370,000k. Its net debt (debt minus cash) is $30,000k, so EV is $400,000k. Bankers compare EV to EBITDA — a whole-business profit measure — and equity value to net income, a shareholders-only measure, because numerator and denominator must cover the same slice of the business.',
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: '$k',
       items: [
-        'Equity value (market cap): share price × shares outstanding',
-        'Enterprise value: equity value + net debt',
-        'Ledgerly: $370,000k equity + $30,000k net debt = $400,000k EV',
+        { label: 'Market cap', value: EQUITY_VALUE, role: 'equity' },
+        { label: 'Net debt', value: NET_DEBT, role: 'debt' },
+        { label: 'Enterprise value', value: ENTERPRISE_VALUE, role: 'neutral' },
       ],
     },
   },

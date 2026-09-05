@@ -83,18 +83,18 @@ export function BridgeTask({
         const width = Math.abs(pct(newTotal, scale) - pct(prevTotal, scale))
         return (
           <div key={adj.id} className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex flex-col">
-                <span className="text-ink text-sm font-semibold">{adj.label}</span>
-                {adj.hint && <span className="text-muted text-xs">{adj.hint}</span>}
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+              <div className="flex flex-col min-w-0">
+                <span className="text-ink text-sm font-semibold break-words">{adj.label}</span>
+                {adj.hint && <span className="text-muted text-xs break-words">{adj.hint}</span>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   disabled={disabled || got === null}
                   onClick={() => setAdjustment(adj.id, got === null ? null : -got)}
                   aria-label={`Flip sign for ${adj.label}`}
-                  className="min-w-11 min-h-11 flex items-center justify-center font-mono text-ink bg-panel-2 border border-line rounded-lg disabled:opacity-60"
+                  className="min-w-11 min-h-11 shrink-0 flex items-center justify-center font-mono text-ink bg-panel-2 border border-line rounded-lg disabled:opacity-60"
                 >
                   {positive ? '+' : '−'}
                 </button>
@@ -119,9 +119,9 @@ export function BridgeTask({
 
       {/* Reconciliation */}
       <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-wide text-muted font-semibold">{task.end.label}</span>
-          <span className={`text-sm font-semibold ${anyBlank ? 'text-muted' : reconciled ? 'text-revenue' : 'text-cost'}`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <span className="text-xs uppercase tracking-wide text-muted font-semibold min-w-0 break-words">{task.end.label}</span>
+          <span className={`text-sm font-semibold min-w-0 break-words ${anyBlank ? 'text-muted' : reconciled ? 'text-revenue' : 'text-cost'}`}>
             {anyBlank ? 'Fill in every bar' : reconciled ? 'Reconciled' : `Off by ${formatNumber(Math.abs(diff))}${unit}`}
           </span>
         </div>
@@ -139,7 +139,7 @@ export function BridgeTask({
             />
           </div>
         </div>
-        <div className="flex justify-between font-mono text-sm text-ink">
+        <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 font-mono text-sm text-ink tabular-nums">
           <span>
             {formatNumber(runningTotal)}
             {unit}

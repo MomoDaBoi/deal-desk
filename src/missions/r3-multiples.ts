@@ -1,7 +1,7 @@
 import type { Mission } from '../engine/types'
 import { gradeBalance } from '../engine/graders/balance'
 import { mdVerdict } from '../engine/voice'
-import { BRICKHOUSE, LEDGERLY, derived } from './companies'
+import { BRICKHOUSE, LEDGERLY, NANS_PANTRY, derived } from './companies'
 
 /**
  * Rung 3, mission 1. A multiple is just a price divided by a performance
@@ -27,6 +27,7 @@ const LD_NET_INCOME = LEDGERLY.income.netIncome // 3,750
 
 const bhRatios = derived(BRICKHOUSE)
 const ldRatios = derived(LEDGERLY)
+const npRatios = derived(NANS_PANTRY)
 
 /** 800,000 / 96,000 = 8.3x */
 const BH_EV_EBITDA = bhRatios.evEbitda!
@@ -36,6 +37,10 @@ const BH_EV_REVENUE = bhRatios.evRevenue!
 const BH_PE = bhRatios.pe!
 /** 370,000 / 3,750 = 98.7x */
 const LD_PE = ldRatios.pe!
+/** Ledgerly EV/EBITDA: 400,000 / 12,000 = 33.3x */
+const LD_EV_EBITDA = ldRatios.evEbitda!
+/** Nan's Pantry EV/EBITDA: 1,008,000 / 144,000 = 7.0x */
+const NP_EV_EBITDA = npRatios.evEbitda!
 
 const money = (n: number) => n.toLocaleString('en-US')
 
@@ -58,11 +63,12 @@ const mission: Mission = {
     body:
       'A multiple is a price divided by a performance number: multiple = price ÷ performance. The trick is pairing the right price with the right performance number. Enterprise value (EV, the whole business, debt included) pairs with EBITDA or revenue, since both belong to everyone who financed the company, lenders included. Market cap (equity value, just the shares) pairs with net income, the profit left for shareholders once lenders are paid. Mix them — EV over net income, say — and debt gets counted twice: once inside EV, once by ignoring that net income already paid interest. Brickhouse: EV/EBITDA 8.3x, EV/Revenue 1.25x, P/E 16.8x. Ledgerly: P/E 98.7x, absurd on its face, because its profit is razor-thin.',
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: 'x',
       items: [
-        'EV (whole business, debt included) ÷ EBITDA or Revenue',
-        'Market cap (equity only) ÷ Net income',
-        'Mixing the two double-counts or ignores debt',
+        { label: 'Ledgerly', value: LD_EV_EBITDA, role: 'neutral' },
+        { label: 'Brickhouse', value: BH_EV_EBITDA, role: 'neutral' },
+        { label: "Nan's Pantry", value: NP_EV_EBITDA, role: 'neutral' },
       ],
     },
   },

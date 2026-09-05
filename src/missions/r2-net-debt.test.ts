@@ -79,4 +79,15 @@ describe('r2-net-debt', () => {
     const wrongAnswer: OrderAnswer = { kind: 'order', orderedIds: [] }
     expect(() => mission.grade(wrongAnswer)).toThrow()
   })
+
+  it('shows a bars visual of total debt, cash, and net debt', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('$k')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel['Total debt']).toBe(60_000)
+    expect(byLabel.Cash).toBe(30_000)
+    expect(byLabel['Net debt']).toBe(30_000)
+  })
 })

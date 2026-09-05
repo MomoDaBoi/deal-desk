@@ -26,11 +26,12 @@ const mission: Mission = {
     body:
       'Net debt = total debt − cash. A company sitting on cash could, in theory, wire it out tomorrow and retire that much debt, so bankers net the cash against the debt instead of looking at debt alone. Ledgerly owes $60,000k in total debt and holds $30,000k in cash, so its net debt is $30,000k. But restricted cash — cash set aside for a specific purpose, like an escrow or a covenant, that cannot be used to repay debt — does not count. If $10,000k of that cash is restricted, only $20,000k is left to offset debt, so net debt rises to $40,000k.',
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: '$k',
       items: [
-        'Total debt: $60,000k (short-term 5,000 + long-term 55,000)',
-        'Cash: $30,000k',
-        'Net debt = total debt − cash',
+        { label: 'Total debt', value: totalDebt, role: 'debt' },
+        { label: 'Cash', value: cash, role: 'cash' },
+        { label: 'Net debt', value: NET_DEBT, role: 'debt' },
       ],
     },
   },

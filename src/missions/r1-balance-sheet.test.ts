@@ -63,6 +63,13 @@ describe('r1-balance-sheet mission', () => {
     expect(new Set(lineIds).size).toBe(lineIds.length)
   })
 
+  it('has a bars lesson visual covering every balance sheet line', () => {
+    const visual = mission.lesson.visual
+    if (!visual || visual.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.items).toHaveLength(7)
+    expect(visual.items.find((i) => i.label === 'Equity')?.value).toBe(400)
+  })
+
   it('balances: total assets equals total liabilities plus equity', () => {
     if (mission.task.kind !== 'balance') throw new Error('expected a balance task')
     const lineById = new Map(mission.task.sections.flatMap((s) => s.lines).map((l) => [l.id, l.value ?? l.answer ?? 0]))

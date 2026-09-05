@@ -28,12 +28,13 @@ const mission: Mission = {
     body:
       'A margin is a slice of revenue expressed as a percentage: margin = profit ÷ revenue × 100. Gross margin uses gross profit, EBITDA margin uses EBITDA, net margin uses net income — same divisor, different profit line. On its own a margin means nothing; it only means something next to another company\'s margin in the same industry. A grocer running a 3% EBIT margin is healthy, because groceries are a low-margin, high-volume business. A software company running 3% is dying, because SaaS is supposed to keep most of every dollar it brings in.',
     visual: {
-      kind: 'bullets',
+      kind: 'bars',
+      unit: '$k',
       items: [
-        `Revenue: $${revenue.toLocaleString('en-US')}k`,
-        `Gross profit: $${grossProfit.toLocaleString('en-US')}k`,
-        `EBITDA: $${ebitda.toLocaleString('en-US')}k`,
-        `Net income: $${netIncome.toLocaleString('en-US')}k`,
+        { label: 'Revenue', value: revenue, role: 'revenue' },
+        { label: 'Gross profit', value: grossProfit, role: 'revenue' },
+        { label: 'EBITDA', value: ebitda, role: 'equity' },
+        { label: 'Net income', value: netIncome, role: 'cash' },
       ],
     },
   },

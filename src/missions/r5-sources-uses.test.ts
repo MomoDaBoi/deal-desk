@@ -120,4 +120,16 @@ describe('r5-sources-uses mission', () => {
     const lineIds = task.sections.flatMap((s) => s.lines.map((l) => l.id))
     expect(new Set(lineIds).size).toBe(lineIds.length)
   })
+
+  it('shows a bars visual of the four sources/uses lines', () => {
+    const visual = mission.lesson.visual
+    expect(visual?.kind).toBe('bars')
+    if (visual?.kind !== 'bars') throw new Error('expected a bars visual')
+    expect(visual.unit).toBe('$k')
+    const byLabel = Object.fromEntries(visual.items.map((it) => [it.label, it.value]))
+    expect(byLabel['New debt']).toBe(480_000)
+    expect(byLabel.Cash).toBe(40_000)
+    expect(byLabel['Sponsor equity']).toBe(310_000)
+    expect(byLabel['Total uses']).toBe(830_000)
+  })
 })

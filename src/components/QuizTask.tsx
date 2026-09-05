@@ -98,11 +98,11 @@ export function QuizTask({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-muted">
+        <span className="text-sm text-muted min-w-0">
           Question {index + 1} of {questions.length}
         </span>
         {limit !== undefined && (
-          <span className={`font-mono text-sm tabular-nums ${urgent ? 'text-cost' : 'text-muted'}`}>{clock}</span>
+          <span className={`font-mono text-sm tabular-nums shrink-0 ${urgent ? 'text-cost' : 'text-muted'}`}>{clock}</span>
         )}
       </div>
 
@@ -127,7 +127,7 @@ export function QuizTask({
               onClick={() => pick(choice.id)}
               disabled={disabled}
               aria-pressed={selected}
-              className={`min-h-12 px-4 rounded-xl border text-left font-medium bg-panel-2 border-line text-ink transition
+              className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
                 ${selected ? 'border-ink ring-2 ring-ink' : ''}
                 disabled:opacity-60`}
             >
@@ -137,7 +137,7 @@ export function QuizTask({
         })}
       </div>
 
-      <div className="flex items-center justify-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 pt-1">
         {questions.map((q, i) => {
           const answered = value[q.id] != null
           const isCurrent = i === index

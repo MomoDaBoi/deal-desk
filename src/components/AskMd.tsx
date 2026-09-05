@@ -92,26 +92,26 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
             }}
             placeholder="Why does interest come before tax?"
             disabled={sending}
-            className="flex-1 min-h-11 rounded-xl bg-panel-2 border border-line px-3 text-ink placeholder:text-muted disabled:opacity-60"
+            className="flex-1 min-w-0 min-h-11 rounded-xl bg-panel-2 border border-line px-3 text-ink placeholder:text-muted disabled:opacity-60"
           />
-          <Button onClick={handleSend} disabled={sending || !question.trim()}>
+          <Button className="shrink-0" onClick={handleSend} disabled={sending || !question.trim()}>
             Send
           </Button>
         </div>
 
         {sending && (
           <div className="space-y-1">
-            <div className="text-sm font-semibold text-ink">{lastQuestion}</div>
+            <div className="text-sm font-semibold text-ink break-words">{lastQuestion}</div>
             <div className="text-sm text-muted italic">The MD is typing…</div>
             {streamingText && (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-ink">{streamingText}</div>
+              <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-ink">{streamingText}</div>
             )}
           </div>
         )}
 
         {status === 'error' && (
           <div className="space-y-2">
-            <div className="text-sm text-cost">{errorMsg}</div>
+            <div className="text-sm text-cost break-words">{errorMsg}</div>
             <Button variant="danger" onClick={handleRetry}>
               Retry
             </Button>
@@ -122,8 +122,8 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
           <div className="flex flex-col gap-3 border-t border-line pt-3">
             {[...pairs].reverse().map((p, i) => (
               <div key={pairs.length - i} className="space-y-1">
-                <div className="text-sm font-semibold text-ink">{p.q}</div>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap text-ink/90">{p.a}</div>
+                <div className="text-sm font-semibold text-ink break-words">{p.q}</div>
+                <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-ink/90">{p.a}</div>
                 {i === 0 && status === 'done' && lastCost !== null && (
                   <div className="text-xs text-muted">about {formatUsd(lastCost)}</div>
                 )}

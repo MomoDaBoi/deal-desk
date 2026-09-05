@@ -15,12 +15,17 @@ const mission: Mission = {
     body:
       'An income statement starts with everything the company sold (revenue) and walks down, subtracting costs one group at a time, until only profit is left. Revenue minus the cost of making the product is gross profit. Take out the cost of running the business and you get operating profit. Pay the bank and the tax office, and what remains is net income. The order is the point: each line is the previous line minus something.',
     visual: {
-      kind: 'bullets',
+      kind: 'waterfall',
+      unit: '$k',
       items: [
-        'Revenue: what customers paid',
-        'Gross profit: after cost of goods',
-        'Operating profit: after running costs',
-        'Net income: after interest and tax',
+        { label: 'Revenue', value: 1_200, total: true, role: 'revenue' },
+        { label: 'COGS', value: -480, role: 'cost' },
+        { label: 'Gross profit', value: 720, total: true, role: 'revenue' },
+        { label: 'Opex', value: -420, role: 'cost' },
+        { label: 'EBIT', value: 300, total: true, role: 'revenue' },
+        { label: 'Interest', value: -30, role: 'debt' },
+        { label: 'Taxes', value: -70, role: 'cost' },
+        { label: 'Net income', value: 200, total: true, role: 'equity' },
       ],
     },
   },
