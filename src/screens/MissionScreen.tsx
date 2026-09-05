@@ -13,6 +13,10 @@ import { OrderTask } from '../components/OrderTask'
 import { SortTask } from '../components/SortTask'
 import { BalanceTask } from '../components/BalanceTask'
 import { QuizTask } from '../components/QuizTask'
+import { SliderTask } from '../components/SliderTask'
+import { WaterfallTask } from '../components/WaterfallTask'
+import { BridgeTask } from '../components/BridgeTask'
+import { FootballFieldTask } from '../components/FootballFieldTask'
 
 type Phase =
   | { name: 'lesson' }
@@ -126,6 +130,10 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             startedAt={startedAt.current}
           />
         )}
+        {task.kind === 'slider' && <SliderTask task={task} value={state.slider} onChange={state.setSlider} />}
+        {task.kind === 'waterfall' && <WaterfallTask task={task} value={state.waterfall} onChange={state.setWaterfall} />}
+        {task.kind === 'bridge' && <BridgeTask task={task} value={state.bridge} onChange={state.setBridge} />}
+        {task.kind === 'footballfield' && <FootballFieldTask task={task} value={state.ff} onChange={state.setFf} />}
         <BottomBar>
           <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
             Lesson
