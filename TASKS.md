@@ -187,43 +187,43 @@ Sub-tasks refined against `PLAN.md` (sections b, c, d, e):
 
 ## Milestone 4 — Mentor mode
 
-- [ ] Check current Anthropic docs: browser-access header, model ids,
+- [x] (2026-09-05) Check current Anthropic docs: browser-access header, model ids,
       pricing. Log findings under Decisions.
-- [ ] `src/lib/anthropic.ts`: minimal Messages API client, key from
+- [x] (2026-09-05) `src/lib/anthropic.ts`: minimal Messages API client, key from (built on the official SDK with dangerouslyAllowBrowser, see Decisions)
       settings, only talks to api.anthropic.com.
-- [ ] Task kind `written`, graded 1–10 by the MD with feedback.
-- [ ] "Ask the MD" button on result screens.
+- [x] (2026-09-05) Task kind `written`, graded 1–10 by the MD with feedback.
+- [x] (2026-09-05) "Ask the MD" button on result screens.
 - [ ] Mock interview: five IB technical questions.
-- [ ] Cost display: rough tokens/cost per call in Settings.
+- [x] (2026-09-05) Cost display: rough tokens/cost per call in Settings.
 
 Sub-tasks refined against `PLAN.md` (sections b, d, g, l):
 
-- [ ] Assert in `src/lib/anthropic.ts` that the request URL host is
+- [x] (2026-09-05) Assert in `src/lib/anthropic.ts` that the request URL host is
       exactly `api.anthropic.com`; key read from the settings store at
       call time, never stored, logged, or serialised elsewhere.
-- [ ] `src/lib/prompts.ts`: three templates returning `{system, user}`
+- [x] (2026-09-05) `src/lib/prompts.ts`: three templates returning `{system, user}` (grade + ask shipped; interview template lands with m5-mock-interview)
       and requesting JSON back — grade-written (`{score 1..10, verdict,
       explanation, missed[]}`), ask-the-MD (`{answer}`), mock-interview
       (per-question plus a final `{overall, wouldHire, note}`).
-- [ ] Prompt must require that `explanation` stands alone as correct
+- [x] (2026-09-05) Prompt must require that `explanation` stands alone as correct
       finance with `verdict` deleted. Test the builders and the JSON
       parser against fixtures; never call the API in a test.
-- [ ] `src/lib/pricing.ts`: per-model input/output prices with a
+- [x] (2026-09-05) `src/lib/pricing.ts`: per-model input/output prices with a
       `checkedOn` date rendered in Settings, plus the per-call estimate
       helper.
-- [ ] Hard token caps: 700 grading, 500 ask-the-MD, 600 per interview
+- [x] (2026-09-05) Hard token caps: 700 grading, 500 ask-the-MD, 600 per interview
       turn. Truncate the player's answer to `wordLimit` before sending.
-- [ ] Session counter in Settings: calls this session + running
+- [x] (2026-09-05) Session counter in Settings: calls this session + running
       estimated spend. 401/403 → "that key did not work", no retry;
       429 → "the MD is in a meeting", no auto-retry.
-- [ ] Task kind `written`: `mentorOnly: true` always; mission exposes
+- [x] (2026-09-05) Task kind `written`: `mentorOnly: true` always; mission exposes
       `gradeAsync(answer, client)` and `MissionScreen` awaits it. The
       pure `grade` returns accuracy 0 with a "Mentor mode required"
       explanation. Do not weaken the signature of `grade`.
-- [ ] Missions `m2-written-ev`, `m3-written-peers`, `m4-written-defend`,
-      `m5-mock-interview`, all `baseComp: 0` (see the rung-threshold
-      task below).
-- [ ] `rungStatus` should exclude `mentorOnly` missions from
+- [x] (2026-09-05) Missions `m2-written-ev`, `m3-written-peers` (shipped).
+- [ ] Missions `m4-written-defend`, `m5-mock-interview` all `baseComp: 0` (see the rung-threshold
+      task below). (need Rungs 4-5; do in Milestone 5)
+- [x] (2026-09-05) `rungStatus` should exclude `mentorOnly` missions from
       `possible` — otherwise turning Mentor mode on raises the
       denominator and can un-pass a rung the player already passed
       (PLAN.md §l.2). Engine change: needs its own tests.
@@ -300,6 +300,8 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 
 ## Backlog / ideas
 
+- [ ] Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic
+      SDK is not in the main bundle for Standard-mode players.
 - [ ] Streak or "days survived" counter on the ladder.
 - [ ] Hash-based deep links (`#/mission/<id>`) if sharing a specific
       mission ever matters.
@@ -351,6 +353,15 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
   (1.25x, 0.42x) and everything else to 1 decimal, matching PLAN.md.
 - 2026-09-05: Ledgerly's revenue three years ago (40,960) lives only in
   r2-growth-rates as a local constant; companies.ts carries one prior year.
+- 2026-09-05: Mentor mode uses the official `@anthropic-ai/sdk` with
+  `dangerouslyAllowBrowser: true` (verified in the SDK docs), not raw
+  fetch as PLAN.md section (g) sketched. The SDK sets the browser-access
+  header itself. Model ids and prices verified 2026-09-05: claude-opus-5
+  $5/$25, claude-sonnet-5 $2/$10, claude-haiku-4-5 $1/$5 per MTok.
+- 2026-09-05: Mentor-only missions carry `baseComp: 0` and `order` after
+  the boss; the registry test ignores them for boss-last and comp checks.
+- 2026-09-05: Structured grading uses `messages.parse` with a zod schema;
+  an unparseable reply surfaces as a retryable error, not a 0 score.
 
 ## Owner notes
 
