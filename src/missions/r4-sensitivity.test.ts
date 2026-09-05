@@ -97,6 +97,14 @@ describe('r4-sensitivity mission', () => {
     expect(() => mission.grade(wrongKind)).toThrow()
   })
 
+  it('does not reveal the tap answer cell or its price in the lesson bullets', () => {
+    const bullets = mission.lesson.visual?.kind === 'bullets' ? mission.lesson.visual.items.join(' ') : ''
+    const centre = task.cells['w3:g3']
+    expect(bullets).not.toContain('8.3%')
+    expect(bullets).not.toContain('2.0%')
+    expect(bullets).not.toContain(centre.toFixed(2))
+  })
+
   it('keeps the lesson body under 120 words and defines WACC and terminal growth', () => {
     const wordCount = mission.lesson.body.trim().split(/\s+/).length
     expect(wordCount).toBeLessThan(120)

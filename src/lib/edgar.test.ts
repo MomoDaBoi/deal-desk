@@ -42,6 +42,24 @@ describe('pickLatestFact', () => {
     const facts: XbrlFact[] = [fact({ end: '2023-12-31', val: 1, form: '10-Q', fp: 'Q1' })]
     expect(pickLatestFact(facts, true)).toBeNull()
   })
+
+  it('with requireAnnualDuration, rejects a non-annual duration even when its `end` is later', () => {
+    const facts: XbrlFact[] = [
+      fact({ start: '2023-10-01', end: '2023-12-31', val: 30 }), // a three-month row, later end
+      fact({ start: '2022-01-01', end: '2022-12-31', val: 100 }), // the real annual row
+    ]
+    expect(pickLatestFact(facts, true, true)?.val).toBe(100)
+  })
+
+  it('with requireAnnualDuration, drops a fact with no `start` at all', () => {
+    const facts: XbrlFact[] = [fact({ end: '2023-12-31', val: 5, start: undefined })]
+    expect(pickLatestFact(facts, true, true)).toBeNull()
+  })
+
+  it('without requireAnnualDuration, span is not checked (instant facts have no `start`)', () => {
+    const facts: XbrlFact[] = [fact({ end: '2023-12-31', val: 5, start: undefined })]
+    expect(pickLatestFact(facts, true)?.val).toBe(5)
+  })
 })
 
 describe('extractFields', () => {
@@ -50,10 +68,10 @@ describe('extractFields', () => {
       entityName: 'Fixture Corp',
       facts: {
         'us-gaap': {
-          Revenues: { units: { USD: [fact({ end: '2023-12-31', val: 5_000_000, fy: 2023 })] } },
-          OperatingIncomeLoss: { units: { USD: [fact({ end: '2023-12-31', val: 800_000, fy: 2023 })] } },
-          DepreciationDepletionAndAmortization: { units: { USD: [fact({ end: '2023-12-31', val: 100_000 })] } },
-          NetIncomeLoss: { units: { USD: [fact({ end: '2023-12-31', val: 500_000 })] } },
+          Revenues: { units: { USD: [fact({ start: '2023-01-01', end: '2023-12-31', val: 5_000_000, fy: 2023 })] } },
+          OperatingIncomeLoss: { units: { USD: [fact({ start: '2023-01-01', end: '2023-12-31', val: 800_000, fy: 2023 })] } },
+          DepreciationDepletionAndAmortization: { units: { USD: [fact({ start: '2023-01-01', end: '2023-12-31', val: 100_000, fy: 2023 })] } },
+          NetIncomeLoss: { units: { USD: [fact({ start: '2023-01-01', end: '2023-12-31', val: 500_000, fy: 2023 })] } },
           CashAndCashEquivalentsAtCarryingValue: { units: { USD: [fact({ end: '2023-12-31', val: 1_200_000 })] } },
           LongTermDebtNoncurrent: { units: { USD: [fact({ end: '2023-12-31', val: 2_000_000 })] } },
           LongTermDebtCurrent: { units: { USD: [fact({ end: '2023-12-31', val: 300_000 })] } },
@@ -107,6 +125,29 @@ describe('extractFields', () => {
     delete doc.facts!.dei!.EntityCommonStockSharesOutstanding
     doc.facts!['us-gaap']!.CommonStockSharesOutstanding = { units: { shares: [fact({ end: '2023-12-31', val: 9_999 })] } }
     expect(extractFields(doc).shares).toBe(9_999)
+  })
+
+  it('ignores a quarterly duration row even when it has a later `end` than the real annual one', () => {
+    const doc = fixture()
+    // A spurious three-month row (e.g. selected quarterly data), tagged
+    // 10-K/FY like the real annual fact, with a later `end`.
+    doc.facts!['us-gaap']!.Revenues.units.USD.push(
+      fact({ start: '2024-10-01', end: '2024-12-31', val: 999_999, fy: 2024 }),
+    )
+    expect(extractFields(doc).revenue).toBe(5_000_000)
+  })
+
+  it('drops a duration tag whose latest fact is from a different fiscal year than the revenue anchor, instead of mixing years', () => {
+    const doc = fixture()
+    // D&A only has a stale FY2019 value under this filer; nothing tags the
+    // current (FY2023) period.
+    doc.facts!['us-gaap']!.DepreciationDepletionAndAmortization = {
+      units: { USD: [fact({ start: '2019-01-01', end: '2019-12-31', val: 50_000, fy: 2019 })] },
+    }
+    const result = extractFields(doc)
+    expect(result.da).toBeNull()
+    expect(result.revenue).toBe(5_000_000)
+    expect(result.fiscalYear).toBe(2023)
   })
 
   it('returns null for every field that is entirely absent', () => {
@@ -220,7 +261,9 @@ describe('fetchLiveCompany', () => {
     return {
       entityName: 'Live Corp',
       facts: {
-        'us-gaap': { OperatingIncomeLoss: { units: { USD: [fact({ end: '2023-12-31', val })] } } },
+        'us-gaap': {
+          OperatingIncomeLoss: { units: { USD: [fact({ start: '2023-01-01', end: '2023-12-31', val, fy: 2023 })] } },
+        },
       },
     }
   }

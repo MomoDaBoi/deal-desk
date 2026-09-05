@@ -315,8 +315,8 @@ export type QuizAnswer = { kind: 'quiz'; choices: Record<string, string | null>;
 export type SliderAnswer = { kind: 'slider'; values: Record<string, number>; choice?: string | null }
 /** "rowId:colId" -> typed number for blanks; `tapped` is the tapped cell key. */
 export type HeatmapAnswer = { kind: 'heatmap'; values: Record<string, number | null>; tapped?: string | null }
-/** One bid per round, in order. Fewer bids than rounds = the player dropped out. */
-export type AuctionAnswer = { kind: 'auction'; bids: number[] }
+/** One bid per round, in order. `walked` = the player folded; no further bids are possible. */
+export type AuctionAnswer = { kind: 'auction'; bids: number[]; walked?: boolean }
 /** stageId -> that stage's answer. */
 export type MultiAnswer = { kind: 'multi'; answers: Record<string, Exclude<Answer, MultiAnswer>> }
 /** stepId -> typed number for blanks. */

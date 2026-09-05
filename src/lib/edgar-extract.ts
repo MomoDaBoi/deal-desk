@@ -39,6 +39,27 @@ export interface XbrlCompanyFacts {
   }
 }
 
+/** Whole days between two `YYYY-MM-DD` strings. */
+function daysBetween(start: string, end: string): number {
+  return Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000)
+}
+
+/**
+ * True when a fact is a duration (has a `start`) whose span is roughly a
+ * year (330-400 days). Income-statement tags (revenue, EBIT, D&A, net
+ * income) are reported over a period, and a 10-K carries plenty of
+ * non-annual durations alongside the annual one — three-month "selected
+ * quarterly data" rows, restated interim tables — all tagged `fp: 'FY'`
+ * because `fp` describes the filing's period focus, not the fact's own
+ * span. Instant facts (balance sheet lines, share counts) have no
+ * `start` and never go through this check.
+ */
+function isAnnualDuration(f: XbrlFact): boolean {
+  if (!f.start) return false
+  const days = daysBetween(f.start, f.end)
+  return days >= 330 && days <= 400
+}
+
 /**
  * Pick the fact to use out of one concept's one unit's fact list: filter to
  * 10-K annual rows, take the latest `end`, and within that `end` take the
@@ -49,9 +70,17 @@ export interface XbrlCompanyFacts {
  * count, public float) — PLAN.md (h) calls these out separately because
  * their `fp` is not reliably `'FY'` even though they still ride along on
  * the annual filing, so only `form === '10-K'` is required.
+ *
+ * `requireAnnualDuration` additionally restricts to facts whose start-to-end
+ * span is roughly a year (see {@link isAnnualDuration}). Pass `true` for
+ * duration (income-statement) tags so a quarterly row never outranks the
+ * real annual one; leave `false` (the default) for instant facts, which
+ * have no span to check.
  */
-export function pickLatestFact(facts: XbrlFact[], requireFp: boolean): XbrlFact | null {
-  const candidates = facts.filter((f) => f.form === '10-K' && (!requireFp || f.fp === 'FY'))
+export function pickLatestFact(facts: XbrlFact[], requireFp: boolean, requireAnnualDuration = false): XbrlFact | null {
+  const candidates = facts.filter(
+    (f) => f.form === '10-K' && (!requireFp || f.fp === 'FY') && (!requireAnnualDuration || isAnnualDuration(f)),
+  )
   if (candidates.length === 0) return null
 
   let best: XbrlFact | null = null
@@ -70,15 +99,35 @@ export function pickLatestFact(facts: XbrlFact[], requireFp: boolean): XbrlFact 
 }
 
 /**
+ * Pick the fact matching a specific period (used to keep every duration
+ * tag on one company row anchored to the same fiscal year): same filters
+ * as {@link pickLatestFact}, plus `f.end === anchor.end`, taking the
+ * latest `filed` among matches. Returns `null` — never a fact from a
+ * different period — when nothing matches.
+ */
+function pickFactAtPeriod(facts: XbrlFact[], requireFp: boolean, anchor: XbrlFact): XbrlFact | null {
+  const candidates = facts.filter(
+    (f) => f.form === '10-K' && (!requireFp || f.fp === 'FY') && isAnnualDuration(f) && f.end === anchor.end,
+  )
+  if (candidates.length === 0) return null
+
+  let best: XbrlFact | null = null
+  for (const f of candidates) {
+    if (!best || (f.filed ?? '') > (best.filed ?? '')) best = f
+  }
+  return best
+}
+
+/**
  * Resolve one tag on one taxonomy to its latest 10-K value, trying every
  * unit the concept reports under (companyfacts keys facts by unit, e.g.
  * `USD` or `shares`, and we don't know which up front).
  */
-export function pickLatestConceptValue(concept: XbrlConcept | undefined, requireFp: boolean): number | null {
+export function pickLatestConceptValue(concept: XbrlConcept | undefined, requireFp: boolean, requireAnnualDuration = false): number | null {
   if (!concept?.units) return null
   let best: XbrlFact | null = null
   for (const unitFacts of Object.values(concept.units)) {
-    const candidate = pickLatestFact(unitFacts, requireFp)
+    const candidate = pickLatestFact(unitFacts, requireFp, requireAnnualDuration)
     if (!candidate) continue
     if (!best || candidate.end > best.end || (candidate.end === best.end && (candidate.filed ?? '') > (best.filed ?? ''))) {
       best = candidate
@@ -88,11 +137,11 @@ export function pickLatestConceptValue(concept: XbrlConcept | undefined, require
 }
 
 /** Same as {@link pickLatestConceptValue} but also returns the fact used, for `fiscalYear`/`periodEnd`. */
-export function pickLatestConceptFact(concept: XbrlConcept | undefined, requireFp: boolean): XbrlFact | null {
+export function pickLatestConceptFact(concept: XbrlConcept | undefined, requireFp: boolean, requireAnnualDuration = false): XbrlFact | null {
   if (!concept?.units) return null
   let best: XbrlFact | null = null
   for (const unitFacts of Object.values(concept.units)) {
-    const candidate = pickLatestFact(unitFacts, requireFp)
+    const candidate = pickLatestFact(unitFacts, requireFp, requireAnnualDuration)
     if (!candidate) continue
     if (!best || candidate.end > best.end || (candidate.end === best.end && (candidate.filed ?? '') > (best.filed ?? ''))) {
       best = candidate
@@ -106,10 +155,11 @@ export function firstAvailable(
   taxonomyFacts: Record<string, XbrlConcept> | undefined,
   tags: string[],
   requireFp: boolean,
+  requireAnnualDuration = false,
 ): number | null {
   if (!taxonomyFacts) return null
   for (const tag of tags) {
-    const value = pickLatestConceptValue(taxonomyFacts[tag], requireFp)
+    const value = pickLatestConceptValue(taxonomyFacts[tag], requireFp, requireAnnualDuration)
     if (value !== null) return value
   }
   return null
@@ -120,11 +170,38 @@ export function firstAvailableFact(
   taxonomyFacts: Record<string, XbrlConcept> | undefined,
   tags: string[],
   requireFp: boolean,
+  requireAnnualDuration = false,
 ): XbrlFact | null {
   if (!taxonomyFacts) return null
   for (const tag of tags) {
-    const fact = pickLatestConceptFact(taxonomyFacts[tag], requireFp)
+    const fact = pickLatestConceptFact(taxonomyFacts[tag], requireFp, requireAnnualDuration)
     if (fact) return fact
+  }
+  return null
+}
+
+/**
+ * Try a list of duration tags, in priority order, but only accept a fact
+ * that falls on `anchor`'s exact period (`end`). Used to keep every
+ * income-statement field on one extracted row anchored to the same fiscal
+ * year as revenue: a tag that stopped being filed, or that was last
+ * reported for an earlier year, resolves to `null` here rather than
+ * silently mixing a stale year into a current-year row.
+ */
+export function firstAvailableAtPeriod(
+  taxonomyFacts: Record<string, XbrlConcept> | undefined,
+  tags: string[],
+  requireFp: boolean,
+  anchor: XbrlFact | null,
+): number | null {
+  if (!taxonomyFacts || !anchor) return null
+  for (const tag of tags) {
+    const concept = taxonomyFacts[tag]
+    if (!concept?.units) continue
+    for (const unitFacts of Object.values(concept.units)) {
+      const match = pickFactAtPeriod(unitFacts, requireFp, anchor)
+      if (match) return match.val
+    }
   }
   return null
 }
@@ -168,18 +245,19 @@ export interface ExtractedFields {
  * Extract every field this game cares about from one companyfacts
  * document. Debt sums `LongTermDebtNoncurrent + LongTermDebtCurrent` when
  * either is present, falling back to `LongTermDebt` only when neither is
- * reported. `fiscalYear`/`periodEnd` come from whichever of
+ * reported (these are instant facts, so they simply take the latest
+ * `end` each). `fiscalYear`/`periodEnd` come from whichever of
  * revenue/ebit/netIncome resolved first (in that order) — the most
- * reliable anchor for "the annual period this snapshot represents".
+ * reliable anchor for "the annual period this snapshot represents" — and
+ * every other duration (income-statement) tag is then required to land
+ * on that exact period, resolving to `null` rather than mixing in a
+ * stale or differently-dated year.
  */
 export function extractFields(doc: XbrlCompanyFacts): ExtractedFields {
   const gaap = doc.facts?.['us-gaap']
   const dei = doc.facts?.dei
 
-  const revenue = firstAvailable(gaap, [...TAGS.revenue], true)
-  const ebit = firstAvailable(gaap, [...TAGS.ebit], true)
-  const da = firstAvailable(gaap, [...TAGS.da], true)
-  const netIncome = firstAvailable(gaap, [...TAGS.netIncome], true)
+  const revenue = firstAvailable(gaap, [...TAGS.revenue], true, true)
   const cash = firstAvailable(gaap, [...TAGS.cash], true)
   const shortTermInvestments = firstAvailable(gaap, [...TAGS.shortTermInvestments], true)
 
@@ -198,9 +276,16 @@ export function extractFields(doc: XbrlCompanyFacts): ExtractedFields {
   const publicFloat = firstAvailable(dei, [...TAGS.publicFloat], false)
 
   const anchor =
-    firstAvailableFact(gaap, [...TAGS.revenue], true) ??
-    firstAvailableFact(gaap, [...TAGS.ebit], true) ??
-    firstAvailableFact(gaap, [...TAGS.netIncome], true)
+    firstAvailableFact(gaap, [...TAGS.revenue], true, true) ??
+    firstAvailableFact(gaap, [...TAGS.ebit], true, true) ??
+    firstAvailableFact(gaap, [...TAGS.netIncome], true, true)
+
+  // Every other duration tag must agree with the anchor's exact period —
+  // a tag last filed for a different fiscal year reads as "not reported"
+  // rather than silently mixing years into one row.
+  const ebit = firstAvailableAtPeriod(gaap, [...TAGS.ebit], true, anchor)
+  const da = firstAvailableAtPeriod(gaap, [...TAGS.da], true, anchor)
+  const netIncome = firstAvailableAtPeriod(gaap, [...TAGS.netIncome], true, anchor)
 
   return {
     fiscalYear: anchor?.fy ?? null,

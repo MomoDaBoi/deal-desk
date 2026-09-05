@@ -113,7 +113,7 @@ const mission: Mission = {
       kind: 'bullets',
       items: [
         'WACC rows: 7.3% to 9.3%, terminal growth columns: 1.0% to 3.0%',
-        `Centre cell (8.3% WACC, 2.0% growth): $${CENTRE_PRICE.toFixed(2)} a share`,
+        'Half a point of WACC moves the implied price by dollars, not cents',
         'Every cell is the same DCF, just a different guess about the discount rate and the tail',
       ],
     },

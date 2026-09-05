@@ -25,12 +25,14 @@ const ROLE_FILL: Record<Role, string> = {
  * Format a readout or chart value: same currency-prefix / suffix rule as
  * `formatSliderValue`, but with a fixed precision since readouts have no
  * `step` to derive one from — 1 decimal for "%" and "x", thousands
- * separators (no decimals) for "$", 1 decimal for anything else.
+ * separators (no decimals) for any unit starting with "$" (with the rest
+ * of the unit rendered as a suffix, e.g. "$480,000k"), 1 decimal for
+ * anything else.
  */
 function formatReadout(value: number, unit?: string): string {
-  if (unit === '$') {
+  if (unit?.startsWith('$')) {
     const sign = value < 0 ? '-' : ''
-    return `${sign}$${Math.abs(Math.round(value)).toLocaleString('en-US')}`
+    return `${sign}$${Math.abs(Math.round(value)).toLocaleString('en-US')}${unit.slice(1)}`
   }
   if (!unit) return value.toFixed(1)
   const sep = unit === 'x' || unit === '%' ? '' : ' '

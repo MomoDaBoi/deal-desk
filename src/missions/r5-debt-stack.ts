@@ -98,9 +98,7 @@ const mission: Mission = {
       const verdict =
         accuracy >= 0.75
           ? 'Close. "Close" is what we say at the deposition.'
-          : accuracy >= 0.5
-            ? mdVerdict(accuracy, 'r5-debt-stack')
-            : 'This capital structure would not survive a real liquidation, and neither would you.'
+          : mdVerdict(accuracy, 'r5-debt-stack')
       return {
         verdict,
         explanation:

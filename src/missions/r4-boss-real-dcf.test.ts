@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SliderAnswer, QuizAnswer } from '../engine/types'
-import { edgarByTicker, edgarCompanies, ebitda, netDebt, impliedMarketValue, type EdgarCompany } from '../lib/edgar'
+import { edgarByTicker, edgarCompanies, ebitda, netDebt, impliedMarketValue, fmtMoney, type EdgarCompany } from '../lib/edgar'
 import mission, {
   ANSWER,
   ANSWER_EV,
@@ -11,8 +11,10 @@ import mission, {
   MARKET_EV,
   QUESTION_EXPLANATION,
   TG_LINE,
+  USING_STAND_IN,
   WACC_LINE,
   impliedEnterpriseValue,
+  judgeVsMarket,
 } from './r4-boss-real-dcf'
 
 function task() {
@@ -146,11 +148,84 @@ describe('r4-boss-real-dcf: correctId is computed from the real, live numbers', 
     expect(MARKET_EV).toBeCloseTo(marketValue + nd, 6)
   })
 
-  it("the question's correctId reflects the DCF-at-band-midpoints vs the market-implied EV, using the 15% fair band", () => {
+  it("the static task's correctId (seeded from the textbook answer) reflects the DCF-at-band-midpoints vs the market-implied EV, using the 15% fair band", () => {
     const ratio = ANSWER_EV / MARKET_EV
     const expectedId = ratio > 1.15 ? 'high' : ratio < 0.85 ? 'low' : 'fair'
     expect(CORRECT_QUESTION_ID).toBe(expectedId)
     expect(task().question!.correctId).toBe(expectedId)
+  })
+
+  it('judgeVsMarket applies the same 15% band to any implied EV, and QUESTION_EXPLANATION matches judgeVsMarket(ANSWER_EV)', () => {
+    const judged = judgeVsMarket(ANSWER_EV)
+    expect(judged.correctId).toBe(CORRECT_QUESTION_ID)
+    expect(judged.explanation).toBe(QUESTION_EXPLANATION)
+
+    // Boundary checks against the 0.85 / 1.15 band, independent of this
+    // mission's own numbers.
+    expect(judgeVsMarket(MARKET_EV * 1.2).correctId).toBe('high')
+    expect(judgeVsMarket(MARKET_EV * 1.0).correctId).toBe('fair')
+    expect(judgeVsMarket(MARKET_EV * 0.8).correctId).toBe('low')
+  })
+})
+
+describe('r4-boss-real-dcf: grading judges the DCF the player actually built, not the textbook one', () => {
+  it('scores a perfect accuracy when every slider is within tolerance and the player reads their own implied EV correctly, even when that reading differs from the textbook answer', () => {
+    const t = task()
+    const growthSlider = t.sliders.find((s) => s.id === 'growth')!
+    const waccSlider = t.sliders.find((s) => s.id === 'wacc')!
+    const tgSlider = t.sliders.find((s) => s.id === 'tg')!
+    // All three are exactly `tolerance` away from the textbook answer, so
+    // every slider still scores full credit (err <= tolerance) ...
+    const values = {
+      growth: growthSlider.answer - growthSlider.tolerance,
+      wacc: waccSlider.answer + waccSlider.tolerance,
+      tg: tgSlider.answer - tgSlider.tolerance,
+    }
+    const playerEV = impliedEnterpriseValue(BASE_FCF, values.growth, values.wacc, values.tg)
+    const judged = judgeVsMarket(playerEV)
+
+    const answer: SliderAnswer = { kind: 'slider', values, choice: judged.correctId }
+    const result = mission.grade(answer)
+    // If this player's own implied EV reads the same as the textbook
+    // answer's, the two grading paths can't be distinguished by this
+    // test; assert the interesting case actually applies.
+    expect(judged.correctId).not.toBe(CORRECT_QUESTION_ID)
+    expect(result.accuracy).toBe(1)
+  })
+
+  it('marks the question wrong when the player picks the stale textbook answer instead of what their own dials imply', () => {
+    const t = task()
+    const growthSlider = t.sliders.find((s) => s.id === 'growth')!
+    const waccSlider = t.sliders.find((s) => s.id === 'wacc')!
+    const tgSlider = t.sliders.find((s) => s.id === 'tg')!
+    const values = {
+      growth: growthSlider.answer - growthSlider.tolerance,
+      wacc: waccSlider.answer + waccSlider.tolerance,
+      tg: tgSlider.answer - tgSlider.tolerance,
+    }
+    const playerEV = impliedEnterpriseValue(BASE_FCF, values.growth, values.wacc, values.tg)
+    const judged = judgeVsMarket(playerEV)
+    expect(judged.correctId).not.toBe(CORRECT_QUESTION_ID)
+
+    // Choice matches the textbook CORRECT_QUESTION_ID, not this player's own reading.
+    const answer: SliderAnswer = { kind: 'slider', values, choice: CORRECT_QUESTION_ID }
+    const result = mission.grade(answer)
+    // Sliders all score 1.0 (every value sits exactly at its tolerance boundary); question wrong: 0.6*1 + 0.4*0.
+    expect(result.accuracy).toBeCloseTo(0.6, 6)
+    expect(result.explanation).toContain(judged.explanation)
+  })
+
+  it("a missing slider value is treated as that slider's minimum when computing the player's implied EV, matching how gradeSlider treats missing values", () => {
+    const t = task()
+    const waccSlider = t.sliders.find((s) => s.id === 'wacc')!
+    const tgSlider = t.sliders.find((s) => s.id === 'tg')!
+    const growthSlider = t.sliders.find((s) => s.id === 'growth')!
+    const playerEV = impliedEnterpriseValue(BASE_FCF, growthSlider.min, waccSlider.min, tgSlider.min)
+    const judged = judgeVsMarket(playerEV)
+
+    const answer: SliderAnswer = { kind: 'slider', values: {}, choice: judged.correctId }
+    const result = mission.grade(answer)
+    expect(result.details?.find((d) => d.id === 'question')?.ok).toBe(true)
   })
 })
 
@@ -199,5 +274,54 @@ describe('r4-boss-real-dcf: grading', () => {
   it('throws on a mismatched answer kind', () => {
     const wrongAnswer: QuizAnswer = { kind: 'quiz', choices: {} }
     expect(() => mission.grade(wrongAnswer)).toThrow()
+  })
+})
+
+describe('r4-boss-real-dcf: copy never claims real SEC data while running on the stand-in', () => {
+  it('tagline only claims a real SEC filing when not using the stand-in', () => {
+    if (USING_STAND_IN) {
+      expect(mission.tagline.toLowerCase()).not.toContain('filed with the sec')
+      expect(mission.tagline.toLowerCase()).toContain('stand-in')
+    } else {
+      expect(mission.tagline.toLowerCase()).toContain('sec')
+    }
+  })
+
+  it('the first lesson bullet only claims a real SEC filing when not using the stand-in', () => {
+    const bullet = mission.lesson.visual?.kind === 'bullets' ? mission.lesson.visual.items[0] : undefined
+    expect(bullet).toBeDefined()
+    if (USING_STAND_IN) {
+      expect(bullet!.toLowerCase()).not.toContain('sec filing')
+      expect(bullet!.toLowerCase()).toContain('placeholder')
+    } else {
+      expect(bullet!.toLowerCase()).toContain('sec filing')
+    }
+  })
+
+  it('the lesson body names the stand-in, not a real filing, when using the stand-in', () => {
+    if (USING_STAND_IN) {
+      expect(mission.lesson.body).toContain('stand-in')
+      expect(mission.lesson.body).not.toContain('real SEC filing')
+    }
+  })
+})
+
+describe('r4-boss-real-dcf: money formatting stays readable at any company scale', () => {
+  it('QUESTION_EXPLANATION renders both enterprise values through fmtMoney with at most one decimal', () => {
+    expect(QUESTION_EXPLANATION).toMatch(/\$[\d,]+\.\d[MB]/)
+    // Never two-or-more decimal places, e.g. "$1.23B".
+    expect(QUESTION_EXPLANATION).not.toMatch(/\$[\d,]+\.\d{2,}[MB]/)
+  })
+
+  it("fmtMoney's auto mode picks millions below $1B and billions at or above it, always at one decimal", () => {
+    expect(fmtMoney(800_000_000, '$auto')).toBe('$800.0M')
+    expect(fmtMoney(1_156_607_984, '$auto')).toBe('$1.2B')
+    expect(fmtMoney(2_090_395_400_000, '$auto')).toBe('$2,090.4B') // mega-cap scale stays legible
+  })
+
+  it('fmtMoney handles negatives and null without breaking the scale or sign placement', () => {
+    expect(fmtMoney(-5_500_000, '$M')).toBe('-$5.5M')
+    expect(fmtMoney(-6_000_000_000, '$auto')).toBe('-$6.0B')
+    expect(fmtMoney(null, '$auto')).toBe('not reported')
   })
 })

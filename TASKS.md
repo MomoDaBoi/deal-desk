@@ -6,17 +6,27 @@ session.
 
 ## Project state
 
-**As of 2026-09-05.** Milestone 1 (skeleton) is built and runs locally.
-Not yet pushed to GitHub or deployed; the owner needs to create the repo
-and enable Pages (see "Owner to-dos"). One placeholder mission exists
-(`r1-income-statement-order`). No Mentor-mode API calls exist yet; the
-key slot and gating logic are in place. 39 tests pass. `npm run build`
-passes.
+**As of 2026-09-05 (overnight build).** Milestones 1-5 are built and
+committed locally, plus the Milestone 6 share card, PWA manifest, SDK
+lazy-loading, drag-and-drop, sounds, and days-survived counter. All five
+rungs have their missions: 29 standard missions across eleven task kinds
+(order, sort, balance, quiz, slider, waterfall, bridge, footballfield,
+heatmap, auction, multi) and four mentor-only written missions. Mentor
+mode runs on the official Anthropic SDK in browser mode and has NOT been
+exercised against the live API (no key here); it is covered by
+fake-client tests. 640 tests pass; `npm run build` passes. Nothing has
+been played in a browser since Milestone 1 (Chrome was unreachable);
+every milestone got a static multi-agent review and the confirmed
+findings were fixed (the Milestone 5 fix batch is the latest commit;
+check git log). The EDGAR snapshot is an EMPTY placeholder because SEC
+blocks fetches from the build environment; the real-data DCF boss runs
+on a labelled stand-in until the owner runs the fetch script. The GitHub
+repo is public; local history was rewritten to the noreply email and
+must be force-pushed by the owner before any push works.
 
-**Next up:** Milestone 2, Rung 1 content. Start by adding the `sort`
-(bucket) and `balance` (number entry) task kinds, then the Rung 1
-missions in curriculum order, then the boss fight (needs a `quiz` kind
-with a timer).
+**Next up:** the Owner to-dos (force-push, EDGAR snapshot, play it),
+then a browser playtest of every rung once Chrome is reachable, then the
+remaining Milestone 6 items (360px pass, deep links) and owner notes.
 
 ## Owner to-dos (admin, not code)
 
@@ -285,19 +295,19 @@ Sub-tasks refined against `PLAN.md` (sections d, e, h):
 
 ## Milestone 6 — Polish
 
-- [ ] Sounds (off by default).
+- [x] (2026-09-05) Sounds (off by default).
 - [x] (2026-09-05) Share card for scores.
-- [ ] Drag-and-drop as an enhancement over tap for `order` and `sort`.
+- [x] (2026-09-05) Drag-and-drop as an enhancement over tap for `order` and `sort`.
 - [x] (2026-09-05) PWA manifest so it installs on the phone home screen.
 
 Sub-tasks refined against `PLAN.md` (sections e, f, i):
 
-- [ ] "Days survived" counter on the ladder, derived from distinct
+- [x] (2026-09-05) "Days survived" counter on the ladder, derived from distinct
       attempt dates already in `progress.attempts` (PLAN.md §f).
 - [x] (2026-09-05) Share card renders comp, rung title and a verdict line from
       `src/engine/voice.ts`; must never include the API key or any
       personal data.
-- [ ] Pointer-events drag layered over the existing tap interaction for
+- [x] (2026-09-05) Pointer-events drag layered over the existing tap interaction for
       `order`, `sort`, and the football-field handles. Tap must keep
       working unchanged.
 - [ ] Pass over every chart board at 360px width; move any overflowing
@@ -307,7 +317,7 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 
 - [x] (2026-09-05) Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic
       SDK is not in the main bundle for Standard-mode players.
-- [ ] Streak or "days survived" counter on the ladder.
+- [x] (2026-09-05) Streak or "days survived" counter on the ladder.
 - [ ] Hash-based deep links (`#/mission/<id>`) if sharing a specific
       mission ever matters.
 
@@ -374,6 +384,13 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
   details; shipped code is the source of truth.
 - 2026-09-05: Mentor mode SDK is lazy-loaded (src/lib/mentor.ts) so the
   Standard-mode bundle never includes it.
+- 2026-09-05: Auction bids must strictly exceed the standing high and the
+  winner is the highest bid across all rounds; intrinsic value is the
+  control value consistent with r3-precedents (EV 1,185,000).
+- 2026-09-05: The real-data DCF boss grades its judgement question against
+  the player's own slider values, never a fixed textbook point.
+- 2026-09-05: Capstone stage navigation lives in the sticky bottom bar;
+  Submit only appears on the last stage.
 
 ## Owner notes
 

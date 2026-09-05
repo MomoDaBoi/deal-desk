@@ -14,15 +14,24 @@ import { NANS_PANTRY } from './companies'
 
 const REVENUE = NANS_PANTRY.income.revenue // 2,400,000
 const EBITDA = NANS_PANTRY.income.ebitda // 144,000
+const SHARE_PRICE = NANS_PANTRY.market!.price // 11.80
+const SHARES_K = NANS_PANTRY.market!.sharesK // 60,000
 const NET_DEBT = NANS_PANTRY.market!.netDebt // 300,000
+const TRADING_MULTIPLE = NANS_PANTRY.market!.evEbitda // 7.0
 const STORE_COUNT = 210
+const CONTROL_PREMIUM_PCT = 25
 
-/** Grocery trades at 6.0x-7.5x EBITDA (src/missions/companies.ts GROCERY_PEERS); 7.0x is the fair-value pick a disciplined buyer underwrites to. */
-const INTRINSIC_MULTIPLE = 7.0
-
-/** Enterprise value at a given multiple of EBITDA. The one number the auction never shows the player. */
-export function computeIntrinsicValue(ebitda: number, multiple: number): number {
-  return ebitda * multiple
+/**
+ * A disciplined buyer here is pricing the whole company, which means paying
+ * for control the same way r3-precedents does for this exact target: a 25%
+ * premium over the $11.80 trading price, times shares out, plus net debt.
+ * That is 8.2x EBITDA — above the 7.0x the shares trade at, because control
+ * is not the same thing as a quote. The one number the auction never shows
+ * the player.
+ */
+export function computeIntrinsicValue(sharePrice: number, sharesK: number, premiumPct: number, netDebt: number): number {
+  const offerPrice = Math.round(sharePrice * (1 + premiumPct / 100) * 100) / 100
+  return sharesK * offerPrice + netDebt
 }
 
 /** How much a winning bid ran over intrinsic value, as a percentage of it. Positive means overpaid. */
@@ -30,14 +39,17 @@ export function overpayPct(winningBid: number, intrinsic: number): number {
   return ((winningBid - intrinsic) / intrinsic) * 100
 }
 
-const INTRINSIC_VALUE = computeIntrinsicValue(EBITDA, INTRINSIC_MULTIPLE) // 1,008,000
+const INTRINSIC_VALUE = computeIntrinsicValue(SHARE_PRICE, SHARES_K, CONTROL_PREMIUM_PCT, NET_DEBT) // 1,185,000
+const INTRINSIC_MULTIPLE = Math.round((INTRINSIC_VALUE / EBITDA) * 10) / 10 // 8.2
+const OFFER_PRICE = Math.round(SHARE_PRICE * (1 + CONTROL_PREMIUM_PCT / 100) * 100) / 100 // 14.75
+const EQUITY_VALUE = INTRINSIC_VALUE - NET_DEBT // 885,000
 
 const moneyK = (n: number) => `$${Math.round(n).toLocaleString('en-US')}k`
 const pct = (n: number) => `${n.toFixed(1)}%`
 
-const TEASER = `Nan's Pantry Markets Inc. runs ${STORE_COUNT} stores and pulled in ${moneyK(REVENUE)} of revenue last year. EBITDA (earnings before interest, taxes, depreciation and amortization) came in at ${moneyK(EBITDA)} — thin, but typical for grocery. Net debt sits at ${moneyK(NET_DEBT)}, mostly from a store-refresh program the board approved without asking to see the payback math. Grocery chains like this trade at 6.0x-7.5x EBITDA in the market, so know your ceiling before you raise a paddle. Three bidders are circling, and only one of them is pricing this like a grocery chain.`
+const TEASER = `Nan's Pantry Markets Inc. runs ${STORE_COUNT} stores and pulled in ${moneyK(REVENUE)} of revenue last year. EBITDA (earnings before interest, taxes, depreciation and amortization) came in at ${moneyK(EBITDA)} — thin, but typical for grocery. Net debt sits at ${moneyK(NET_DEBT)}, mostly from a store-refresh program the board approved without asking to see the payback math. The shares trade around ${TRADING_MULTIPLE.toFixed(1)}x EBITDA, but recent whole-company grocery deals have cleared at 8.4x-9.2x — a buyer paying for control pays more than a stock quote. Three bidders are circling, and only one of them is pricing this like a takeover.`
 
-const IV_LINE = `Nan's Pantry is worth about ${moneyK(INTRINSIC_VALUE)} to a disciplined buyer — ${INTRINSIC_MULTIPLE.toFixed(1)}x its ${moneyK(EBITDA)} EBITDA, the middle of grocery's 6.0x-7.5x trading range.`
+const IV_LINE = `Nan's Pantry is worth about ${moneyK(INTRINSIC_VALUE)} to a disciplined buyer paying for control — a 25% premium over its $${SHARE_PRICE.toFixed(2)} share price is $${OFFER_PRICE.toFixed(2)} a share (${moneyK(EQUITY_VALUE)} of equity), plus ${moneyK(NET_DEBT)} of net debt, about ${INTRINSIC_MULTIPLE.toFixed(1)}x its ${moneyK(EBITDA)} EBITDA.`
 
 const BOTS = [
   {
@@ -83,8 +95,8 @@ const mission: Mission = {
       kind: 'bullets',
       items: [
         "Nan's Pantry: 210 stores, $144,000k EBITDA",
-        'Grocery trades at 6.0x-7.5x EBITDA',
-        'Intrinsic value: about $1,008,000k',
+        'Shares trade around 7.0x EBITDA; grocery control deals have cleared at 8.4x-9.2x',
+        'Multiply EBITDA by the control range yourself — that is your ceiling',
       ],
     },
   },
@@ -96,8 +108,8 @@ const mission: Mission = {
     unit: '$k',
     intrinsicValue: INTRINSIC_VALUE,
     rounds: 3,
-    bidMin: 700_000,
-    bidMax: 1_400_000,
+    bidMin: 800_000,
+    bidMax: 1_600_000,
     bidStep: 10_000,
     bots: BOTS,
   },

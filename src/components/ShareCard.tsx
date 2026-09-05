@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { RUNG_TITLES, type Rung } from '../engine/types'
 import { formatComp, rungStatus } from '../engine/scoring'
 import { missionsForRung } from '../missions'
@@ -119,6 +119,12 @@ export function ShareCard() {
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
+
   const { currentRung, passedCount, totalComp } = useMemo(() => {
     const status = Object.fromEntries(
       RUNGS.map((r) => [r, rungStatus(missionsForRung(r, mentor), best)]),
@@ -154,7 +160,9 @@ export function ShareCard() {
         const a = document.createElement('a')
         a.href = url
         a.download = 'deal-desk.png'
+        document.body.appendChild(a)
         a.click()
+        a.remove()
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') {

@@ -234,4 +234,8 @@ describe('formatSliderValue', () => {
   it('suffixes any other unit with a leading space', () => {
     expect(formatSliderValue(5, { step: 1, unit: 'yrs' })).toBe('5 yrs')
   })
+
+  it('prefixes a "$k"-style currency unit with thousands separators and keeps the remainder as a suffix', () => {
+    expect(formatSliderValue(480000, { step: 1000, unit: '$k' })).toBe('$480,000k')
+  })
 })

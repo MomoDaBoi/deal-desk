@@ -9,6 +9,21 @@ function cellLabel(task: HeatmapTask, key: string): string {
 }
 
 /**
+ * Format a cell value with its unit. A unit starting with "$" is a prefix
+ * currency (thousands separators, two decimals, any remainder of the unit
+ * string kept as a suffix — "$" -> "$17.90", "$k" -> "$1,234.00k"); every
+ * other unit (e.g. "%", "x") renders as a plain suffix, matching
+ * formatSliderValue's rule in src/engine/graders/slider.ts.
+ */
+export function fmtCell(value: number, unit: string): string {
+  if (unit.startsWith('$')) {
+    const suffix = unit.slice(1)
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}${suffix}`
+  }
+  return unit ? `${value}${unit}` : `${value}`
+}
+
+/**
  * Grade a sensitivity-heatmap task. `task.blanks` names the cell keys
  * ("rowId:colId") the player typed into; each is right when within
  * `task.tolerance ?? 0` of `task.cells[key]`, and a missing or null
@@ -43,7 +58,7 @@ export function gradeHeatmap(
 
   const blankDetails = blanks.map((b) => {
     const ok = b.got !== null && Math.abs(b.got - b.expected) <= tolerance
-    return { id: b.key, ok, note: `Expected ${b.expected}${unit}` }
+    return { id: b.key, ok, note: `Expected ${fmtCell(b.expected, unit)}` }
   })
 
   const tapOk: boolean | null = task.tap ? answer.tapped === task.tap.answer : null

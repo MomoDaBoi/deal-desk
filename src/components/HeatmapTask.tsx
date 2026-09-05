@@ -1,6 +1,7 @@
 import { Fragment } from 'react'
 import type { HeatmapTask as HeatmapTaskType } from '../engine/types'
 import { NumberField } from './BalanceTask'
+import { fmtCell } from '../engine/graders/heatmap'
 
 /**
  * Background for a known cell: a color-mix from cost (red, low values) to
@@ -52,7 +53,7 @@ export function HeatmapTask({
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-panel">
         <div className="grid w-max" style={{ gridTemplateColumns: `repeat(${task.cols.length + 1}, minmax(64px, 1fr))` }}>
-          <div className="min-h-11 min-w-16 flex items-center justify-center text-center text-[11px] leading-tight text-muted font-semibold bg-panel-2 border-b border-r border-line px-1">
+          <div className="sticky left-0 z-10 min-h-11 min-w-16 flex items-center justify-center text-center text-[11px] leading-tight text-muted font-semibold bg-panel-2 border-b border-r border-line px-1">
             {task.rowsLabel} \ {task.colsLabel}
           </div>
 
@@ -67,7 +68,7 @@ export function HeatmapTask({
 
           {task.rows.map((row) => (
             <Fragment key={row.id}>
-              <div className="min-h-11 min-w-16 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-r border-line px-1 text-center">
+              <div className="sticky left-0 z-10 min-h-11 min-w-16 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-r border-line px-1 text-center">
                 {row.label}
               </div>
 
@@ -99,14 +100,13 @@ export function HeatmapTask({
                     disabled={disabled}
                     onClick={() => handleTap(key)}
                     aria-pressed={task.tap ? tapped : undefined}
-                    aria-label={`${row.label}, ${col.label}: ${cellValue}${unit}`}
+                    aria-label={`${row.label}, ${col.label}: ${fmtCell(cellValue, unit)}`}
                     style={{ backgroundColor: knownCellColor(cellValue, min, max) }}
                     className={`min-h-11 min-w-16 flex items-center justify-center font-mono text-sm text-ink border-b border-line px-1 disabled:opacity-60 ${
                       tapped ? 'ring-2 ring-ink' : ''
                     }`}
                   >
-                    {cellValue}
-                    {unit}
+                    {fmtCell(cellValue, unit)}
                   </button>
                 )
               })}

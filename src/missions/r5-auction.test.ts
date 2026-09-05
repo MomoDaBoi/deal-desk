@@ -4,21 +4,6 @@ import type { Answer, AuctionTask } from '../engine/types'
 
 const task = mission.task as AuctionTask
 
-/**
- * Bid sequences below are pre-computed against the bot policy in
- * src/engine/graders/auction.ts (fixed, shared, and not owned by this
- * file). Because a bot's round-2+ bid is `min(ceiling, prevHigh *
- * followRate)` with every followRate > 1, the going price crosses this
- * auction's $1,008,000k intrinsic value by round 2 as soon as anyone leads
- * with a realistic bid — so the only way to WIN at or under intrinsic value
- * is to spike a bid past every bot's ceiling (>$1,260,000k, the
- * overbidder's 1.25x) in a middle round, which permanently drops all three
- * bots, then bid low in the final round: only that last round's leader sets
- * the winning price. That is exactly what `PERFECT_BIDS` does.
- */
-const PERFECT_BIDS = [900_000, 1_270_000, 900_000]
-const OVERPAID_BIDS = [900_000, 1_270_000, 1_160_000]
-
 describe('r5-auction mission', () => {
   it('is an auction task, rung 5, order 5, with the spec constants', () => {
     expect(mission.id).toBe('r5-auction')
@@ -28,16 +13,16 @@ describe('r5-auction mission', () => {
     expect(mission.parSeconds).toBe(240)
     expect(task.kind).toBe('auction')
     expect(task.rounds).toBe(3)
-    expect(task.bidMin).toBe(700_000)
-    expect(task.bidMax).toBe(1_400_000)
+    expect(task.bidMin).toBe(800_000)
+    expect(task.bidMax).toBe(1_600_000)
     expect(task.bidStep).toBe(10_000)
     expect(task.unit).toBe('$k')
   })
 
-  it('recomputes intrinsic value at 7.0x EBITDA from the company bible', () => {
-    // Nan's Pantry EBITDA is 144,000; 7.0x that is 1,008,000.
-    expect(computeIntrinsicValue(144_000, 7.0)).toBe(1_008_000)
-    expect(task.intrinsicValue).toBe(1_008_000)
+  it('prices intrinsic value on a control basis consistent with r3-precedents: a 25% premium over the trading price, plus net debt', () => {
+    // 11.80 x 1.25 = 14.75 a share x 60,000k shares = 885,000k equity, + 300,000k net debt = 1,185,000k EV, ~8.2x EBITDA.
+    expect(computeIntrinsicValue(11.8, 60_000, 25, 300_000)).toBe(1_185_000)
+    expect(task.intrinsicValue).toBe(1_185_000)
   })
 
   it('computes overpay percentage relative to intrinsic value', () => {
@@ -46,12 +31,14 @@ describe('r5-auction mission', () => {
     expect(overpayPct(900_000, 1_008_000)).toBeCloseTo(-10.714286, 5)
   })
 
-  it('states the key facts and the grocery multiple range in the teaser', () => {
+  it('states the key facts and hints at the control-vs-trading gap without naming a target multiple', () => {
     expect(task.teaser).toContain('210 stores')
     expect(task.teaser).toContain('$2,400,000k')
     expect(task.teaser).toContain('$144,000k')
     expect(task.teaser).toContain('$300,000k')
-    expect(task.teaser).toMatch(/6\.0x-7\.5x/)
+    expect(task.teaser).toMatch(/7\.0x/)
+    expect(task.teaser).toMatch(/8\.4x-9\.2x/)
+    expect(task.teaser).not.toContain('1,185,000')
   })
 
   it('has three bots with the spec names, styles, and non-empty blurbs', () => {
@@ -70,27 +57,37 @@ describe('r5-auction mission', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('gives accuracy 1 for a winning bid at or below intrinsic value', () => {
-    const answer: Answer = { kind: 'auction', bids: PERFECT_BIDS }
+  it('the old spike-then-lowball trick no longer wins at the lowball price', () => {
+    // Spike round 2 above every bot's ceiling (the highest, the overbidder's, is
+    // 1.25 x 1,185,000 = 1,481,250) to drive all three out, then try to retract
+    // to a cheap bid in round 3. A bid at or below the standing high (1,500,000)
+    // does not count as a bid, so the true winning price stays the spike, not
+    // the retraction, and the room is graded as badly overpaid rather than won.
+    const answer: Answer = { kind: 'auction', bids: [900_000, 1_500_000, 900_000] }
     const result = mission.grade(answer)
-    expect(result.accuracy).toBe(1)
-    expect(result.verdict.length).toBeGreaterThan(0)
-    expect(result.explanation).toContain('$900,000k')
-    expect(result.explanation).toContain('$1,008,000k')
+    expect(result.accuracy).toBe(0)
+    expect(result.explanation).toContain('$1,500,000k')
+    expect(result.explanation).not.toContain('$900,000k')
   })
 
-  it('scores a specific overpaying win and names the overpay in $k and as a percentage', () => {
-    const answer: Answer = { kind: 'auction', bids: OVERPAID_BIDS }
+  it('scores a specific overpaying win reached by honestly outbidding the room round after round', () => {
+    // Round 1: 1,140,000 beats every bot's opening bid (highest is the overbidder at 1,130,000).
+    // Round 2: bots escalate off that; the overbidder's follow bid reaches 1,230,000, so
+    // 1,240,000 is needed to lead. Round 3: it escalates again to 1,340,000, so 1,350,000
+    // is needed to stay ahead. The player wins at 1,350,000, which is 13.9% over the
+    // 1,185,000 intrinsic value.
+    const answer: Answer = { kind: 'auction', bids: [1_140_000, 1_240_000, 1_350_000] }
     const result = mission.grade(answer)
-    // Won at 1,160,000 against 1,008,000 intrinsic value: overpaid by 152,000, 15.1%.
-    expect(result.accuracy).toBeCloseTo(0.446825, 5)
-    expect(result.explanation).toContain('$1,160,000k')
-    expect(result.explanation).toContain('$152,000k')
-    expect(result.explanation).toContain('15.1%')
+    expect(result.accuracy).toBeCloseTo(0.493038, 5)
+    expect(result.explanation).toContain('$1,350,000k')
+    expect(result.explanation).toContain('$165,000k')
+    expect(result.explanation).toContain('13.9%')
   })
 
   it('scores losing narrowly to the overbidder and explains that losing is fine', () => {
-    const answer: Answer = { kind: 'auction', bids: [1_000_000, 1_050_000, 1_150_000] }
+    // A single disciplined bid, 90.3% of intrinsic value, then walking away. The
+    // overbidder keeps escalating without the player and takes it well above that.
+    const answer: Answer = { kind: 'auction', bids: [1_070_000] }
     const result = mission.grade(answer)
     expect(result.accuracy).toBeCloseTo(0.6)
     expect(result.explanation.toLowerCase()).toContain('halcyon holdings')
@@ -101,7 +98,7 @@ describe('r5-auction mission', () => {
     const answer: Answer = { kind: 'auction', bids: [] }
     const result = mission.grade(answer)
     expect(result.accuracy).toBe(0)
-    expect(result.explanation).toContain('$1,008,000k')
+    expect(result.explanation).toContain('$1,185,000k')
   })
 
   it('throws on a mismatched answer kind', () => {
@@ -117,5 +114,11 @@ describe('r5-auction mission', () => {
     expect(lower).toContain('intrinsic value')
     expect(lower).toContain("winner's curse")
     expect(lower).toContain('walking away')
+  })
+
+  it('never prints the intrinsic value in the lesson visual', () => {
+    const text = mission.lesson.visual && 'items' in mission.lesson.visual ? mission.lesson.visual.items.join(' ') : ''
+    expect(text).not.toContain('1,185,000')
+    expect(text).not.toMatch(/intrinsic value:\s*about/i)
   })
 })

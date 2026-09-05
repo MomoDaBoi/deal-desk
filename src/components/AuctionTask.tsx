@@ -3,10 +3,11 @@ import type { AuctionTask as AuctionTaskType } from '../engine/types'
 import { simulateAuction, snapToStep } from '../engine/graders/auction'
 import { Eyebrow } from './ui'
 
+/** A unit starting with "$" is a prefix currency (thousands-grouped) with the rest of the unit as a suffix, e.g. "$k" -> "$1,185,000k". Any other unit is a plain suffix. */
 function formatUnit(n: number, unit?: string): string {
   const s = Math.round(n).toLocaleString('en-US')
   if (!unit) return s
-  return unit === '$' ? `$${s}` : `${s} ${unit}`
+  return unit.startsWith('$') ? `$${s}${unit.slice(1)}` : `${s} ${unit}`
 }
 
 export function AuctionTask({
@@ -16,11 +17,11 @@ export function AuctionTask({
   disabled,
 }: {
   task: AuctionTaskType
-  value: { bids: number[] }
-  onChange: (next: { bids: number[] }) => void
+  value: { bids: number[]; walked: boolean }
+  onChange: (next: { bids: number[]; walked: boolean }) => void
   disabled?: boolean
 }) {
-  const [walked, setWalked] = useState(false)
+  const walked = value.walked
 
   const bidsSoFar = value.bids.length
   const result = simulateAuction(task, value.bids)
@@ -30,27 +31,28 @@ export function AuctionTask({
   const prevRound = completedRounds[completedRounds.length - 1]
   const prevHigh = prevRound?.leader?.bid ?? 0
 
-  const defaultBid = Math.min(task.bidMax, Math.max(task.bidMin, prevHigh > 0 ? snapToStep(prevHigh + task.bidStep, task.bidStep, task.bidMin) : task.bidMin))
-  const [currentBid, setCurrentBid] = useState(defaultBid)
+  // A bid must strictly exceed the standing high, so the slider's floor sits one step above it.
+  const bidFloor = prevHigh > 0 ? Math.min(task.bidMax, prevHigh + task.bidStep) : task.bidMin
+  const [currentBid, setCurrentBid] = useState(bidFloor)
 
   // Re-seed the slider to a sensible opening bid each time a new round starts.
   useEffect(() => {
-    setCurrentBid(defaultBid)
+    setCurrentBid(bidFloor)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRoundNumber])
 
   function nudge(dir: 1 | -1) {
     const raw = currentBid + dir * task.bidStep
     const snapped = snapToStep(raw, task.bidStep, task.bidMin)
-    setCurrentBid(Math.min(task.bidMax, Math.max(task.bidMin, snapped)))
+    setCurrentBid(Math.min(task.bidMax, Math.max(bidFloor, snapped)))
   }
 
   function placeBid() {
-    onChange({ bids: [...value.bids, currentBid] })
+    onChange({ bids: [...value.bids, currentBid], walked: false })
   }
 
   function walkAway() {
-    setWalked(true)
+    onChange({ ...value, walked: true })
   }
 
   return (
@@ -136,7 +138,7 @@ export function AuctionTask({
             <input
               type="range"
               aria-label="Bid amount"
-              min={task.bidMin}
+              min={bidFloor}
               max={task.bidMax}
               step={task.bidStep}
               value={currentBid}
@@ -157,7 +159,7 @@ export function AuctionTask({
           </div>
 
           <div className="flex items-center justify-between text-xs text-muted font-mono">
-            <span>{formatUnit(task.bidMin, task.unit)}</span>
+            <span>{formatUnit(bidFloor, task.unit)}</span>
             <span>{formatUnit(task.bidMax, task.unit)}</span>
           </div>
 

@@ -11,15 +11,21 @@ function decimalsOf(step: number): number {
 /**
  * Format a slider value using the precision implied by the slider's own
  * `step` (so a 0.05 step shows two decimals, not the one-size-fits-all
- * rounding a naive threshold gives). Currency renders as a prefix
- * ("$14.75"); every other unit renders as a suffix ("8.2x", "25.0%").
+ * rounding a naive threshold gives). Any unit beginning with "$" renders as
+ * a prefix currency with thousands separators and the rest of the unit as
+ * a suffix ("$14.75", "$480,000k"); every other unit renders as a plain
+ * suffix ("8.2x", "25.0%").
  */
 export function formatSliderValue(value: number, slider: Pick<SliderConfig, 'step' | 'unit'>): string {
   const decimals = decimalsOf(slider.step)
-  const s = value.toFixed(decimals)
   const unit = slider.unit ?? ''
+  if (unit.startsWith('$')) {
+    const sign = value < 0 ? '-' : ''
+    const s = Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+    return `${sign}$${s}${unit.slice(1)}`
+  }
+  const s = value.toFixed(decimals)
   if (!unit) return s
-  if (unit === '$') return `$${s}`
   const sep = unit === 'x' || unit === '%' ? '' : ' '
   return `${s}${sep}${unit}`
 }

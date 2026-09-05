@@ -8,20 +8,26 @@ import { BRICKHOUSE } from './companies'
 
 /**
  * Rung 5 boss, the capstone. Run one deal end to end on Brickhouse
- * Industrial: value it (bridge market cap to EV), structure it (set the
- * leverage and the equity cheque that fund the buyout), then defend it
- * (three untimed judgement questions). Every figure is recomputed here from
- * the company bible (src/missions/companies.ts) with pure helpers, so this
- * file can never silently drift from PLAN.md section (c) or (d).
+ * Industrial: value it (bridge market cap to undisturbed EV), structure it
+ * (set the leverage and the equity cheque that fund the buyout at the
+ * OFFER price), then defend it (three untimed judgement questions). Every
+ * figure is recomputed here from the company bible
+ * (src/missions/companies.ts) with pure helpers, so this file can never
+ * silently drift from PLAN.md section (c) or (d).
  *
- * Stage 1 - value: MARKET_CAP 580,000 -> ENTERPRISE_VALUE 800,000, bridged
- * by +TOTAL_DEBT, -CASH, +0 minority interest, +0 preferred stock.
- * Stage 2 - structure: leverage of 5.0x EBITDA raises DEBT_RAISED
- * 480,000; the remaining EQUITY_CHEQUE of EV minus that debt is 320,000.
+ * Stage 1 - value: MARKET_CAP 580,000 -> undisturbed ENTERPRISE_VALUE
+ * 800,000, bridged by +TOTAL_DEBT, -CASH, +0 minority interest, +0
+ * preferred stock. That undisturbed EV is the starting point, not what the
+ * buyout pays.
+ * Stage 2 - structure: a 25% control premium on the $14.50 share price
+ * ($18.125 exactly) lifts the deal to PURCHASE_EQUITY 725,000 and, with
+ * NET_DEBT of 220,000 already on the balance sheet, PURCHASE_EV 945,000.
+ * That is the number the buyout actually funds: leverage of 5.0x EBITDA
+ * raises DEBT_RAISED 480,000, and the remaining EQUITY_CHEQUE is 465,000.
  * Stage 3 - defend: three untimed questions on why EV (not market cap) is
  * the right base to lever, why 5.0x (not the top of the range) fits a
  * cyclical industrial, and what a 25% control premium implies for the
- * offer price off Brickhouse's $14.50 share price.
+ * offer price off Brickhouse's $14.50 share price ($18.13, rounded).
  */
 
 const MARKET_CAP = BRICKHOUSE.market!.marketCap // 580,000
@@ -29,12 +35,17 @@ const TOTAL_DEBT = BRICKHOUSE.balance!.totalDebt // 260,000
 const CASH = BRICKHOUSE.balance!.cash // 40,000
 const EBITDA = BRICKHOUSE.income.ebitda // 96,000
 const SHARE_PRICE = BRICKHOUSE.market!.price // 14.50
+const SHARES_K = BRICKHOUSE.market!.sharesK // 40,000
+const NET_DEBT = BRICKHOUSE.market!.netDebt // 220,000 (total debt - cash)
 
 /** Bridge: equity value + debt - cash + minority interest + preferred stock. */
 function enterpriseValue(marketCap: number, totalDebt: number, cash: number, minorityInterest: number, preferred: number): number {
   return marketCap + totalDebt - cash + minorityInterest + preferred
 }
 
+// The undisturbed EV: where the market prices Brickhouse today, before any
+// takeover premium. This is stage 1's bridge target, not what the buyout
+// pays for the company.
 const ENTERPRISE_VALUE = enterpriseValue(MARKET_CAP, TOTAL_DEBT, CASH, 0, 0) // 800,000
 
 /** Debt a buyout raises at a given leverage multiple of EBITDA. */
@@ -47,29 +58,39 @@ function equityCheque(ev: number, debt: number): number {
   return ev - debt
 }
 
-const LEVERAGE_X = 5.0
-const DEBT_RAISED = debtRaised(LEVERAGE_X, EBITDA) // 480,000
-const EQUITY_CHEQUE = equityCheque(ENTERPRISE_VALUE, DEBT_RAISED) // 320,000
-
-/** Offer price implied by a control premium over the pre-deal share price, rounded to the cent. */
+/** Offer price implied by a control premium over the pre-deal share price (exact, unrounded). */
 function offerPriceAtPremium(sharePrice: number, premiumPct: number): number {
-  return Math.round(sharePrice * (1 + premiumPct / 100) * 100) / 100
+  return sharePrice * (1 + premiumPct / 100)
 }
 
 const CONTROL_PREMIUM_PCT = 25
-const OFFER_PRICE = offerPriceAtPremium(SHARE_PRICE, CONTROL_PREMIUM_PCT) // 18.13
+const OFFER_PRICE_EXACT = offerPriceAtPremium(SHARE_PRICE, CONTROL_PREMIUM_PCT) // 18.125
+const OFFER_PRICE = Math.round(OFFER_PRICE_EXACT * 100) / 100 // 18.13, for display
+
+// The buyout pays a premium for control, not the undisturbed price — so it
+// funds the OFFER enterprise value, not the 800,000 from stage 1.
+const PURCHASE_EQUITY = OFFER_PRICE_EXACT * SHARES_K // 725,000
+const PURCHASE_EV = PURCHASE_EQUITY + NET_DEBT // 945,000
+
+const LEVERAGE_X = 5.0
+const DEBT_RAISED = debtRaised(LEVERAGE_X, EBITDA) // 480,000
+const EQUITY_CHEQUE = equityCheque(PURCHASE_EV, DEBT_RAISED) // 465,000
 
 const money = (n: number) => n.toLocaleString('en-US')
 
 const VALUE_LINE = `Bridge: market cap ${money(MARKET_CAP)} + total debt ${money(TOTAL_DEBT)} - cash ${money(
   CASH,
-)} + 0 minority interest + 0 preferred stock = enterprise value ${money(ENTERPRISE_VALUE)}.`
+)} + 0 minority interest + 0 preferred stock = undisturbed enterprise value ${money(ENTERPRISE_VALUE)}.`
 
-const STRUCTURE_LINE = `At ${LEVERAGE_X.toFixed(1)}x EBITDA (${money(EBITDA)}), the buyout raises ${money(
-  DEBT_RAISED,
-)} of debt. The remaining ${money(EQUITY_CHEQUE)} of the ${money(ENTERPRISE_VALUE)} purchase price has to come from the equity cheque: ${money(
-  ENTERPRISE_VALUE,
-)} - ${money(DEBT_RAISED)} = ${money(EQUITY_CHEQUE)}.`
+const STRUCTURE_LINE = `A 25% control premium on the $${SHARE_PRICE.toFixed(2)} share price lifts the deal to purchase equity ${money(
+  PURCHASE_EQUITY,
+)} + net debt ${money(NET_DEBT)} = offer enterprise value ${money(
+  PURCHASE_EV,
+)}, above the undisturbed ${money(ENTERPRISE_VALUE)}. At ${LEVERAGE_X.toFixed(1)}x EBITDA (${money(
+  EBITDA,
+)}), the buyout raises ${money(DEBT_RAISED)} of debt. The remaining ${money(EQUITY_CHEQUE)} of the ${money(
+  PURCHASE_EV,
+)} purchase price has to come from the equity cheque: ${money(PURCHASE_EV)} - ${money(DEBT_RAISED)} = ${money(EQUITY_CHEQUE)}.`
 
 const DEFEND_EV_EXPLANATION =
   'A buyout buys the whole business, debt and all — the lender and the equity sponsor together are funding enterprise value, not just the shares. Market cap only prices the equity slice; levering off it would understate how much the deal actually costs and how much debt the business needs to carry.'
@@ -100,12 +121,12 @@ const mission: Mission = {
   lesson: {
     title: 'A deal is value, then structure, then defense',
     body:
-      "Every deal runs the same three steps. Value it: bridge equity value (market cap, what shareholders own) to enterprise value (EV, the price for the whole business) by adding debt and subtracting cash — a buyer takes on what the company owes and gets to use what it holds. Structure it: split that EV between debt (leverage, sized as a multiple of EBITDA, operating profit before interest, tax, depreciation and amortization) and the equity cheque (the sponsor's own cash) that fund the purchase together. Defend it: explain those choices, including a control premium — the extra a buyer pays over trading price for control. Brickhouse Industrial is the target throughout.",
+      "Every deal runs the same three steps. Value it: bridge equity value (market cap, what shareholders own) to enterprise value (EV, the whole business's price) by adding debt and subtracting cash — a buyer takes on what the company owes and gets to use what it holds. Structure it: a control premium — extra paid over trading price for control — lifts the undisturbed EV to the offer EV the buyout actually funds, split between debt (leverage, a multiple of EBITDA, profit before interest, tax, depreciation and amortization) and the equity cheque (the sponsor's own cash). Defend it: explain those choices. Brickhouse Industrial is the target throughout.",
     visual: {
       kind: 'bullets',
       items: [
-        `Value it: market cap ${money(MARKET_CAP)} -> EV ${money(ENTERPRISE_VALUE)}`,
-        `Structure it: ${LEVERAGE_X.toFixed(1)}x EBITDA debt + equity cheque = EV`,
+        `Value it: market cap ${money(MARKET_CAP)} -> undisturbed EV ${money(ENTERPRISE_VALUE)}`,
+        `Structure it: 25% premium -> offer EV ${money(PURCHASE_EV)}, funded by ${LEVERAGE_X.toFixed(1)}x EBITDA debt + equity cheque`,
         'Defend it: why EV, why that leverage, what a control premium buys',
       ],
     },
@@ -117,7 +138,7 @@ const mission: Mission = {
       {
         id: 'value',
         title: 'Value it',
-        intro: "Bridge Brickhouse's market cap to its enterprise value.",
+        intro: "Bridge Brickhouse's undisturbed market cap to its enterprise value, before any takeover premium.",
         task: {
           kind: 'bridge',
           prompt: 'Bridge Brickhouse from market cap to enterprise value. Fill in every adjustment bar.',
@@ -136,10 +157,15 @@ const mission: Mission = {
       {
         id: 'structure',
         title: 'Structure it',
-        intro: 'Set the leverage and the equity cheque that together fund the buyout.',
+        intro: `A 25% control premium lifts the offer to enterprise value ${money(
+          PURCHASE_EV,
+        )} (purchase equity ${money(PURCHASE_EQUITY)} + net debt ${money(
+          NET_DEBT,
+        )}) — set the leverage and the equity cheque that fund that offer, not the undisturbed ${money(ENTERPRISE_VALUE)}.`,
         task: {
           kind: 'slider',
-          prompt: "Size the debt (as a multiple of EBITDA) and the equity cheque that, together, fund Brickhouse's enterprise value.",
+          prompt:
+            "Size the debt (as a multiple of EBITDA) and the equity cheque that, together, fund the offer enterprise value implied by a 25% control premium.",
           sliders: [
             {
               id: 'leverage',
@@ -156,14 +182,14 @@ const mission: Mission = {
             {
               id: 'equityCheque',
               label: 'Equity cheque',
-              min: 200_000,
-              max: 600_000,
+              min: 300_000,
+              max: 700_000,
               step: 10_000,
               answer: EQUITY_CHEQUE,
               tolerance: 30_000,
               unit: '$k',
               role: 'equity',
-              hint: 'Enterprise value minus the debt raised',
+              hint: 'Offer enterprise value minus the debt raised',
             },
           ],
           readouts: [
@@ -179,7 +205,7 @@ const mission: Mission = {
               label: 'Equity implied by that debt',
               unit: '$k',
               role: 'equity',
-              compute: (values) => equityCheque(ENTERPRISE_VALUE, debtRaised(values.leverage ?? 0, EBITDA)),
+              compute: (values) => equityCheque(PURCHASE_EV, debtRaised(values.leverage ?? 0, EBITDA)),
             },
           ],
         },

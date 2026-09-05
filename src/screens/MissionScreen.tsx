@@ -170,12 +170,24 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         {task.kind === 'auction' && <AuctionTask task={task} value={state.auction} onChange={state.setAuction} />}
         {task.kind === 'multi' && <MultiTask task={task} value={state.multi} onChange={state.setMulti} />}
         <BottomBar>
-          <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
-            Lesson
-          </Button>
-          <Button className="flex-1" onClick={() => submit()}>
-            Submit
-          </Button>
+          {task.kind === 'multi' && state.multi.stageIndex > 0 ? (
+            <Button variant="ghost" onClick={() => state.setMulti({ ...state.multi, stageIndex: state.multi.stageIndex - 1 })}>
+              Back
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
+              Lesson
+            </Button>
+          )}
+          {task.kind === 'multi' && state.multi.stageIndex < task.stages.length - 1 ? (
+            <Button className="flex-1" onClick={() => state.setMulti({ ...state.multi, stageIndex: state.multi.stageIndex + 1 })}>
+              Next stage
+            </Button>
+          ) : (
+            <Button className="flex-1" onClick={() => submit()}>
+              Submit
+            </Button>
+          )}
         </BottomBar>
       </Page>
     )
@@ -230,7 +242,9 @@ export function MissionScreen({ mission }: { mission: Mission }) {
                   <span className={`shrink-0 ${d.ok ? 'text-revenue' : 'text-cost'}`}>{d.ok ? '✓' : '✗'}</span>
                   <span className="min-w-0">
                     <span>{labelFor(task, d.id)}</span>
-                    {!d.ok && d.note && <span className="block text-muted text-xs mt-0.5">{d.note}</span>}
+                    {d.note && (!d.ok || task.kind === 'auction' || task.kind === 'multi') && (
+                      <span className="block text-muted text-xs mt-0.5">{d.note}</span>
+                    )}
                   </span>
                 </li>
               ))}
@@ -347,7 +361,7 @@ function useTaskState(task: Task, seed: number) {
   const [ff, setFf] = useState<{ ranges: Record<string, { low: number; high: number }>; choice: string | null }>({ ranges: {}, choice: null })
   const [written, setWritten] = useState<{ text: string; answers: Record<string, string> }>({ text: '', answers: {} })
   const [heatmap, setHeatmap] = useState<{ values: Record<string, number | null>; tapped: string | null }>({ values: {}, tapped: null })
-  const [auction, setAuction] = useState<{ bids: number[] }>({ bids: [] })
+  const [auction, setAuction] = useState<{ bids: number[]; walked: boolean }>({ bids: [], walked: false })
   const [multi, setMulti] = useState<{ answers: Record<string, Exclude<Answer, MultiAnswer>>; stageIndex: number }>({ answers: {}, stageIndex: 0 })
 
   useEffect(() => setOrder(orderShuffled), [orderShuffled])
@@ -362,7 +376,7 @@ function useTaskState(task: Task, seed: number) {
     setFf({ ranges: {}, choice: null })
     setWritten({ text: '', answers: {} })
     setHeatmap({ values: {}, tapped: null })
-    setAuction({ bids: [] })
+    setAuction({ bids: [], walked: false })
     setMulti({ answers: {}, stageIndex: 0 })
   }
 
@@ -389,7 +403,7 @@ function useTaskState(task: Task, seed: number) {
       case 'heatmap':
         return { kind: 'heatmap', values: heatmap.values, tapped: heatmap.tapped }
       case 'auction':
-        return { kind: 'auction', bids: auction.bids }
+        return { kind: 'auction', bids: auction.bids, walked: auction.walked }
       case 'multi':
         return { kind: 'multi', answers: multi.answers }
     }

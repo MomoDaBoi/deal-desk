@@ -51,22 +51,34 @@ const TOTAL_USES_LINE = `Total uses must tie to total sources: $${money(TOTAL_SO
 const FEES_LINE = `Fees are the plug between total uses and the purchase price: $${money(TOTAL_USES)}k − $${money(PURCHASE_PRICE)}k = $${money(FEES)}k.`
 const SPONSOR_EQUITY_LINE = `Sponsor equity is the plug: total sources $${money(TOTAL_SOURCES)}k − new debt $${money(NEW_DEBT)}k − cash $${money(CASH)}k = $${money(SPONSOR_EQUITY)}k.`
 
-/** Sum of the player's own typed source blanks plus known cash, vs. the player's own typed total uses. */
-function tieCheck(values: Record<string, number | null>): { ok: boolean; sumSources: number; totalUses: number } {
+/**
+ * Sum of the player's own typed source blanks plus known cash, vs. the sum
+ * of the player's own typed uses blanks (purchase price plus their typed
+ * fees) — not the typed total-uses line itself, so a wrong total-uses entry
+ * can't confirm a tie the player's own uses column doesn't actually have.
+ */
+function tieCheck(values: Record<string, number | null>): { ok: boolean; sumSources: number; sumUses: number } {
   const newDebt = values['new-debt']
   const sponsorEquity = values['sponsor-equity']
+  const fees = values['fees']
   const totalUses = values['total-uses']
   const sumSources = (newDebt ?? 0) + CASH + (sponsorEquity ?? 0)
-  const uses = totalUses ?? 0
-  const ok = newDebt != null && sponsorEquity != null && totalUses != null && sumSources === uses
-  return { ok, sumSources, totalUses: uses }
+  const sumUses = PURCHASE_PRICE + (fees ?? 0)
+  const ok =
+    newDebt != null &&
+    sponsorEquity != null &&
+    fees != null &&
+    totalUses != null &&
+    sumSources === sumUses &&
+    totalUses === sumUses
+  return { ok, sumSources, sumUses }
 }
 
 function tieLine(check: ReturnType<typeof tieCheck>): string {
-  if (check.ok) return `Your sources ($${money(check.sumSources)}k) tie to your uses ($${money(check.totalUses)}k).`
-  const diff = check.sumSources - check.totalUses
+  if (check.ok) return `Your sources ($${money(check.sumSources)}k) tie to your uses ($${money(check.sumUses)}k).`
+  const diff = check.sumSources - check.sumUses
   const side = diff > 0 ? 'sources' : 'uses'
-  return `Your sources ($${money(check.sumSources)}k) and uses ($${money(check.totalUses)}k) do not tie — ${side} is off by $${money(Math.abs(diff))}k.`
+  return `Your sources ($${money(check.sumSources)}k) and uses ($${money(check.sumUses)}k) do not tie — ${side} is off by $${money(Math.abs(diff))}k.`
 }
 
 const task: BalanceTask = {

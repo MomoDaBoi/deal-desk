@@ -21,14 +21,14 @@ describe('r4-fcf-forecast mission', () => {
     expect(task.sliders).toHaveLength(5)
   })
 
-  it('has five growth sliders 0-12%, step 0.5, tolerance 1.0, targeting the management case', () => {
+  it('has five growth sliders 0-12%, step 0.5, tolerance 0.5, targeting the management case', () => {
     const ids = task.sliders.map((s) => s.id)
     expect(ids).toEqual(['g1', 'g2', 'g3', 'g4', 'g5'])
     task.sliders.forEach((s, i) => {
       expect(s.min).toBe(0)
       expect(s.max).toBe(12)
       expect(s.step).toBe(0.5)
-      expect(s.tolerance).toBe(1.0)
+      expect(s.tolerance).toBe(0.5)
       expect(s.unit).toBe('%')
       expect(s.answer).toBe(MANAGEMENT_CASE[i])
     })
@@ -92,7 +92,7 @@ describe('r4-fcf-forecast mission', () => {
   })
 
   it('scores 0.8 and names year 3 when only that slider misses by 2 points', () => {
-    // Year 3 set to 7% instead of 5% -> error 2.0, tolerance 1.0 -> that
+    // Year 3 set to 7% instead of 5% -> error 2.0, tolerance 0.5 -> that
     // slider scores 0; the other four score 1. Mean = 4/5 = 0.8.
     const result = mission.grade(answer({ g1: 6, g2: 6, g3: 7, g4: 5, g5: 4 }))
     expect(result.accuracy).toBeCloseTo(0.8, 5)
@@ -100,6 +100,18 @@ describe('r4-fcf-forecast mission', () => {
     expect(result.explanation).toContain('7.0%')
     expect(result.explanation).toContain("management's case is 5.0%")
     expect(result.explanation).not.toContain('Year 1 growth: you set')
+  })
+
+  it('no longer gives full credit for a flat 5% path (a single-point miss now scores 0 on that slider)', () => {
+    // Flat 5.0% every year vs management's 6/6/5/5/4: years 1, 2 and 5 miss
+    // by exactly 1 point. With tolerance 0.5 that exceeds the tolerance, so
+    // those three sliders score 0 and only years 3-4 (exact matches) score
+    // 1. Mean = 2/5 = 0.4 - nowhere near the full credit tolerance 1.0 used
+    // to hand out for the same flat path the mission's own sensitivity
+    // explanation warns is wrong.
+    const result = mission.grade(answer({ g1: 5, g2: 5, g3: 5, g4: 5, g5: 5 }))
+    expect(result.accuracy).toBeCloseTo(0.4, 5)
+    expect(result.accuracy).toBeLessThan(1)
   })
 
   it('gives accuracy 0 and lists every year when the player leaves every slider at its minimum', () => {

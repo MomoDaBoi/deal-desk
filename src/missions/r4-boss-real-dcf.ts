@@ -1,4 +1,4 @@
-import type { Mission } from '../engine/types'
+import type { Mission, SliderTask } from '../engine/types'
 import { gradeSlider } from '../engine/graders/slider'
 import { mdVerdict } from '../engine/voice'
 import { edgarByTicker, edgarCompanies, ebitda, netDebt, impliedMarketValue, fmtMoney, type EdgarCompany } from '../lib/edgar'
@@ -112,28 +112,35 @@ export function impliedEnterpriseValue(baseFcf: number, growthPct: number, waccP
   return pvOfFcfs + pvOfTerminalValue
 }
 
-/** The "textbook" slider settings this mission grades against. */
+/** The "textbook" slider settings this mission's sliders (not the judgement question) grade against. */
 export const ANSWER = { growth: 4, wacc: 7.5, tg: 2.5 }
 
-/** Implied EV at the answer settings — what the question's correctId is computed from. */
+/** Implied EV at the textbook answer settings — reference figure for the lesson, not what the judgement question is graded against (see `judgeVsMarket`, used live in `grade()` on the player's own slider values). */
 export const ANSWER_EV = impliedEnterpriseValue(BASE_FCF, ANSWER.growth, ANSWER.wacc, ANSWER.tg)
 
-const EV_RATIO = ANSWER_EV / MARKET_EV
-
 /**
- * Computed at module load from the real numbers above, not hardcoded, so
- * the answer stays consistent if the snapshot is ever regenerated. "Fair"
- * covers anything within 15% of the market-implied EV either way.
+ * Judge an implied enterprise value against the market-implied EV using a
+ * 15%-either-way "fair" band. Used live in `grade()` against the player's
+ * own submitted DCF, so the readout on screen (which always shows the
+ * player's own implied EV vs the market) and the graded verdict always
+ * agree — never against a fixed textbook assumption.
  */
-export const CORRECT_QUESTION_ID: 'high' | 'low' | 'fair' = EV_RATIO > 1.15 ? 'high' : EV_RATIO < 0.85 ? 'low' : 'fair'
+export function judgeVsMarket(impliedEv: number): { correctId: 'high' | 'low' | 'fair'; verdictWord: string; explanation: string } {
+  const ratio = impliedEv / MARKET_EV
+  const correctId: 'high' | 'low' | 'fair' = ratio > 1.15 ? 'high' : ratio < 0.85 ? 'low' : 'fair'
+  const verdictWord = correctId === 'fair' ? 'roughly in line with' : correctId === 'high' ? 'higher than' : 'lower than'
+  const explanation = `Your DCF implies ${fmtMoney(impliedEv, '$auto')} of enterprise value for ${COMPANY.name}. The market's implied EV (public float plus net debt) is ${fmtMoney(MARKET_EV, '$auto')} — that makes your DCF ${verdictWord} the market.`
+  return { correctId, verdictWord, explanation }
+}
 
 export const GROWTH_LINE = `Analysts pencil in modest growth for a mature company like ${COMPANY.name} — around 4% annual FCF growth, not a startup's hockey stick.`
 export const WACC_LINE = `A WACC near 7.5% fits a large, stable, investment-grade filer like ${COMPANY.name}: the bigger and steadier the cash flows, the cheaper the blended cost of debt and equity.`
 export const TG_LINE = `Terminal growth around 2.5% tracks long-run economic growth — no company can out-grow the whole economy forever, so the "forever" rate stays modest.`
 
-const VERDICT_WORD = CORRECT_QUESTION_ID === 'fair' ? 'roughly in line with' : CORRECT_QUESTION_ID === 'high' ? 'higher than' : 'lower than'
-
-export const QUESTION_EXPLANATION = `At the textbook assumptions (4% growth, 7.5% WACC, 2.5% terminal growth), the DCF implies ${fmtMoney(ANSWER_EV, '$M')} of enterprise value for ${COMPANY.name}. The market's implied EV (public float plus net debt) is ${fmtMoney(MARKET_EV, '$M')} — that makes the DCF ${VERDICT_WORD} the market.`
+/** The textbook judgement, computed from ANSWER_EV. Only used to seed the static task's `question.correctId`/`explanation` — `grade()` always re-derives both from the player's own answer. */
+const TEXTBOOK_JUDGEMENT = judgeVsMarket(ANSWER_EV)
+export const CORRECT_QUESTION_ID = TEXTBOOK_JUDGEMENT.correctId
+export const QUESTION_EXPLANATION = TEXTBOOK_JUDGEMENT.explanation
 
 const mission: Mission = {
   id: 'r4-boss-real-dcf',
@@ -141,7 +148,7 @@ const mission: Mission = {
   order: 6,
   boss: true,
   title: `The real DCF: ${COMPANY.name}`,
-  tagline: 'No more made-up companies. This one filed with the SEC.',
+  tagline: USING_STAND_IN ? 'A stand-in until the SEC snapshot is generated.' : 'No more made-up companies. This one filed with the SEC.',
   baseComp: 17_000,
   parSeconds: 300,
   lesson: {
@@ -150,7 +157,7 @@ const mission: Mission = {
     visual: {
       kind: 'bullets',
       items: [
-        `${COMPANY.name}, straight from its SEC filing — no more fictional companies`,
+        USING_STAND_IN ? `${COMPANY.name} — placeholder figures until the snapshot is generated` : `${COMPANY.name}, straight from its SEC filing`,
         'EBITDA × 0.55 ≈ a rough stand-in for free cash flow',
         'Public float ≈ a rough stand-in for market cap',
         'A defensible band beats a confident point answer',
@@ -201,17 +208,17 @@ const mission: Mission = {
     readouts: [
       {
         id: 'impliedEV',
-        label: `Implied EV, ${COMPANY.ticker} ($M)`,
-        unit: '$',
+        label: `Implied EV, ${COMPANY.ticker}`,
+        unit: '$B',
         role: 'equity',
-        compute: (values) => impliedEnterpriseValue(BASE_FCF, values.growth, values.wacc, values.tg) / 1e6,
+        compute: (values) => impliedEnterpriseValue(BASE_FCF, values.growth, values.wacc, values.tg) / 1e9,
       },
       {
         id: 'marketEV',
-        label: 'Market value (public float) + net debt ($M)',
-        unit: '$',
+        label: 'Market value (public float) + net debt',
+        unit: '$B',
         role: 'cash',
-        compute: () => MARKET_EV / 1e6,
+        compute: () => MARKET_EV / 1e9,
       },
     ],
     question: {
@@ -229,24 +236,36 @@ const mission: Mission = {
   grade(answer) {
     if (answer.kind !== 'slider') throw new Error('wrong answer kind')
     if (mission.task.kind !== 'slider') throw new Error('wrong task kind')
-    return gradeSlider(mission.task, answer, ({ accuracy, wrongIds }) => {
+    const t = mission.task
+    // Grade the judgement question against the DCF the player actually
+    // built, not the fixed textbook assumptions — the on-screen readouts
+    // always show the player's own implied EV vs the market, so the
+    // "correct" choice must track that same number or the two contradict
+    // each other (see PLAN.md / review notes on this mission).
+    const growth = answer.values.growth ?? t.sliders.find((s) => s.id === 'growth')!.min
+    const wacc = answer.values.wacc ?? t.sliders.find((s) => s.id === 'wacc')!.min
+    const tg = answer.values.tg ?? t.sliders.find((s) => s.id === 'tg')!.min
+    const playerEV = impliedEnterpriseValue(BASE_FCF, growth, wacc, tg)
+    const judged = judgeVsMarket(playerEV)
+    const gradedTask: SliderTask = { ...t, question: { ...t.question!, correctId: judged.correctId, explanation: judged.explanation } }
+    return gradeSlider(gradedTask, answer, ({ accuracy, wrongIds }) => {
       if (accuracy === 1) {
         return {
           verdict: "Real filings, real discipline. The MD checks the tie-out twice and still can't fault it.",
-          explanation: `${GROWTH_LINE} ${WACC_LINE} ${TG_LINE} ${QUESTION_EXPLANATION}`,
+          explanation: `${GROWTH_LINE} ${WACC_LINE} ${TG_LINE} ${judged.explanation}`,
         }
       }
       if (accuracy === 0) {
         return {
           verdict: mdVerdict(0, 'r4-boss-real-dcf'),
-          explanation: `${GROWTH_LINE} ${WACC_LINE} ${TG_LINE} ${QUESTION_EXPLANATION}`,
+          explanation: `${GROWTH_LINE} ${WACC_LINE} ${TG_LINE} ${judged.explanation}`,
         }
       }
       const parts: string[] = []
       if (wrongIds.includes('growth')) parts.push(GROWTH_LINE)
       if (wrongIds.includes('wacc')) parts.push(WACC_LINE)
       if (wrongIds.includes('tg')) parts.push(TG_LINE)
-      if (wrongIds.includes('question')) parts.push(QUESTION_EXPLANATION)
+      if (wrongIds.includes('question')) parts.push(judged.explanation)
       return {
         verdict: mdVerdict(accuracy, 'r4-boss-real-dcf'),
         explanation: parts.join(' '),

@@ -91,6 +91,19 @@ describe('r5-sources-uses mission', () => {
     expect(result.explanation.toLowerCase()).toContain('tie')
   })
 
+  it('does not confirm a tie when the typed fees do not actually sum to the typed total uses', () => {
+    // Sources are all correct and total-uses is the "right" number, but the
+    // player's own fees blank (100,000) does not add up to it against the
+    // fixed purchase price (800,000 + 100,000 = 900,000 !== 830,000).
+    const answer: Answer = {
+      kind: 'balance',
+      values: { fees: 100_000, 'total-uses': 830_000, 'new-debt': 480_000, 'sponsor-equity': 310_000 },
+    }
+    const result = mission.grade(answer)
+    expect(result.accuracy).toBeLessThan(1)
+    expect(result.explanation.toLowerCase()).toContain('do not tie')
+  })
+
   it('throws when given the wrong answer kind', () => {
     const badAnswer = { kind: 'order' } as unknown as Answer
     expect(() => mission.grade(badAnswer)).toThrow('wrong answer kind')

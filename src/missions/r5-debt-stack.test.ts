@@ -88,4 +88,15 @@ describe('r5-debt-stack grading', () => {
   it('throws on a mismatched answer kind', () => {
     expect(() => mission.grade({ kind: 'slider', values: {} })).toThrow()
   })
+
+  it('does not use the old personal jab on a sub-50% stack', () => {
+    // A single adjacent swap near the bottom scores well under 0.5 without
+    // being the fully-reversed (accuracy 0 / "zero" band) case.
+    const wrong = ['common-equity', 'revolver', 'first-lien', 'second-lien', 'senior-notes', 'mezzanine']
+    const result = mission.grade({ kind: 'order', orderedIds: wrong })
+    expect(result.accuracy).toBeLessThan(0.5)
+    expect(result.verdict).not.toBe(
+      'This capital structure would not survive a real liquidation, and neither would you.',
+    )
+  })
 })

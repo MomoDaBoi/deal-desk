@@ -1,6 +1,7 @@
 import type { Mission, MentorClient } from '../engine/types'
 import { offlineWrittenGrade, mentorResultToGrade } from '../engine/graders/written'
 import { BRICKHOUSE } from './companies'
+import { fcfPath } from './r4-fcf-forecast'
 
 /**
  * Rung 4, mentor-only. The player has just built a WACC × terminal-growth
@@ -12,21 +13,15 @@ import { BRICKHOUSE } from './companies'
  *
  * All figures below are computed here with pure DCF helpers, not re-typed
  * from PLAN.md, so this file and its tests always agree with each other.
- * The five-year free-cash-flow path is this mission's own assumption (a
- * straight line from $40,000k to the $52,000k year-5 figure used by the
- * Rung 4 terminal-value mission); WACC (8.3%) and Brickhouse's market
- * enterprise value ($800,000k = $580,000k equity + $220,000k net debt) come
- * straight from the company bible in `companies.ts`.
+ * The five-year free-cash-flow path reuses `fcfPath` from
+ * `r4-fcf-forecast.ts` (management's case: 6%, 6%, 5%, 5%, 4% off
+ * Brickhouse's $640,000k base revenue) — the same cash flows the rung-4
+ * sensitivity table grades against, so this mission's numbers can never
+ * drift from the grid the player just filled in. WACC (8.3%) and
+ * Brickhouse's market enterprise value ($800,000k = $580,000k equity +
+ * $220,000k net debt) come straight from the company bible in
+ * `companies.ts`.
  */
-
-/** A straight-line FCF forecast from `startFcf` to `endFcf` over `years` years. */
-function linearFcfPath(startFcf: number, endFcf: number, years: number): number[] {
-  const path: number[] = []
-  for (let t = 0; t < years; t++) {
-    path.push(Math.round(startFcf + ((endFcf - startFcf) * t) / (years - 1)))
-  }
-  return path
-}
 
 /** Sum of `fcfs`, each discounted back at `wacc` from its own year (1-indexed). */
 function presentValueOfFcfs(fcfs: number[], wacc: number): number {
@@ -44,7 +39,7 @@ function enterpriseValue(fcfs: number[], wacc: number, g: number): number {
   return presentValueOfFcfs(fcfs, wacc) + terminalValue(fcfs[n - 1], wacc, g) / Math.pow(1 + wacc, n)
 }
 
-const FCF_PATH = linearFcfPath(40_000, 52_000, 5)
+const FCF_PATH = fcfPath([6, 6, 5, 5, 4])
 const BASE_WACC = 0.083
 const BASE_G = 0.02
 /** +/- 1 percentage point either side of base, the spread this mission's sensitivity table uses. */
@@ -56,11 +51,11 @@ const LOW_EV = Math.round(enterpriseValue(FCF_PATH, BASE_WACC + DELTA, BASE_G - 
 /** Aggressive corner: lowest WACC, highest growth. */
 const HIGH_EV = Math.round(enterpriseValue(FCF_PATH, BASE_WACC - DELTA, BASE_G + DELTA))
 
-/** How much EV moves for a 1-point WACC move, growth held at base. */
+/** How much EV moves across a two-point WACC band (base -1pt to base +1pt), growth held at base. */
 const WACC_SWING = Math.round(
   enterpriseValue(FCF_PATH, BASE_WACC - DELTA, BASE_G) - enterpriseValue(FCF_PATH, BASE_WACC + DELTA, BASE_G),
 )
-/** How much EV moves for a 1-point growth move, WACC held at base. */
+/** How much EV moves across a two-point growth band (base -1pt to base +1pt), WACC held at base. */
 const GROWTH_SWING = Math.round(
   enterpriseValue(FCF_PATH, BASE_WACC, BASE_G + DELTA) - enterpriseValue(FCF_PATH, BASE_WACC, BASE_G - DELTA),
 )
@@ -106,7 +101,7 @@ const mission: Mission = {
       'Ends with a recommendation the CFO can actually act on',
     ],
     modelAnswer:
-      `A DCF is only as good as its inputs, and WACC and terminal growth are estimates, not facts, so a single-point answer would be false precision. The range comes from a sensitivity table: across WACC 7.3%-9.3% and growth 1%-3%, enterprise value spans ${fmt(LOW_EV)} to ${fmt(HIGH_EV)}, comfortably bracketing Brickhouse's own market EV of ${fmt(MARKET_EV)}. ${MOST_SENSITIVE} moves the answer more than the other input here — a one-point move shifts value about ${fmt(WACC_SWING)} versus ${fmt(GROWTH_SWING)}. Recommendation: anchor on the ${fmt(BASE_EV)} base case and treat the market's price as fair, not cheap.`,
+      `A DCF is only as good as its inputs, and WACC and terminal growth are estimates, not facts, so a single-point answer would be false precision. The range comes from a sensitivity table: across WACC 7.3%-9.3% and growth 1%-3%, enterprise value spans ${fmt(LOW_EV)} to ${fmt(HIGH_EV)}, comfortably bracketing Brickhouse's own market EV of ${fmt(MARKET_EV)}. ${MOST_SENSITIVE} moves the answer more than the other input here — a two-point band (+/-1 point either side of base) moves value about ${fmt(WACC_SWING)} versus ${fmt(GROWTH_SWING)}. Recommendation: anchor on the ${fmt(BASE_EV)} base case and treat the market's price as fair, not cheap.`,
   },
   grade(answer) {
     if (answer.kind !== 'written') throw new Error('wrong answer kind')

@@ -53,8 +53,9 @@ describe('simulateAuction bot policies', () => {
 
   it('later rounds follow min(ceiling, prevHigh * followRate)', () => {
     // Round 1: player bids 990, beating strategic (900), sponsor (850), overbidder (950).
-    // prevHigh after round 1 = 990.
-    // Round 2: player passes (walks away is not tested here; instead bids low again to keep bots alive).
+    // Standing high after round 1 = 990. Round 2's player bid (500) is at or below that
+    // standing high, so it does not count as a bid this round (covered separately below) -
+    // it has no bearing on the bot bids, which only look at the standing high.
     const result = simulateAuction(task, [990, 500])
     const round2 = result.rounds[1]
     const strat = round2.bots.find((b) => b.id === 'strat')
@@ -62,7 +63,7 @@ describe('simulateAuction bot policies', () => {
     const yolo = round2.bots.find((b) => b.id === 'yolo')
     // strategic ceiling = 1060, min(1060, 990*1.03=1019.7 -> snap to 1020)
     expect(strat?.bid).toBe(1020)
-    // sponsor ceiling = 970; prevHigh 990 > ceiling 970 -> drops out
+    // sponsor ceiling = 970; standing high 990 > ceiling 970 -> drops out
     expect(sponsor?.bid).toBeNull()
     // overbidder ceiling = 1250, min(1250, 990*1.08=1069.2 -> snap 1070)
     expect(yolo?.bid).toBe(1070)
@@ -101,10 +102,44 @@ describe('simulateAuction bot policies', () => {
     expect(result.rounds[0].leader?.id).toBe('yolo')
   })
 
-  it('winner is the highest bid in the last round that has any bid', () => {
+  it('a bid at or below the standing high does not count as a bid', () => {
+    // Round 1: player leads at 990. Round 2: the player "bids" 990 again (a
+    // tie with their own standing bid) and 900 (below it) - neither is a valid
+    // bid, so both rounds record playerBid: null even though bids[] has values.
+    const tie = simulateAuction(task, [990, 990])
+    expect(tie.rounds[1].playerBid).toBeNull()
+    const below = simulateAuction(task, [990, 900])
+    expect(below.rounds[1].playerBid).toBeNull()
+  })
+
+  it('the standing high persists even through a round nobody bids, rather than resetting to zero', () => {
+    // Round 1: player spikes to 1400, clearing every bot's ceiling (highest is
+    // 1250) for every later round. Round 2: the player's 700 is at or below the
+    // standing high (1400) so it is not a bid, and every bot is out - the round
+    // has no leader. Round 3: if the standing high had incorrectly reset to 0,
+    // 700 would now count as a valid bid; it must not.
+    const result = simulateAuction(task, [1400, 700, 700])
+    expect(result.rounds[1].leader).toBeNull()
+    expect(result.rounds[2].playerBid).toBeNull()
+    expect(result.winner).toBe('player')
+    expect(result.winningBid).toBe(1400)
+  })
+
+  it('winner and winning price are the highest bid across the whole auction, not the last round with a leader', () => {
+    // Ascending, honest bidding: each round's high is also the auction's high so far.
     const result = simulateAuction(task, [990, 1200, 1300])
     expect(result.winner).toBe('player')
     expect(result.winningBid).toBe(1300)
+  })
+
+  it('a spike-then-lowball no longer wins at the lowball price (the old exploit)', () => {
+    // Round 2 spikes to 1400, clearing every bot (ceilings top out at 1250) for
+    // good. Round 3's 700 is at or below the standing high (1400) so it is not
+    // a bid. The true winning price is the spike, not the retraction.
+    const result = simulateAuction(task, [700, 1400, 700])
+    expect(result.winner).toBe('player')
+    expect(result.winningBid).toBe(1400)
+    expect(result.rounds[2].playerBid).toBeNull()
   })
 })
 
@@ -131,14 +166,15 @@ describe('gradeAuction shaping', () => {
   })
 
   it('losing with a disciplined last bid (>= 0.9x IV) scores 0.6', () => {
-    // Overbidder's ceiling (1250) guarantees it eventually outbids a disciplined player.
-    const answer: AuctionAnswer = { kind: 'auction', bids: [900, 950, 950] }
+    // A single disciplined opening bid, then walking away. The overbidder's
+    // ceiling (1250) guarantees it eventually outbids an absent player.
+    const answer: AuctionAnswer = { kind: 'auction', bids: [900] }
     const result = gradeAuction(task, answer, noJoke)
     expect(result.accuracy).toBe(0.6)
   })
 
   it('losing after bidding well below intrinsic value scores 0.3', () => {
-    const answer: AuctionAnswer = { kind: 'auction', bids: [100, 100, 100] }
+    const answer: AuctionAnswer = { kind: 'auction', bids: [100] }
     const result = gradeAuction(task, answer, noJoke)
     expect(result.accuracy).toBe(0.3)
   })
@@ -150,7 +186,7 @@ describe('gradeAuction shaping', () => {
   })
 
   it('produces one detail per round plus an outcome detail', () => {
-    const answer: AuctionAnswer = { kind: 'auction', bids: [990, 1000, 1000] }
+    const answer: AuctionAnswer = { kind: 'auction', bids: [990, 1200, 1300] }
     const result = gradeAuction(task, answer, noJoke)
     expect(result.details?.map((d) => d.id)).toEqual(['round1', 'round2', 'round3', 'outcome'])
     expect(result.details?.every((d) => d.ok !== undefined)).toBe(true)
@@ -162,5 +198,21 @@ describe('gradeAuction shaping', () => {
     const round2 = result.details?.find((d) => d.id === 'round2')
     expect(round2?.ok).toBe(false)
     expect(round2?.note).toMatch(/passed/)
+  })
+
+  it('a round with an invalid (not-strictly-higher) bid also reads as passed', () => {
+    const answer: AuctionAnswer = { kind: 'auction', bids: [990, 900] }
+    const result = gradeAuction(task, answer, noJoke)
+    const round2 = result.details?.find((d) => d.id === 'round2')
+    expect(round2?.ok).toBe(false)
+    expect(round2?.note).toMatch(/passed/)
+  })
+
+  it('renders a "$k"-style unit as a prefix with the scale suffixed, e.g. "$1,000k"', () => {
+    const kTask = makeTask({ unit: '$k', intrinsicValue: 1_185_000, bidMin: 800_000, bidMax: 1_600_000, bidStep: 10_000 })
+    const answer: AuctionAnswer = { kind: 'auction', bids: [1_140_000] }
+    const result = gradeAuction({ ...kTask, rounds: 1 }, answer, noJoke)
+    const round1 = result.details?.find((d) => d.id === 'round1')
+    expect(round1?.note).toContain('$1,140,000k')
   })
 })

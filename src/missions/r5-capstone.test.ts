@@ -11,7 +11,7 @@ const PERFECT_ANSWER: Answer = {
   kind: 'multi',
   answers: {
     value: { kind: 'bridge', values: { debt: 260_000, cash: -40_000, minority: 0, preferred: 0 } },
-    structure: { kind: 'slider', values: { leverage: 5.0, equityCheque: 320_000 } },
+    structure: { kind: 'slider', values: { leverage: 5.0, equityCheque: 465_000 } },
     defend: {
       kind: 'quiz',
       choices: { whyEv: 'wholeBusiness', whyLeverage: 'cyclical', whyPremium: 'correct' },
@@ -58,7 +58,7 @@ describe('r5-capstone mission', () => {
     expect(sum).toBe(valueTask.end.value)
   })
 
-  it('recomputes the structure-stage sliders: 5.0x leverage, 320,000 equity cheque', () => {
+  it('recomputes the structure-stage sliders at the offer EV: 5.0x leverage, 465,000 equity cheque', () => {
     expect(structureTask.kind).toBe('slider')
     const leverage = structureTask.sliders.find((s) => s.id === 'leverage')!
     const equity = structureTask.sliders.find((s) => s.id === 'equityCheque')!
@@ -68,17 +68,25 @@ describe('r5-capstone mission', () => {
     expect(leverage.answer).toBe(5.0)
     expect(leverage.tolerance).toBe(0.5)
     expect(leverage.unit).toBe('x')
-    expect(equity.min).toBe(200_000)
-    expect(equity.max).toBe(600_000)
+    expect(equity.min).toBe(300_000)
+    expect(equity.max).toBe(700_000)
     expect(equity.step).toBe(10_000)
-    expect(equity.answer).toBe(320_000)
+    expect(equity.answer).toBe(465_000)
     expect(equity.tolerance).toBe(30_000)
-    // EV 800,000 - debt (5.0 x 96,000 = 480,000) = 320,000
-    expect(equity.answer).toBe(800_000 - 5.0 * 96_000)
+    // Offer EV: $14.50 x 1.25 = $18.125 x 40,000 shares = 725,000 equity
+    // + 220,000 net debt = 945,000 offer EV.
+    // 945,000 - debt (5.0 x 96,000 = 480,000) = 465,000
+    const offerEquity = 14.5 * 1.25 * 40_000
+    const offerEv = offerEquity + 220_000
+    expect(offerEquity).toBe(725_000)
+    expect(offerEv).toBe(945_000)
+    expect(equity.answer).toBe(offerEv - 5.0 * 96_000)
     expect(structureTask.readouts).toBeDefined()
     expect(structureTask.readouts!.length).toBeGreaterThanOrEqual(2)
     const debtReadout = structureTask.readouts!.find((r) => r.id === 'debtRaised')!
     expect(debtReadout.compute({ leverage: 5.0 })).toBe(480_000)
+    const equityReadout = structureTask.readouts!.find((r) => r.id === 'equityImplied')!
+    expect(equityReadout.compute({ leverage: 5.0 })).toBe(465_000)
   })
 
   it('has three untimed defend questions with valid correctIds and unique ids', () => {
@@ -131,7 +139,7 @@ describe('r5-capstone mission', () => {
       kind: 'multi',
       answers: {
         ...PERFECT_ANSWER.answers,
-        structure: { kind: 'slider', values: { leverage: 2, equityCheque: 320_000 } },
+        structure: { kind: 'slider', values: { leverage: 2, equityCheque: 465_000 } },
       },
     }
     const result = mission.grade(answer)

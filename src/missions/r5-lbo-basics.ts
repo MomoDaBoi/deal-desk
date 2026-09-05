@@ -37,6 +37,10 @@ export interface LboOutcome {
   debtEntry: number
   equityIn: number
   totalPaydown: number
+  /** Portion of totalPaydown actually applied to debt (capped at debtEntry). */
+  usedPaydown: number
+  /** Portion of totalPaydown left over once debt hits zero, banked as cash. */
+  excessCash: number
   debtRemaining: number
   exitEbitda: number
   exitEV: number
@@ -49,21 +53,25 @@ export interface LboOutcome {
  * The whole LBO model. `leverageX` and `exitMultipleX` are the two things
  * the player controls; everything else is fixed by the constants above.
  * Debt entry = leverageX × entry EBITDA. Every hold year sweeps
- * `PAYDOWN_SHARE` of that year's (grown) EBITDA to debt paydown, floored at
- * zero remaining debt. Exit EV = exitMultipleX × exit-year EBITDA. Equity in
- * / out are EV less debt at each end; IRR is the 5-year annualized return.
+ * `PAYDOWN_SHARE` of that year's (grown) EBITDA toward debt paydown; once
+ * debt hits zero, the rest of the sweep just piles up as cash on the balance
+ * sheet instead of vanishing. Exit EV = exitMultipleX × exit-year EBITDA.
+ * Equity in is EV less debt at entry; equity out is exit EV less remaining
+ * debt plus any banked cash. IRR is the 5-year annualized return.
  */
 export function computeLboOutcome(leverageX: number, exitMultipleX: number): LboOutcome {
   const debtEntry = leverageX * ENTRY_EBITDA
   const equityIn = ENTRY_EV - debtEntry
   const path = ebitdaPath(ENTRY_EBITDA, EBITDA_GROWTH_PCT, HOLD_YEARS)
   const totalPaydown = path.reduce((sum, ebitda) => sum + PAYDOWN_SHARE * ebitda, 0)
-  const debtRemaining = Math.max(0, debtEntry - totalPaydown)
+  const usedPaydown = Math.min(debtEntry, totalPaydown)
+  const excessCash = totalPaydown - usedPaydown
+  const debtRemaining = debtEntry - usedPaydown
   const exitEbitda = path[path.length - 1]!
   const exitEV = exitMultipleX * exitEbitda
-  const equityOut = exitEV - debtRemaining
+  const equityOut = exitEV - debtRemaining + excessCash
   const irr = equityIn > 0 ? Math.pow(equityOut / equityIn, 1 / HOLD_YEARS) - 1 : 0
-  return { debtEntry, equityIn, totalPaydown, debtRemaining, exitEbitda, exitEV, equityOut, irr }
+  return { debtEntry, equityIn, totalPaydown, usedPaydown, excessCash, debtRemaining, exitEbitda, exitEV, equityOut, irr }
 }
 
 const LEVERAGE_ANSWER = 5.0
@@ -77,7 +85,7 @@ const LEVERAGE_LINE = `Leverage sets the debt: ${LEVERAGE_ANSWER.toFixed(1)}x en
 
 const EXIT_LINE = `The exit multiple sets the sale price: ${EXIT_ANSWER.toFixed(1)}x on year-5 EBITDA of ${moneyK(ANSWER.exitEbitda)} is a ${moneyK(ANSWER.exitEV)} exit enterprise value. After repaying the ${moneyK(ANSWER.debtRemaining)} of debt still outstanding, equity out is ${moneyK(ANSWER.equityOut)} — a ${pct(ANSWER.irr)} IRR over the ${HOLD_YEARS}-year hold.`
 
-const QUESTION_LINE = `Debt paydown swept ${moneyK(ANSWER.totalPaydown)} off the balance sheet over the hold — more value than EBITDA growth added and far more than the flat exit multiple (which added nothing, since it matched the entry multiple). Paying down debt did most of the work.`
+const QUESTION_LINE = `Debt paydown swept ${moneyK(ANSWER.usedPaydown)} off the balance sheet over the hold — more value than EBITDA growth added and far more than the flat exit multiple (which added nothing, since it matched the entry multiple). Paying down debt did most of the work.`
 
 const mission: Mission = {
   id: 'r5-lbo-basics',

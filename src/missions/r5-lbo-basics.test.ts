@@ -81,6 +81,34 @@ describe('r5-lbo-basics mission', () => {
     expect(outcome.debtRemaining).toBe(0)
   })
 
+  it('banks the sweep in excess of debt as cash once debt is fully repaid', () => {
+    // At 2x leverage, debt (192,000) is smaller than the full sweep (~334,190):
+    // the leftover doesn't vanish, it accumulates as cash added to equity out.
+    const outcome = computeLboOutcome(2, 8.3)
+    expect(outcome.usedPaydown).toBeCloseTo(outcome.debtEntry, 6)
+    expect(outcome.excessCash).toBeCloseTo(outcome.totalPaydown - outcome.debtEntry, 6)
+    expect(outcome.excessCash).toBeGreaterThan(0)
+    expect(outcome.equityOut).toBeCloseTo(outcome.exitEV + outcome.excessCash, 6)
+  })
+
+  it('varies equity out smoothly (monotonically) across the whole leverage slider, with no flat/dead zone', () => {
+    // Banking excess sweep as cash means equity out is exactly
+    // exitEV + totalPaydown - debtEntry at every leverage: more debt at
+    // entry always means proportionally more debt (or less banked cash) at
+    // exit, so equity out decreases strictly and steadily as leverage rises
+    // — never the flat, unresponsive stretch the un-banked-cash bug produced
+    // at the low end of the slider.
+    const { min, max, step } = task.sliders.find((s) => s.id === 'leverage')!
+    const equityOuts: number[] = []
+    for (let leverage = min; leverage <= max + 1e-9; leverage += step) {
+      equityOuts.push(computeLboOutcome(leverage, 8.3).equityOut)
+    }
+    for (let i = 1; i < equityOuts.length; i++) {
+      // Strictly decreasing: more leverage -> more debt entry -> less equity out.
+      expect(equityOuts[i]).toBeLessThan(equityOuts[i - 1]!)
+    }
+  })
+
   it('debt paydown drives more of the value creation than growth or a flatter/richer exit multiple', () => {
     const outcome = computeLboOutcome(5.0, 8.3)
     const entryMultiple = ENTRY_EV / ENTRY_EBITDA

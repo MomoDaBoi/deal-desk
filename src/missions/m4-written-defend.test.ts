@@ -37,9 +37,10 @@ describe('m4-written-defend mission', () => {
   })
 
   it('rubric names WACC as the more sensitive input for this DCF', () => {
-    // Verified independently: at WACC 8.3% +/- 1pp (holding g at 2%) enterprise
-    // value swings ~247,727; at g 2% +/- 1pp (holding WACC at 8.3%) it swings
-    // ~195,398. WACC moves the answer more, so the rubric must say so.
+    // Verified independently: across the two-point band from WACC 7.3% to
+    // 9.3% (holding g at 2%) enterprise value swings ~259,980; across the
+    // two-point band from g 1% to 3% (holding WACC at 8.3%) it swings
+    // ~204,963. WACC moves the answer more, so the rubric must say so.
     expect(task().rubric[2]).toMatch(/WACC/)
   })
 
@@ -51,10 +52,10 @@ describe('m4-written-defend mission', () => {
 
   it('model answer cites a range that brackets Brickhouse market EV of $800,000k', () => {
     const t = task()
-    expect(t.modelAnswer).toContain('$581,132k')
-    expect(t.modelAnswer).toContain('$1,061,124k')
+    expect(t.modelAnswer).toContain('$613,096k')
+    expect(t.modelAnswer).toContain('$1,116,711k')
     expect(t.modelAnswer).toContain('$800,000k')
-    expect(t.modelAnswer).toContain('$745,426k')
+    expect(t.modelAnswer).toContain('$785,494k')
   })
 
   it('keeps the lesson body under 120 words', () => {

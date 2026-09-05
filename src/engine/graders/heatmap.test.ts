@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gradeHeatmap } from './heatmap'
+import { fmtCell, gradeHeatmap } from './heatmap'
 import type { HeatmapAnswer, HeatmapTask } from '../types'
 
 const noop = () => ({ verdict: 'v', explanation: 'e' })
@@ -34,6 +34,23 @@ function answer(values: Record<string, number | null>, tapped?: string | null): 
   return { kind: 'heatmap', values, ...(tapped === undefined ? {} : { tapped }) }
 }
 
+describe('fmtCell', () => {
+  it('renders a "$" unit as a prefix currency with two decimals', () => {
+    expect(fmtCell(17.9, '$')).toBe('$17.90')
+    expect(fmtCell(1234.5, '$')).toBe('$1,234.50')
+  })
+
+  it('keeps a "$" unit\'s remainder as a suffix after the prefixed number', () => {
+    expect(fmtCell(480, '$k')).toBe('$480.00k')
+  })
+
+  it('renders a non-currency unit as a plain suffix', () => {
+    expect(fmtCell(120, '%')).toBe('120%')
+    expect(fmtCell(8.3, 'x')).toBe('8.3x')
+    expect(fmtCell(90, '')).toBe('90')
+  })
+})
+
 describe('gradeHeatmap', () => {
   it('gives accuracy 1 and all-ok details when every blank is exactly right', () => {
     const task = baseTask()
@@ -53,6 +70,12 @@ describe('gradeHeatmap', () => {
       { id: 'wacc-8:g-3', ok: false, note: 'Expected 120%' },
       { id: 'wacc-10:g-3', ok: true, note: 'Expected 90%' },
     ])
+  })
+
+  it('formats a "$" unit as prefix currency in the "Expected" note', () => {
+    const task = baseTask({ unit: '$', cells: { ...baseTask().cells, 'wacc-8:g-3': 120.5 } })
+    const result = gradeHeatmap(task, answer({ 'wacc-8:g-3': 0, 'wacc-10:g-3': 0 }), noop)
+    expect(result.details).toContainEqual({ id: 'wacc-8:g-3', ok: false, note: 'Expected $120.50' })
   })
 
   it('accepts a value within tolerance', () => {

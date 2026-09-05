@@ -92,14 +92,25 @@ export function evToEbitda(c: Pick<EdgarCompany, 'publicFloat' | 'debt' | 'cash'
 /**
  * Format a dollar figure for display. `unit` picks the scale: `"$"` for a
  * plain comma-grouped dollar amount (the default), `"$M"` for millions,
- * `"$B"` for billions. Renders `"not reported"` for `null` rather than
- * `"$NaN"`.
+ * `"$B"` for billions, `"$auto"` to pick millions or billions by magnitude
+ * (billions at $1B and above, millions below). Millions/billions always
+ * render to exactly one decimal with thousands separators (e.g.
+ * `"$2,090.4B"`, never more digits after the point). Negatives keep the
+ * sign in front of the `$`. Renders `"not reported"` for `null` rather
+ * than `"$NaN"`.
  */
-export function fmtMoney(n: number | null, unit: '$' | '$M' | '$B' = '$'): string {
+export function fmtMoney(n: number | null, unit: '$' | '$M' | '$B' | '$auto' = '$'): string {
   if (n === null) return 'not reported'
-  if (unit === '$B') return `$${(n / 1e9).toFixed(1)}B`
-  if (unit === '$M') return `$${(n / 1e6).toFixed(1)}M`
-  return `$${Math.round(n).toLocaleString('en-US')}`
+  const scaleUnit = unit === '$auto' ? (Math.abs(n) >= 1e9 ? '$B' : '$M') : unit
+  if (scaleUnit === '$B' || scaleUnit === '$M') {
+    const scale = scaleUnit === '$B' ? 1e9 : 1e6
+    const sign = n < 0 ? '-' : ''
+    const scaled = Math.abs(n) / scale
+    const grouped = scaled.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    return `${sign}$${grouped}${scaleUnit === '$B' ? 'B' : 'M'}`
+  }
+  const sign = n < 0 ? '-' : ''
+  return `${sign}$${Math.round(Math.abs(n)).toLocaleString('en-US')}`
 }
 
 // ---------------------------------------------------------------------

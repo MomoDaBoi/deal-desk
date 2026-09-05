@@ -130,7 +130,7 @@ const mission: Mission = {
       max: 12,
       step: 0.5,
       answer: MANAGEMENT_CASE[i],
-      tolerance: 1.0,
+      tolerance: 0.5,
       unit: '%',
       role: 'revenue',
     })),

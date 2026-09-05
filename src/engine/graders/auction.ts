@@ -48,27 +48,44 @@ export interface AuctionSimResult {
 
 /**
  * Replay an auction from the player's submitted bids. Bot policies are pure
- * functions of the task and the previous round's high bid (which includes
- * the player), so the same `bids` array always replays identically.
+ * functions of the task and the standing high bid (which includes the
+ * player and never falls), so the same `bids` array always replays
+ * identically.
  *
- * The player is out once `bids` runs shorter than the current round (they
- * walked away) and stays out for every later round. A bot that sees the
- * previous high above its ceiling drops out (bids `null`) for good.
+ * A bid must strictly exceed the standing high going into that round; one
+ * that does not (at or below it) counts as no bid for that round, exactly
+ * like a pass, rather than as a valid-but-losing bid. The standing high
+ * itself only ever rises: a round nobody wins does not erase it. The player
+ * is out for every later round once `bids` runs shorter than the current
+ * round (they walked away). A bot that sees the standing high above its
+ * ceiling drops out (bids `null`) for good.
+ *
+ * The winner and winning price are the highest bid placed at any point in
+ * the whole auction, not whichever bid happened to lead the final round —
+ * a bidder cannot un-win by later declining to bid. Ties go to a bot.
  */
 export function simulateAuction(task: AuctionTask, bids: number[]): AuctionSimResult {
   const iv = task.intrinsicValue
   const rounds: AuctionRoundResult[] = []
-  let prevHigh = 0
+  let standingHigh = 0
   const botsOut = new Set<string>()
   let playerOut = false
 
+  let winner: string | null = null
+  let winningBid = 0
+
   for (let r = 1; r <= task.rounds; r++) {
     if (!playerOut && bids[r - 1] === undefined) playerOut = true
-    const playerBid = playerOut ? null : clamp(snapToStep(bids[r - 1], task.bidStep, task.bidMin), task.bidMin, task.bidMax)
+    let playerBid: number | null = null
+    if (!playerOut) {
+      const submitted = clamp(snapToStep(bids[r - 1], task.bidStep, task.bidMin), task.bidMin, task.bidMax)
+      // A bid at or below the standing high does not count as a bid this round.
+      playerBid = submitted > standingHigh ? submitted : null
+    }
 
     const botBids = task.bots.map((bot) => {
       if (botsOut.has(bot.id)) return { id: bot.id, name: bot.name, bid: null }
-      const bid = botBid(bot.style, iv, r, prevHigh, task)
+      const bid = botBid(bot.style, iv, r, standingHigh, task)
       if (bid === null) botsOut.add(bot.id)
       return { id: bot.id, name: bot.name, bid }
     })
@@ -81,16 +98,21 @@ export function simulateAuction(task: AuctionTask, bids: number[]): AuctionSimRe
     if (playerBid !== null && (leader === null || playerBid > leader.bid)) leader = { id: 'player', bid: playerBid }
 
     rounds.push({ round: r, playerBid, bots: botBids, leader })
-    prevHigh = leader?.bid ?? 0
+
+    if (leader !== null) {
+      standingHigh = Math.max(standingHigh, leader.bid)
+      // Highest bid across the whole auction wins; a tie keeps a standing bot ahead of the player.
+      if (leader.bid > winningBid || (leader.bid === winningBid && leader.id !== 'player')) {
+        winningBid = leader.bid
+        winner = leader.id
+      }
+    }
   }
 
-  const lastWithBid = [...rounds].reverse().find((r) => r.leader !== null)
-  const winner = lastWithBid?.leader?.id ?? null
-  const winningBid = lastWithBid?.leader?.bid ?? null
   const playerRounds = rounds.filter((r) => r.playerBid !== null)
   const playerLastBid = playerRounds.length > 0 ? playerRounds[playerRounds.length - 1].playerBid : null
 
-  return { rounds, winner, winningBid, playerLastBid }
+  return { rounds, winner, winningBid: winner === null ? null : winningBid, playerLastBid }
 }
 
 export type AuctionBand = 'won-below' | 'won-fair' | 'overpaid' | 'lost-narrowly' | 'lost-badly' | 'never-bid'
@@ -116,9 +138,12 @@ function shapeAccuracy(task: AuctionTask, result: AuctionSimResult): { accuracy:
   return { accuracy: 0.3, overpaidBy: 0, band: 'lost-badly' }
 }
 
+/** A unit starting with "$" is a prefix currency (thousands-grouped) with the rest of the unit as a suffix, e.g. "$k" -> "$1,185,000k". Any other unit is a plain suffix. */
 function fmtMoney(n: number, unit?: string): string {
-  const s = n.toLocaleString('en-US')
-  return unit ? `${unit}${s}` : s
+  const s = Math.round(n).toLocaleString('en-US')
+  if (!unit) return s
+  if (unit.startsWith('$')) return `$${s}${unit.slice(1)}`
+  return `${s} ${unit}`
 }
 
 /**
