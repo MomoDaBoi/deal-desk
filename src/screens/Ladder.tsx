@@ -13,6 +13,7 @@ const RUNGS: Rung[] = [5, 4, 3, 2, 1]
 export function Ladder() {
   const go = useNav((s) => s.go)
   const best = useProgress((s) => s.best)
+  const attempts = useProgress((s) => s.attempts)
   const mentor = useMentorMode()
 
   const status = Object.fromEntries(RUNGS.map((r) => [r, rungStatus(missionsForRung(r, mentor), best)])) as Record<
@@ -20,6 +21,17 @@ export function Ladder() {
     ReturnType<typeof rungStatus>
   >
   const totalComp = Object.values(best).reduce((a, b) => a + b, 0)
+
+  const distinctDates = new Set(
+    attempts.map((a) => {
+      const date = new Date(a.at)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    })
+  )
+  const daysSurvived = distinctDates.size
 
   function unlocked(r: Rung): boolean {
     if (r === 1) return true
@@ -46,6 +58,7 @@ export function Ladder() {
         <p className="text-muted mt-1">
           Lifetime comp: <span className="font-mono text-ink">{formatComp(totalComp)}</span>. Survive the year to get promoted.
         </p>
+        {daysSurvived > 0 && <p className="text-sm text-muted mt-1">{daysSurvived} {daysSurvived === 1 ? 'day' : 'days'} survived at the desk.</p>}
         {currentRung > 1 && <p className="text-sm text-debt mt-1">{promotionLine((currentRung - 1) as Rung)}</p>}
       </div>
 

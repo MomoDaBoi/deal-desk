@@ -24,6 +24,7 @@ import { MultiTask } from '../components/MultiTask'
 import { AskMd } from '../components/AskMd'
 import { MentorError } from '../lib/mentor-error'
 import { loadMentor } from '../lib/mentor'
+import { playSound } from '../lib/sounds'
 
 type Phase =
   | { name: 'lesson' }
@@ -94,6 +95,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
 
   function finishGrade(grade: GradeResult, elapsed: number, answer: Answer) {
     const comp = computeComp(mission, grade.accuracy, elapsed)
+    playSound(grade.accuracy === 1 ? 'perfect' : comp.passed ? 'pass' : 'fail')
     const { newBest, needsReview } = recordAttempt({
       missionId: mission.id,
       accuracy: grade.accuracy,
@@ -110,6 +112,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     const st = rungStatus(missionsForRung(mission.rung, mentor), best)
     if (st.perfect && !seen.includes(mission.rung)) {
       markBonusSeen(mission.rung)
+      playSound('bonus')
       return setPhase({ name: 'bonus' })
     }
     go({ name: 'rung', rung: mission.rung })
