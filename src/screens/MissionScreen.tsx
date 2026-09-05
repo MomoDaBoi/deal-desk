@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { GradeResult, Mission, OrderItem } from '../engine/types'
+import type { Answer, GradeResult, Mission, OrderItem, Task } from '../engine/types'
 import { RUNG_TITLES } from '../engine/types'
 import { computeComp, formatComp, rungStatus, type CompBreakdown } from '../engine/scoring'
 import { shuffle } from '../engine/graders'
@@ -9,17 +9,22 @@ import { useProgress } from '../store/progress'
 import { useMentorMode } from '../store/settings'
 import { BottomBar, Button, Eyebrow, Page, Panel } from '../components/ui'
 import { OrderTask } from '../components/OrderTask'
+import { SortTask } from '../components/SortTask'
+import { BalanceTask } from '../components/BalanceTask'
+import { QuizTask } from '../components/QuizTask'
 
 type Phase =
   | { name: 'lesson' }
   | { name: 'task' }
-  | { name: 'result'; grade: GradeResult; comp: CompBreakdown; newBest: boolean; elapsed: number }
+  | { name: 'result'; grade: GradeResult; comp: CompBreakdown; newBest: boolean; elapsed: number; answer: Answer }
   | { name: 'review' }
   | { name: 'bonus' }
 
 /**
  * Mission engine: lesson card -> task -> result -> (review | bonus | back).
- * Task rendering is dispatched on `mission.task.kind`. New kinds plug in here.
+ * Task rendering and answer assembly are dispatched on `mission.task.kind`.
+ * To add a kind: add a widget, a state slot in `useTaskState`, a case in
+ * `buildAnswer`, and a case in the task phase render.
  */
 export function MissionScreen({ mission }: { mission: Mission }) {
   const go = useNav((s) => s.go)
@@ -30,24 +35,29 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   const [phase, setPhase] = useState<Phase>({ name: 'lesson' })
   const [seed, setSeed] = useState(() => Date.now())
   const startedAt = useRef<number>(0)
+  const submitted = useRef(false)
 
-  const shuffled = useMemo(() => shuffle(mission.task.items, seed), [mission, seed])
-  const [order, setOrder] = useState<OrderItem[]>(shuffled)
-  useEffect(() => setOrder(shuffled), [shuffled])
+  const task = mission.task
+  const state = useTaskState(task, seed)
 
   function startTask() {
     startedAt.current = performance.now()
+    submitted.current = false
     setPhase({ name: 'task' })
   }
 
   function retry() {
     setSeed(Date.now())
+    state.reset()
     startTask()
   }
 
-  function submit() {
+  function submit(opts: { timedOut?: boolean } = {}) {
+    if (submitted.current) return
+    submitted.current = true
     const elapsed = (performance.now() - startedAt.current) / 1000
-    const grade = mission.grade({ kind: 'order', orderedIds: order.map((o) => o.id) })
+    const answer = state.buildAnswer(opts.timedOut ?? false)
+    const grade = mission.grade(answer)
     const comp = computeComp(mission, grade.accuracy, elapsed)
     const { newBest, needsReview } = recordAttempt({
       missionId: mission.id,
@@ -56,11 +66,10 @@ export function MissionScreen({ mission }: { mission: Mission }) {
       elapsedSeconds: elapsed,
     })
     if (needsReview) return setPhase({ name: 'review' })
-    setPhase({ name: 'result', grade, comp, newBest, elapsed })
+    setPhase({ name: 'result', grade, comp, newBest, elapsed, answer })
   }
 
   function finish() {
-    // Bonus season fires the first time a rung goes perfect.
     const best = useProgress.getState().best
     const seen = useProgress.getState().bonusSeen
     const st = rungStatus(missionsForRung(mission.rung, mentor), best)
@@ -76,27 +85,21 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'lesson') {
     return (
       <Page title={mission.title} onBack={back}>
-        <Eyebrow>Lesson · {RUNG_TITLES[mission.rung]}</Eyebrow>
+        <Eyebrow>
+          {mission.boss ? 'Boss fight' : 'Lesson'} · {RUNG_TITLES[mission.rung]}
+        </Eyebrow>
         <h1 className="text-2xl font-black mt-1 mb-4">{mission.lesson.title}</h1>
         <Panel>
           <p className="leading-relaxed">{mission.lesson.body}</p>
-          {mission.lesson.visual?.kind === 'bullets' && (
-            <ul className="mt-4 flex flex-col gap-2">
-              {mission.lesson.visual.items.map((b, i) => (
-                <li key={i} className="flex gap-3 text-sm">
-                  <span className="font-mono text-muted w-4 text-right">{i + 1}</span>
-                  <span>{b}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <LessonBullets mission={mission} />
         </Panel>
         <p className="mt-4 text-sm text-muted">
-          Par time {mission.parSeconds}s. Base comp {formatComp(mission.baseComp)}. Speed is a bonus, accuracy is the job.
+          Par time {mission.parSeconds}s. Base comp {formatComp(mission.baseComp)}.
+          {task.kind === 'quiz' && task.timeLimitSeconds ? ` Hard limit ${task.timeLimitSeconds}s.` : ' Speed is a bonus, accuracy is the job.'}
         </p>
         <BottomBar>
           <Button className="flex-1" onClick={startTask}>
-            Start the task
+            {mission.boss ? 'Walk in' : 'Start the task'}
           </Button>
         </BottomBar>
       </Page>
@@ -104,15 +107,21 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   }
 
   if (phase.name === 'task') {
+    const quizTimed = task.kind === 'quiz' && !!task.timeLimitSeconds
     return (
-      <Page title={mission.title} onBack={back} right={<Timer />}>
-        <p className="mb-4 font-medium">{mission.task.prompt}</p>
-        {mission.task.kind === 'order' && <OrderTask items={order} onChange={setOrder} />}
+      <Page title={mission.title} onBack={back} right={quizTimed ? null : <Timer />}>
+        <p className="mb-4 font-medium">{task.prompt}</p>
+        {task.kind === 'order' && <OrderTask items={state.order} onChange={state.setOrder} />}
+        {task.kind === 'sort' && <SortTask task={task} items={state.sortItems} value={state.sort} onChange={state.setSort} />}
+        {task.kind === 'balance' && <BalanceTask task={task} value={state.balance} onChange={state.setBalance} />}
+        {task.kind === 'quiz' && (
+          <QuizTask task={task} value={state.quiz} onChange={state.setQuiz} onTimeout={() => submit({ timedOut: true })} />
+        )}
         <BottomBar>
           <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
             Lesson
           </Button>
-          <Button className="flex-1" onClick={submit}>
+          <Button className="flex-1" onClick={() => submit()}>
             Submit
           </Button>
         </BottomBar>
@@ -146,20 +155,20 @@ export function MissionScreen({ mission }: { mission: Mission }) {
           <p className="mt-2 leading-relaxed">{grade.explanation}</p>
         </Panel>
 
-        {grade.details && mission.task.kind === 'order' && (
+        {grade.details && grade.details.length > 0 && (
           <Panel className="mt-3">
-            <Eyebrow>Correct order</Eyebrow>
-            <ol className="mt-2 flex flex-col gap-1.5">
-              {mission.task.items.map((it, i) => {
-                const d = grade.details!.find((x) => x.id === it.id)
-                return (
-                  <li key={it.id} className="flex gap-3 text-sm items-center">
-                    <span className="font-mono text-muted w-4 text-right">{i + 1}</span>
-                    <span className={d?.ok ? 'text-revenue' : 'text-cost'}>{d?.ok ? '✓' : '✗'}</span>
-                    <span>{it.label}</span>
-                  </li>
-                )
-              })}
+            <Eyebrow>{detailsTitle(task)}</Eyebrow>
+            <ol className="mt-2 flex flex-col gap-2">
+              {grade.details.map((d, i) => (
+                <li key={d.id} className="flex gap-3 text-sm items-start">
+                  <span className="font-mono text-muted w-4 text-right shrink-0">{i + 1}</span>
+                  <span className={`shrink-0 ${d.ok ? 'text-revenue' : 'text-cost'}`}>{d.ok ? '✓' : '✗'}</span>
+                  <span className="min-w-0">
+                    <span>{labelFor(task, d.id)}</span>
+                    {!d.ok && d.note && <span className="block text-muted text-xs mt-0.5">{d.note}</span>}
+                  </span>
+                </li>
+              ))}
             </ol>
           </Panel>
         )}
@@ -191,6 +200,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         <Panel className="mt-4">
           <div className="font-bold mb-2">{mission.lesson.title}</div>
           <p className="leading-relaxed">{mission.lesson.body}</p>
+          <LessonBullets mission={mission} />
         </Panel>
         <BottomBar>
           <Button variant="ghost" onClick={back}>
@@ -224,6 +234,84 @@ export function MissionScreen({ mission }: { mission: Mission }) {
       </BottomBar>
     </Page>
   )
+}
+
+/** Per-kind answer state. One hook so the screen stays kind-agnostic. */
+function useTaskState(task: Task, seed: number) {
+  const orderShuffled = useMemo(() => shuffle(task.kind === 'order' ? task.items : [], seed), [task, seed])
+  const sortItems = useMemo(() => shuffle(task.kind === 'sort' ? task.items : [], seed), [task, seed])
+
+  const [order, setOrder] = useState<OrderItem[]>(orderShuffled)
+  const [sort, setSort] = useState<Record<string, string>>({})
+  const [balance, setBalance] = useState<Record<string, number | null>>({})
+  const [quiz, setQuiz] = useState<Record<string, string | null>>({})
+
+  useEffect(() => setOrder(orderShuffled), [orderShuffled])
+
+  function reset() {
+    setSort({})
+    setBalance({})
+    setQuiz({})
+  }
+
+  function buildAnswer(timedOut: boolean): Answer {
+    switch (task.kind) {
+      case 'order':
+        return { kind: 'order', orderedIds: order.map((o) => o.id) }
+      case 'sort':
+        return { kind: 'sort', placements: sort }
+      case 'balance':
+        return { kind: 'balance', values: balance }
+      case 'quiz':
+        return { kind: 'quiz', choices: quiz, timedOut }
+    }
+  }
+
+  return { order, setOrder, sortItems, sort, setSort, balance, setBalance, quiz, setQuiz, reset, buildAnswer }
+}
+
+function LessonBullets({ mission }: { mission: Mission }) {
+  const v = mission.lesson.visual
+  if (!v || v.kind !== 'bullets') return null
+  return (
+    <ul className="mt-4 flex flex-col gap-2">
+      {v.items.map((b, i) => (
+        <li key={i} className="flex gap-3 text-sm">
+          <span className="font-mono text-muted w-4 text-right shrink-0">{i + 1}</span>
+          <span>{b}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function labelFor(task: Task, id: string): string {
+  switch (task.kind) {
+    case 'order':
+    case 'sort':
+      return task.items.find((i) => i.id === id)?.label ?? id
+    case 'balance':
+      for (const s of task.sections) {
+        const l = s.lines.find((x) => x.id === id)
+        if (l) return l.label
+      }
+      return id
+    case 'quiz':
+      return task.questions.find((q) => q.id === id)?.text ?? id
+  }
+}
+
+function detailsTitle(task: Task): string {
+  switch (task.kind) {
+    case 'order':
+      return 'Correct order'
+    case 'sort':
+      return 'Where things belong'
+    case 'balance':
+      return 'The blanks'
+    case 'quiz':
+      return 'Question by question'
+  }
 }
 
 function Stat({ label, value, tone = '' }: { label: string; value: string; tone?: string }) {

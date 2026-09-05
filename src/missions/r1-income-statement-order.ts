@@ -43,6 +43,7 @@ const mission: Mission = {
   },
   grade(answer) {
     if (answer.kind !== 'order') throw new Error('wrong answer kind')
+    if (mission.task.kind !== 'order') throw new Error('wrong task kind')
     return gradeOrder(mission.task.items, answer.orderedIds, ({ accuracy, wrongIds }) => {
       if (accuracy === 1) {
         return {

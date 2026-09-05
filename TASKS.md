@@ -72,6 +72,52 @@ with a timer).
 - [ ] Lesson card visuals: one small chart per concept (Recharts).
 - [ ] Owner plays Rung 1 and gives notes.
 
+Sub-tasks refined against `PLAN.md` (sections b, c, d, i, j):
+
+- [ ] `src/missions/companies.ts`: typed constants for Pucker Up
+      Lemonade Co. (PLAN.md §c). Every Rung 1 mission reads from it; no
+      mission hardcodes a figure.
+- [ ] `src/missions/companies.test.ts`: bible invariants — assets =
+      liabilities + equity (800), gross profit = revenue − COGS (720),
+      EBIT = gross profit − opex (300), EBITDA = EBIT + D&A (340),
+      cash flow ties to +40.
+- [ ] `gradeSort` in `src/engine/graders.ts`: accuracy = fraction of
+      items in the correct bucket, unplaced counts wrong. Tests for
+      all-right / all-wrong / partial / unplaced.
+- [ ] `gradeBalance`: accuracy = fraction of blanks within `tolerance`,
+      null counts wrong. Tests for both tolerance boundaries.
+- [ ] `gradeQuiz`: accuracy = fraction correct, unanswered counts wrong,
+      `timedOut` submits whatever is answered. Tests including timeout.
+- [ ] `SortTask` widget (`src/components/SortTask.tsx`): tap item, tap
+      bucket. 44px targets, role colours, unplaced tray.
+- [ ] `BalanceTask` widget: numeric inputs with `inputMode="decimal"`,
+      unit label, subtotal rows styled as totals.
+- [ ] `QuizTask` widget: one question per screen, optional countdown
+      driven by `timeLimitSeconds`.
+- [ ] `MissionScreen`: `case` per new kind in the task phase and the
+      submit handler; move the `order`-specific shuffle into a
+      per-kind setup helper.
+- [ ] Mission `r1-three-statements` (sort, base 4,000, par 100): 9 line
+      items into income statement / balance sheet / cash flow.
+- [ ] Mission `r1-balance-sheet` (balance, base 6,000, par 150): 4
+      blanks — total assets 800, total liabilities 400, equity 400,
+      inventory 60. `tolerance: 0`, `unit: '$k'`.
+- [ ] Mission `r1-cash-flow-sort` (sort, base 6,000, par 140): 8 items
+      into operating / investing / financing, incl. two distractors.
+- [ ] Mission `r1-boss-lemonade` (quiz, boss, base 9,000, par 150,
+      `timeLimitSeconds: 120`): five "which statement tells you X"
+      questions on the full Pucker Up set.
+- [ ] Upgrade `r1-income-statement-order` lesson visual to a small
+      waterfall; keep id, items, and grading unchanged.
+- [ ] `src/engine/voice.ts`: verdict banks by accuracy band (PLAN.md
+      §i), deterministic pick from (missionId, accuracy). Promotion,
+      bonus-season, and performance-review lines.
+- [ ] `src/missions/registry.test.ts`: unique ids, contiguous `order`
+      per rung, `baseComp > 0`, `parSeconds > 0`, one boss per rung.
+- [ ] Per-mission tests: correct answer grades 1.0, two perturbations
+      grade below 1.0, explanation for a wrong answer asserts on a
+      concept substring.
+
 ## Milestone 3 — Rungs 2–3
 
 - [ ] Waterfall chart game board (income statement → EBITDA → net income).
@@ -85,6 +131,53 @@ with a timer).
 - [ ] Football field chart assembled from ranges.
 - [ ] Rung 3 boss: value a fictional target three ways.
 
+Sub-tasks refined against `PLAN.md` (sections b, c, d, e):
+
+- [ ] Add Ledgerly Inc. (SaaS), Brickhouse Industrial Corp., Nan's
+      Pantry Markets Inc., the two peer sets and the three precedent
+      transactions to `src/missions/companies.ts` (PLAN.md §c). Extend
+      `companies.test.ts`: EV = market cap + net debt, net debt = total
+      debt − cash, every stated multiple within 0.05x of computed.
+- [ ] Task kind `waterfall`: types, grader (blanks within tolerance),
+      tests, widget. Recharts `BarChart` with a transparent base bar +
+      visible delta bar sharing a `stackId`, one `<Cell>` per bar.
+- [ ] Task kind `bridge`: waterfall plus `start`/`end` anchors;
+      accuracy = 75% bars + 25% reconciliation to the end anchor.
+- [ ] Task kind `slider`: types, grader with partial credit inside
+      2× tolerance, tests, widget (44px thumb, live value readout).
+- [ ] Task kind `footballfield`: types, grader (mean of low/high hit
+      rates per row), tests, custom-SVG widget with 44px drag handles.
+- [ ] `src/components/charts/`: shared x-scale helper, role→token
+      colour map, a responsive wrapper that stays legible at 360px.
+      Keep Recharts out of `src/engine/`.
+- [ ] Mission `r2-waterfall-ebitda` (waterfall, 6,000 / 150): four
+      blank bars — gross profit 60,000, EBIT 8,000, EBITDA 12,000,
+      net income 3,750.
+- [ ] Mission `r2-margins` (balance, 6,000 / 150): gross 75.0%,
+      EBITDA 15.0%, net 4.7%. `tolerance: 0.1` percentage points.
+- [ ] Mission `r2-growth-rates` (balance, 5,000 / 120): +25.0%,
+      +26.6%, 3-year CAGR +25.0%.
+- [ ] Mission `r2-net-debt` (balance, 6,000 / 120): net debt 30,000,
+      then 40,000 with 10,000 of cash restricted.
+- [ ] Mission `r2-ev-vs-equity` (sort, 6,000 / 120): 8 claims into
+      "true of EV" / "true of equity value".
+- [ ] Mission `r2-boss-ev-bridge` (bridge, boss, 11,000 / 180):
+      370,000 + debt 60,000 − cash 30,000 = EV 400,000, with two
+      zero-value adjustments that must be left at zero.
+- [ ] Mission `r3-multiples` (balance, 7,000 / 160): Brickhouse 8.3x,
+      1.25x, 16.8x plus Ledgerly P/E 98.7x.
+- [ ] Mission `r3-which-multiple` (quiz, 6,000 / 120): 6 untimed
+      questions on when each multiple fits.
+- [ ] Mission `r3-peer-set` (sort, 7,000 / 150): 7 candidates in/out;
+      Halcyon Data Centres and Brickhouse Holdings Pty stay out.
+- [ ] Mission `r3-precedents` (slider, 7,000 / 150): offer price
+      $14.75 at a 25% premium, implied EV/EBITDA 8.2x.
+- [ ] Mission `r3-football-field` (footballfield, 9,000 / 200): peer
+      row $9.88–$12.76, precedent row $15.16–$17.08, tol $0.25.
+- [ ] Mission `r3-boss-three-ways` (footballfield, boss, 14,000 / 240):
+      three ranges on Brickhouse plus one embedded defend-your-range
+      question, each worth 25%.
+
 ## Milestone 4 — Mentor mode
 
 - [ ] Check current Anthropic docs: browser-access header, model ids,
@@ -95,6 +188,38 @@ with a timer).
 - [ ] "Ask the MD" button on result screens.
 - [ ] Mock interview: five IB technical questions.
 - [ ] Cost display: rough tokens/cost per call in Settings.
+
+Sub-tasks refined against `PLAN.md` (sections b, d, g, l):
+
+- [ ] Assert in `src/lib/anthropic.ts` that the request URL host is
+      exactly `api.anthropic.com`; key read from the settings store at
+      call time, never stored, logged, or serialised elsewhere.
+- [ ] `src/lib/prompts.ts`: three templates returning `{system, user}`
+      and requesting JSON back — grade-written (`{score 1..10, verdict,
+      explanation, missed[]}`), ask-the-MD (`{answer}`), mock-interview
+      (per-question plus a final `{overall, wouldHire, note}`).
+- [ ] Prompt must require that `explanation` stands alone as correct
+      finance with `verdict` deleted. Test the builders and the JSON
+      parser against fixtures; never call the API in a test.
+- [ ] `src/lib/pricing.ts`: per-model input/output prices with a
+      `checkedOn` date rendered in Settings, plus the per-call estimate
+      helper.
+- [ ] Hard token caps: 700 grading, 500 ask-the-MD, 600 per interview
+      turn. Truncate the player's answer to `wordLimit` before sending.
+- [ ] Session counter in Settings: calls this session + running
+      estimated spend. 401/403 → "that key did not work", no retry;
+      429 → "the MD is in a meeting", no auto-retry.
+- [ ] Task kind `written`: `mentorOnly: true` always; mission exposes
+      `gradeAsync(answer, client)` and `MissionScreen` awaits it. The
+      pure `grade` returns accuracy 0 with a "Mentor mode required"
+      explanation. Do not weaken the signature of `grade`.
+- [ ] Missions `m2-written-ev`, `m3-written-peers`, `m4-written-defend`,
+      `m5-mock-interview`, all `baseComp: 0` (see the rung-threshold
+      task below).
+- [ ] `rungStatus` should exclude `mentorOnly` missions from
+      `possible` — otherwise turning Mentor mode on raises the
+      denominator and can un-pass a rung the player already passed
+      (PLAN.md §l.2). Engine change: needs its own tests.
 
 ## Milestone 5 — Rungs 4–5
 
@@ -109,12 +234,62 @@ with a timer).
 - [ ] M&A auction vs three bots.
 - [ ] Capstone mock deal + closing dinner screen.
 
+Sub-tasks refined against `PLAN.md` (sections d, e, h):
+
+- [ ] EDGAR CORS is blocked — verified: `data.sec.gov` sends no
+      `Access-Control-Allow-Origin` and 403s the OPTIONS preflight, and
+      a browser cannot set the `User-Agent` SEC requires. Do not retry
+      a direct browser fetch (PLAN.md §h).
+- [ ] `scripts/fetch-edgar.mjs`: Node, run manually, `User-Agent` built
+      from an env var (never commit a contact address). Extracts ~15
+      fields for the 10 curated tickers into
+      `src/data/edgar-snapshot.json`, target under 60KB.
+- [ ] `src/lib/edgar.ts`: tag mapping per PLAN.md §h, filter to
+      `form === '10-K' && fp === 'FY'` and take the latest `end` (then
+      latest `filed`). Getters return `number | null`; UI shows "not
+      reported" rather than NaN. Live-fetch path behind a Settings
+      toggle defaulting off. Cache `deal-desk:edgar:<cik>` with a
+      7-day TTL, extracted fields only, try/catch on every access.
+- [ ] `src/lib/edgar.test.ts` against a hand-trimmed checked-in
+      fixture; missing-tag paths; TTL expiry. No live fetch in tests.
+- [ ] Task kind `heatmap`: types, grader, tests, CSS-grid widget with
+      `color-mix` cost→revenue interpolation. Not Recharts.
+- [ ] Task kind `auction`: deterministic bot policies seeded from the
+      mission id; shaped accuracy where winning above intrinsic value
+      scores worse than losing narrowly.
+- [ ] Missions `r4-time-value` (slider, 8,000 / 150), `r4-wacc`
+      (balance, 9,000 / 180 — after-tax cost of debt 4.5%, WACC 8.30%),
+      `r4-fcf-forecast` (slider, 10,000 / 210), `r4-terminal-value`
+      (balance, 9,000 / 180 — TV 841,905), `r4-sensitivity` (heatmap,
+      10,000 / 200), `r4-boss-real-dcf` (slider, boss, 17,000 / 300).
+- [ ] Missions `r5-lbo-basics` (slider, 10,000 / 180),
+      `r5-sources-uses` (balance, 11,000 / 200 — uses 830,000 = price
+      800,000 + fees 30,000; sources = debt 480,000 + equity 310,000 +
+      balance-sheet cash 40,000), `r5-debt-stack` (sort, 11,000 / 180),
+      `r5-accretion-dilution` (bridge, 12,000 / 200), `r5-auction`
+      (auction, 14,000 / 240), `r5-capstone` (boss, 22,000 / 420).
+- [ ] Debt stack and deal timeline boards (custom SVG / flex, no
+      chart library) per PLAN.md §e.
+
 ## Milestone 6 — Polish
 
 - [ ] Sounds (off by default).
 - [ ] Share card for scores.
 - [ ] Drag-and-drop as an enhancement over tap for `order` and `sort`.
 - [ ] PWA manifest so it installs on the phone home screen.
+
+Sub-tasks refined against `PLAN.md` (sections e, f, i):
+
+- [ ] "Days survived" counter on the ladder, derived from distinct
+      attempt dates already in `progress.attempts` (PLAN.md §f).
+- [ ] Share card renders comp, rung title and a verdict line from
+      `src/engine/voice.ts`; must never include the API key or any
+      personal data.
+- [ ] Pointer-events drag layered over the existing tap interaction for
+      `order`, `sort`, and the football-field handles. Tap must keep
+      working unchanged.
+- [ ] Pass over every chart board at 360px width; move any overflowing
+      Recharts axis or legend to custom SVG.
 
 ## Backlog / ideas
 

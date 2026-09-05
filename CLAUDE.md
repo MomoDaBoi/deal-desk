@@ -10,6 +10,8 @@ curriculum, tone, or the two game modes.
 
 1. Read `TASKS.md`. It is the source of truth for project state and what to
    do next. Never start work that is not on it without adding it first.
+   Read `PLAN.md` when a task needs design detail (mission specs, chart
+   boards, Mentor mode, EDGAR); it is the full project plan.
 2. Work on the first unchecked task in the current milestone unless the
    owner says otherwise.
 3. When a task is done and verified (`npm test` and `npm run build` pass),
@@ -116,10 +118,22 @@ npm run preview    # serve the production build locally
 ## Adding a task kind (the one engine change that is allowed)
 
 1. Add the task and answer shapes to the unions in `src/engine/types.ts`.
-2. Add a pure grader to `src/engine/graders.ts` with tests.
-3. Add a widget in `src/components/` and a `case` in `MissionScreen`'s task
-   phase and submit handler.
-4. Write the first mission that uses it.
+2. Add a pure grader in `src/engine/graders/<kind>.ts` with tests, taking
+   `(task, answer, explain)` and returning `GradeResult`, like the others.
+3. Add a widget `src/components/<Kind>Task.tsx` taking
+   `{ task, value, onChange, disabled }`.
+4. In `src/screens/MissionScreen.tsx`: a state slot in `useTaskState`, a
+   case in `buildAnswer`, a case in the task-phase render, and cases in
+   `labelFor` / `detailsTitle`.
+5. Write the first mission that uses it.
+
+## Tooling notes
+
+- The GitHub CLI is installed but may not be on PATH in a fresh shell. In
+  Git Bash: `export PATH="$PATH:/c/Program Files/GitHub CLI"`.
+- Multi-agent work is welcome (the owner opted in): use Sonnet agents for
+  well-specified independent files, Opus for planning and review passes.
+  Give each agent disjoint files; the orchestrator wires shared files.
 
 ## Deploy
 

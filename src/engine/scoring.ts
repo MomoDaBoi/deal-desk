@@ -54,10 +54,13 @@ export interface RungStatus {
  * `possible` counts base comp only, so a speed bonus can push fraction above 1.
  */
 export function rungStatus(missions: Mission[], best: Record<string, number>): RungStatus {
-  const possible = missions.reduce((s, m) => s + m.baseComp, 0)
+  // Mentor-only missions are extra credit: they never raise the bar, so
+  // turning Mentor mode on cannot un-pass a rung.
+  const core = missions.filter((m) => !m.mentorOnly)
+  const possible = core.reduce((s, m) => s + m.baseComp, 0)
   const earned = missions.reduce((s, m) => s + (best[m.id] ?? 0), 0)
   const fraction = possible === 0 ? 0 : earned / possible
-  const perfect = missions.length > 0 && missions.every((m) => (best[m.id] ?? 0) >= m.baseComp)
+  const perfect = core.length > 0 && core.every((m) => (best[m.id] ?? 0) >= m.baseComp)
   return { earned, possible, fraction, passed: possible > 0 && fraction >= PASS_THRESHOLD, perfect }
 }
 
