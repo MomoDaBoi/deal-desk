@@ -14,11 +14,10 @@ rungs have their missions: 29 standard missions across eleven task kinds
 heatmap, auction, multi) and four mentor-only written missions. Mentor
 mode runs on the official Anthropic SDK in browser mode and has NOT been
 exercised against the live API (no key here); it is covered by
-fake-client tests. 640 tests pass; `npm run build` passes. Nothing has
+fake-client tests. 681 tests pass; `npm run build` passes. Every code item through Milestone 6 is done; only the Owner to-dos remain. Nothing has
 been played in a browser since Milestone 1 (Chrome was unreachable);
 every milestone got a static multi-agent review and the confirmed
-findings were fixed (the Milestone 5 fix batch is the latest commit;
-check git log). The EDGAR snapshot is an EMPTY placeholder because SEC
+findings were fixed (see git log). The EDGAR snapshot is an EMPTY placeholder because SEC
 blocks fetches from the build environment; the real-data DCF boss runs
 on a labelled stand-in until the owner runs the fetch script. The GitHub
 repo is public; local history was rewritten to the noreply email and
