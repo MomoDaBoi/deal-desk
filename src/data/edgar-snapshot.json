@@ -1,0 +1,6 @@
+{
+  "generatedAt": null,
+  "source": "SEC EDGAR companyfacts",
+  "note": "EMPTY PLACEHOLDER. No real data has been fetched yet. Run scripts/fetch-edgar.mjs from a normal network connection to fill this file. EBITDA is EBIT + D&A, a proxy.",
+  "companies": []
+}

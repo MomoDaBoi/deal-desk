@@ -18,6 +18,9 @@ import { WaterfallTask } from '../components/WaterfallTask'
 import { BridgeTask } from '../components/BridgeTask'
 import { FootballFieldTask } from '../components/FootballFieldTask'
 import { WrittenTask } from '../components/WrittenTask'
+import { HeatmapTask } from '../components/HeatmapTask'
+import { AuctionTask } from '../components/AuctionTask'
+import { MultiTask } from '../components/MultiTask'
 import { AskMd } from '../components/AskMd'
 import { MentorError } from '../lib/mentor-error'
 import { loadMentor } from '../lib/mentor'
@@ -160,6 +163,9 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         {task.kind === 'bridge' && <BridgeTask task={task} value={state.bridge} onChange={state.setBridge} />}
         {task.kind === 'footballfield' && <FootballFieldTask task={task} value={state.ff} onChange={state.setFf} />}
         {task.kind === 'written' && <WrittenTask task={task} value={state.written} onChange={state.setWritten} />}
+        {task.kind === 'heatmap' && <HeatmapTask task={task} value={state.heatmap} onChange={state.setHeatmap} />}
+        {task.kind === 'auction' && <AuctionTask task={task} value={state.auction} onChange={state.setAuction} />}
+        {task.kind === 'multi' && <MultiTask task={task} value={state.multi} onChange={state.setMulti} />}
         <BottomBar>
           <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
             Lesson

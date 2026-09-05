@@ -28,7 +28,11 @@ export function formatSliderValue(value: number, slider: Pick<SliderConfig, 'ste
  * Grade a slider task. Each slider scores 1 when the player's value is
  * within `tolerance` of the answer, degrading linearly to 0 at 2x
  * tolerance (and staying 0 beyond it). A missing value is treated as the
- * slider's `min`. accuracy = mean per-slider score.
+ * slider's `min`. sliderAccuracy = mean per-slider score.
+ *
+ * If `task.question` is present it takes `question.weight` (default 0.4)
+ * of the overall accuracy and the sliders share the rest; otherwise
+ * accuracy is just sliderAccuracy (byte-for-byte the pre-question shape).
  */
 export function gradeSlider(
   task: SliderTask,
@@ -37,6 +41,7 @@ export function gradeSlider(
     accuracy: number
     wrongIds: string[]
     results: { id: string; label: string; expected: number; got: number; score: number }[]
+    questionOk: boolean | null
   }) => { verdict: string; explanation: string },
 ): GradeResult {
   const sliders = task.sliders
@@ -66,13 +71,25 @@ export function gradeSlider(
     }
   })
 
-  const accuracy = results.reduce((sum, r) => sum + r.score, 0) / results.length
+  const sliderAccuracy = results.reduce((sum, r) => sum + r.score, 0) / results.length
   const wrongIds = details.filter((d) => !d.ok).map((d) => d.id)
+
+  const question = task.question
+  let questionOk: boolean | null = null
+  let accuracy = sliderAccuracy
+  if (question) {
+    questionOk = answer.choice === question.correctId
+    const w = question.weight ?? 0.4
+    accuracy = (1 - w) * sliderAccuracy + w * (questionOk ? 1 : 0)
+    if (!questionOk) wrongIds.push('question')
+    details.push({ id: 'question', ok: questionOk, note: question.explanation })
+  }
 
   const { verdict, explanation } = explain({
     accuracy,
     wrongIds,
     results: results.map(({ id, label, expected, got, score }) => ({ id, label, expected, got, score })),
+    questionOk,
   })
   return { accuracy, verdict, explanation, details }
 }

@@ -135,6 +135,86 @@ describe('gradeSlider', () => {
   })
 })
 
+describe('gradeSlider with an embedded question', () => {
+  function taskWithQuestion(weight?: number): SliderTask {
+    return {
+      ...task(),
+      question: {
+        text: 'Why did the multiple compress?',
+        choices: [
+          { id: 'right', label: 'Rates rose' },
+          { id: 'wrong', label: 'Revenue grew' },
+        ],
+        correctId: 'right',
+        explanation: 'Higher rates compress multiples.',
+        ...(weight === undefined ? {} : { weight }),
+      },
+    }
+  }
+
+  it('blends slider accuracy and the question at the default 0.4 weight', () => {
+    const t = taskWithQuestion()
+    // sliders exact (sliderAccuracy 1), question correct -> accuracy 1
+    const result = gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 }, choice: 'right' }, noop)
+    expect(result.accuracy).toBe(1)
+    expect(result.details).toEqual([
+      { id: 'a', ok: true },
+      { id: 'b', ok: true },
+      { id: 'question', ok: true, note: 'Higher rates compress multiples.' },
+    ])
+  })
+
+  it('penalises a wrong choice by the question weight', () => {
+    const t = taskWithQuestion()
+    const explain = vi.fn(noop)
+    const result = gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 }, choice: 'wrong' }, explain)
+    // sliderAccuracy 1, questionOk false -> accuracy = 0.6*1 + 0.4*0 = 0.6
+    expect(result.accuracy).toBeCloseTo(0.6)
+    const arg = explain.mock.calls[0]![0]
+    expect(arg.questionOk).toBe(false)
+    expect(arg.wrongIds).toEqual(['question'])
+    expect(result.details).toContainEqual({ id: 'question', ok: false, note: 'Higher rates compress multiples.' })
+  })
+
+  it('treats a missing choice as wrong', () => {
+    const t = taskWithQuestion()
+    const result = gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 }, choice: null }, noop)
+    expect(result.accuracy).toBeCloseTo(0.6)
+    expect(result.details).toContainEqual({ id: 'question', ok: false, note: 'Higher rates compress multiples.' })
+  })
+
+  it('honours a custom weight', () => {
+    const t = taskWithQuestion(0.5)
+    // sliderAccuracy 1, question wrong -> accuracy = 0.5*1 + 0.5*0 = 0.5
+    const result = gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 }, choice: 'wrong' }, noop)
+    expect(result.accuracy).toBeCloseTo(0.5)
+  })
+
+  it('blends a non-perfect slider score with the question', () => {
+    const t = taskWithQuestion()
+    // slider a at 2x tolerance -> score 0, slider b exact -> score 1, sliderAccuracy 0.5
+    const result = gradeSlider(t, { kind: 'slider', values: { a: 60, b: 10 }, choice: 'right' }, noop)
+    // accuracy = 0.6*0.5 + 0.4*1 = 0.7
+    expect(result.accuracy).toBeCloseTo(0.7)
+  })
+
+  it('passes questionOk through to explain even when null is impossible (question present)', () => {
+    const t = taskWithQuestion()
+    const explain = vi.fn(noop)
+    gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 }, choice: 'right' }, explain)
+    const arg = explain.mock.calls[0]![0]
+    expect(arg.questionOk).toBe(true)
+  })
+
+  it('passes questionOk as null when there is no question', () => {
+    const t = task()
+    const explain = vi.fn(noop)
+    gradeSlider(t, { kind: 'slider', values: { a: 50, b: 10 } }, explain)
+    const arg = explain.mock.calls[0]![0]
+    expect(arg.questionOk).toBeNull()
+  })
+})
+
 describe('formatSliderValue', () => {
   it('derives decimal places from the step', () => {
     expect(formatSliderValue(14.75, { step: 0.05 })).toBe('14.75')

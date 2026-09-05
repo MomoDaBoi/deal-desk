@@ -1,0 +1,186 @@
+import { useEffect, useState } from 'react'
+import type { AuctionTask as AuctionTaskType } from '../engine/types'
+import { simulateAuction, snapToStep } from '../engine/graders/auction'
+import { Eyebrow } from './ui'
+
+function formatUnit(n: number, unit?: string): string {
+  const s = Math.round(n).toLocaleString('en-US')
+  if (!unit) return s
+  return unit === '$' ? `$${s}` : `${s} ${unit}`
+}
+
+export function AuctionTask({
+  task,
+  value,
+  onChange,
+  disabled,
+}: {
+  task: AuctionTaskType
+  value: { bids: number[] }
+  onChange: (next: { bids: number[] }) => void
+  disabled?: boolean
+}) {
+  const [walked, setWalked] = useState(false)
+
+  const bidsSoFar = value.bids.length
+  const result = simulateAuction(task, value.bids)
+  const completedRounds = result.rounds.slice(0, bidsSoFar)
+  const isOver = walked || bidsSoFar >= task.rounds
+  const currentRoundNumber = bidsSoFar + 1
+  const prevRound = completedRounds[completedRounds.length - 1]
+  const prevHigh = prevRound?.leader?.bid ?? 0
+
+  const defaultBid = Math.min(task.bidMax, Math.max(task.bidMin, prevHigh > 0 ? snapToStep(prevHigh + task.bidStep, task.bidStep, task.bidMin) : task.bidMin))
+  const [currentBid, setCurrentBid] = useState(defaultBid)
+
+  // Re-seed the slider to a sensible opening bid each time a new round starts.
+  useEffect(() => {
+    setCurrentBid(defaultBid)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoundNumber])
+
+  function nudge(dir: 1 | -1) {
+    const raw = currentBid + dir * task.bidStep
+    const snapped = snapToStep(raw, task.bidStep, task.bidMin)
+    setCurrentBid(Math.min(task.bidMax, Math.max(task.bidMin, snapped)))
+  }
+
+  function placeBid() {
+    onChange({ bids: [...value.bids, currentBid] })
+  }
+
+  function walkAway() {
+    setWalked(true)
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
+        <Eyebrow>Teaser</Eyebrow>
+        <p className="text-ink text-sm leading-relaxed">{task.teaser}</p>
+        <div className="flex flex-col gap-2 mt-2">
+          {task.bots.map((bot) => (
+            <div key={bot.id} className="flex items-baseline gap-2 text-sm">
+              <span className="font-semibold text-ink">{bot.name}</span>
+              <span className="text-muted">{bot.blurb}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {completedRounds.length > 0 && (
+        <div className="bg-panel border border-line rounded-2xl overflow-hidden">
+          <div className="px-4 py-2 border-b border-line text-xs font-semibold uppercase tracking-wide text-muted">Rounds so far</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted text-xs uppercase tracking-wide">
+                  <th className="text-left px-4 py-2">Round</th>
+                  <th className="text-right px-2 py-2">You</th>
+                  {task.bots.map((bot) => (
+                    <th key={bot.id} className="text-right px-2 py-2">
+                      {bot.name}
+                    </th>
+                  ))}
+                  <th className="text-right px-4 py-2">Leader</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {completedRounds.map((r) => {
+                  const leaderName =
+                    r.leader === null ? '—' : r.leader.id === 'player' ? 'You' : task.bots.find((b) => b.id === r.leader!.id)?.name ?? r.leader.id
+                  return (
+                    <tr key={r.round}>
+                      <td className="px-4 py-2 text-ink font-semibold">{r.round}</td>
+                      <td className="px-2 py-2 text-right font-mono text-ink">{r.playerBid === null ? 'out' : formatUnit(r.playerBid, task.unit)}</td>
+                      {r.bots.map((b) => (
+                        <td key={b.id} className="px-2 py-2 text-right font-mono text-ink">
+                          {b.bid === null ? 'out' : formatUnit(b.bid, task.unit)}
+                        </td>
+                      ))}
+                      <td className="px-4 py-2 text-right font-mono text-revenue">{leaderName}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {walked && (
+        <div className="bg-panel border border-line rounded-2xl p-4 text-center text-muted font-semibold">You walked away.</div>
+      )}
+
+      {isOver ? (
+        <div className="bg-panel-2 border border-line rounded-2xl p-4 text-center text-ink font-semibold">Bidding closed. Tap Submit.</div>
+      ) : (
+        <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-ink font-semibold">
+              Round {currentRoundNumber} of {task.rounds}
+            </span>
+            <span className="font-mono text-2xl text-ink tabular-nums">{formatUnit(currentBid, task.unit)}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Decrease bid"
+              disabled={disabled}
+              onClick={() => nudge(-1)}
+              className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+            >
+              −
+            </button>
+            <input
+              type="range"
+              aria-label="Bid amount"
+              min={task.bidMin}
+              max={task.bidMax}
+              step={task.bidStep}
+              value={currentBid}
+              disabled={disabled}
+              onChange={(e) => setCurrentBid(Number(e.target.value))}
+              style={{ accentColor: 'var(--color-equity)' }}
+              className="h-11 flex-1 disabled:opacity-40"
+            />
+            <button
+              type="button"
+              aria-label="Increase bid"
+              disabled={disabled}
+              onClick={() => nudge(1)}
+              className="min-h-11 min-w-11 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+            >
+              +
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-muted font-mono">
+            <span>{formatUnit(task.bidMin, task.unit)}</span>
+            <span>{formatUnit(task.bidMax, task.unit)}</span>
+          </div>
+
+          <div className="flex gap-3 mt-1">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={placeBid}
+              className="flex-1 min-h-11 rounded-xl bg-revenue text-bg font-semibold disabled:opacity-40 active:scale-[0.98]"
+            >
+              Place bid
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={walkAway}
+              className="flex-1 min-h-11 rounded-xl bg-panel-2 border border-line text-ink font-semibold disabled:opacity-40 active:scale-[0.98]"
+            >
+              Walk away
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
