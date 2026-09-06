@@ -260,6 +260,13 @@ export class OfficeWorld {
     this.camY = Math.max(0, this.player.py - this.viewH / 2)
   }
 
+  /** Walk to a mission's desk from the roster (no tap involved). */
+  walkToMission(missionId: string) {
+    const d = this.desks.find((x) => x.mission?.missionId === missionId)
+    if (!d) return
+    this.tap({ x: d.slot.x, y: d.slot.y })
+  }
+
   /** Handle a tap at a tile. */
   tap(tile: Tile) {
     const p = this.player

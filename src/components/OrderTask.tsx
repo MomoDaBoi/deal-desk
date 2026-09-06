@@ -182,15 +182,15 @@ export function OrderTask({
               onPointerCancel={(e) => endPointer(e, false)}
               disabled={disabled}
               aria-pressed={isHeld}
-              className={`flex-1 min-w-0 min-h-12 px-4 py-2 rounded-xl border text-left font-medium flex flex-wrap items-center gap-x-3 gap-y-1 transition select-none
+              className={`flex-1 min-w-0 min-h-12 px-4 py-2 px-chip border-l-4 text-left font-medium flex flex-wrap items-center gap-x-3 gap-y-1 transition select-none
                 ${ROLE_BG[it.role ?? 'neutral']}
-                ${isHeld ? 'ring-2 ring-ink scale-[1.02] shadow-lg' : ''}
-                ${isDraggingThis ? 'relative z-10 scale-105 shadow-lg touch-none' : ''}
+                ${isHeld ? 'outline outline-3 outline-ink -outline-offset-3' : ''}
+                ${isDraggingThis ? 'relative z-10 shadow-lg touch-none' : ''}
                 ${held !== null && !isHeld ? 'opacity-90' : ''}`}
             >
-              <span className="w-6 shrink-0 text-xs font-mono text-muted tabular-nums">{i + 1}</span>
+              <span className="w-6 shrink-0 px-num text-xs text-muted">{i + 1}</span>
               <span className="min-w-0 break-words text-ink">{it.label}</span>
-              {isHeld && <span className="ml-auto shrink-0 text-xs text-muted">tap another to swap</span>}
+              {isHeld && <span className="ml-auto shrink-0 px-eyebrow text-muted">tap another to swap</span>}
             </button>
             <div className="flex flex-col gap-1 shrink-0">
               <button
@@ -198,7 +198,7 @@ export function OrderTask({
                 aria-label={`Move ${it.label} up`}
                 onClick={() => move(i, i - 1)}
                 disabled={disabled || dragging || i === 0}
-                className="min-h-11 min-w-11 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
+                className="px-btn min-w-11 px-2 font-pixel text-[10px]"
               >
                 ▲
               </button>
@@ -207,7 +207,7 @@ export function OrderTask({
                 aria-label={`Move ${it.label} down`}
                 onClick={() => move(i, i + 1)}
                 disabled={disabled || dragging || i === displayedItems.length - 1}
-                className="min-h-11 min-w-11 rounded-lg bg-panel-2 border border-line text-muted disabled:opacity-25 active:bg-line"
+                className="px-btn min-w-11 px-2 font-pixel text-[10px]"
               >
                 ▼
               </button>

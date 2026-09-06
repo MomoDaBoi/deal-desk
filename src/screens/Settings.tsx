@@ -5,13 +5,15 @@ import { looksLikeAnthropicKey, useSettings, type MentorModel } from '../store/s
 import { useUsage } from '../store/usage'
 import { formatComp } from '../engine/scoring'
 import { Button, Eyebrow, Page, Panel } from '../components/ui'
+import { Px } from '../pixel/Px'
+import { ICON_KEY, ICON_SOUND_ON, ICON_DOWNLOAD } from '../pixel/sprites/icons'
 import { MODELS } from '../lib/pricing'
 import { loadMentor } from '../lib/mentor'
 import { PRICES, PRICING_CHECKED_ON, estimateCallCost, formatUsd } from '../lib/pricing'
 
 export function Settings() {
   const go = useNav((s) => s.go)
-  const { apiKey, mentorEnabled, model, soundOn, setApiKey, setMentorEnabled, setModel, setSoundOn } = useSettings()
+  const { apiKey, mentorEnabled, model, soundOn, musicOn, setApiKey, setMentorEnabled, setModel, setSoundOn, setMusicOn } = useSettings()
   const progress = useProgress()
   const usage = useUsage()
   const [draftKey, setDraftKey] = useState(apiKey)
@@ -87,13 +89,16 @@ export function Settings() {
   return (
     <Page title="Settings" onBack={() => go({ name: 'ladder' })}>
       {msg && (
-        <div className={`mb-4 rounded-xl border px-4 py-3 text-sm ${msg.tone === 'ok' ? 'border-revenue/40 bg-revenue/10 text-revenue' : 'border-cost/40 bg-cost/10 text-cost'}`}>
+        <div className={`mb-4 px-box p-3 font-pixel text-[9px] ${msg.tone === 'ok' ? 'text-revenue' : 'text-cost'}`}>
           {msg.text}
         </div>
       )}
 
       <Panel>
-        <Eyebrow>Mentor mode</Eyebrow>
+        <Eyebrow className="flex items-center gap-2">
+          <Px sprite={ICON_KEY} scale={2} />
+          Mentor mode
+        </Eyebrow>
         <p className="mt-2 text-sm text-muted">
           Paste your own Anthropic API key to unlock written-answer missions and a sarcastic MD who grades them. The key is stored only in this
           browser's localStorage and is only ever sent to api.anthropic.com. It is never included in a progress export. Leave blank for the free,
@@ -111,9 +116,9 @@ export function Settings() {
             value={draftKey}
             onChange={(e) => setDraftKey(e.target.value)}
             placeholder="sk-ant-..."
-            className="flex-1 min-h-11 rounded-xl bg-panel-2 border border-line px-3 font-mono text-sm outline-none focus:border-muted"
+            className="px-input flex-1 min-w-0 font-mono"
           />
-          <Button variant="ghost" onClick={() => setShowKey((v) => !v)} aria-label={showKey ? 'Hide key' : 'Show key'}>
+          <Button variant="ghost" className="shrink-0" onClick={() => setShowKey((v) => !v)} aria-label={showKey ? 'Hide key' : 'Show key'}>
             {showKey ? 'Hide' : 'Show'}
           </Button>
         </div>
@@ -136,13 +141,13 @@ export function Settings() {
         </div>
 
         {hasKey && (
-          <label className="mt-4 flex items-center justify-between gap-3 cursor-pointer">
+          <div className="mt-4 flex items-center justify-between gap-3">
             <span>
               <span className="font-semibold">Mentor mode</span>
               <span className="block text-xs text-muted">Show written missions and the Ask the MD button.</span>
             </span>
             <Toggle checked={mentorEnabled} onChange={setMentorEnabled} />
-          </label>
+          </div>
         )}
         {hasKey && (
           <p className="mt-3 text-xs text-muted">
@@ -151,9 +156,9 @@ export function Settings() {
         )}
 
         {hasKey && (
-          <div className="mt-4 border-t border-line pt-4">
+          <div className="mt-4 border-t-[3px] border-line pt-4">
             <div className="text-sm font-semibold">Which MD grades you</div>
-            <div className="mt-2 grid gap-2">
+            <div className="mt-2 flex flex-col gap-2">
               {MODELS.map((m) => {
                 const price = PRICES[m.id]
                 const selected = model === m.id
@@ -162,26 +167,24 @@ export function Settings() {
                     key={m.id}
                     type="button"
                     onClick={() => setModel(m.id as MentorModel)}
-                    className={`min-h-11 text-left rounded-xl border px-3 py-2 transition ${
-                      selected ? 'border-revenue bg-revenue/10' : 'border-line bg-panel-2 hover:bg-line/40'
-                    }`}
+                    className={`px-chip text-left px-3 py-2 ${selected ? 'bg-revenue text-bg' : 'bg-panel-2 text-ink'}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-sm">{m.label}</span>
-                      <span className="text-xs text-muted">
+                      <span className="font-pixel text-[10px]">{m.label}</span>
+                      <span className="text-xs opacity-80">
                         ${price.inputPerM.toFixed(0)} in / ${price.outputPerM.toFixed(0)} out per M tok
                       </span>
                     </div>
-                    <div className="text-xs text-muted">{m.blurb}</div>
+                    <div className="text-xs opacity-80">{m.blurb}</div>
                   </button>
                 )
               })}
             </div>
 
-            <p className="mt-3 text-xs text-muted">
+            <div className="mt-3 px-box px-box-dark p-2 font-pixel text-[9px] leading-relaxed">
               About {formatUsd(estimateCallCost(model, 900, 700))} per graded answer, {formatUsd(estimateCallCost(model, 600, 500))} per Ask the MD,
               at prices checked on {PRICING_CHECKED_ON}.
-            </p>
+            </div>
 
             <div className="mt-3 flex items-center gap-3 flex-wrap">
               <Button variant="ghost" onClick={testKey} disabled={keyTest.state === 'testing'}>
@@ -191,18 +194,21 @@ export function Settings() {
               {keyTest.state === 'err' && <span className="text-sm text-cost">{keyTest.text}</span>}
             </div>
 
-            <p className="mt-3 text-xs text-muted">
+            <div className="mt-3 px-box px-box-dark p-2 font-pixel text-[9px] leading-relaxed">
               {usage.calls} calls this session, about {formatUsd(usage.cost)} total.{' '}
               <button type="button" onClick={() => useUsage.getState().reset()} className="underline hover:text-ink">
                 Reset
               </button>
-            </p>
+            </div>
           </div>
         )}
       </Panel>
 
       <Panel className="mt-4">
-        <Eyebrow>Progress</Eyebrow>
+        <Eyebrow className="flex items-center gap-2">
+          <Px sprite={ICON_DOWNLOAD} scale={2} />
+          Progress
+        </Eyebrow>
         <p className="mt-2 text-sm text-muted">
           Lifetime comp {formatComp(totalComp)} · {progress.attempts.length} attempts. Export to move between phone and PC. The export never contains
           your API key.
@@ -223,7 +229,7 @@ export function Settings() {
         </div>
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={onFile} />
 
-        <div className="mt-4 border-t border-line pt-4">
+        <div className="mt-4 border-t-[3px] border-line pt-4">
           {!confirmReset ? (
             <Button variant="danger" onClick={() => setConfirmReset(true)}>
               Reset progress
@@ -250,14 +256,24 @@ export function Settings() {
       </Panel>
 
       <Panel className="mt-4">
-        <Eyebrow>Other</Eyebrow>
-        <label className="mt-2 flex items-center justify-between gap-3 cursor-pointer">
+        <Eyebrow className="flex items-center gap-2">
+          <Px sprite={ICON_SOUND_ON} scale={2} />
+          Audio
+        </Eyebrow>
+        <div className="mt-2 flex items-center justify-between gap-3">
           <span>
             <span className="font-semibold">Sounds</span>
-            <span className="block text-xs text-muted">Off by default. Also not built yet.</span>
+            <span className="block text-xs text-muted">Synth blips for results and taps.</span>
           </span>
           <Toggle checked={soundOn} onChange={setSoundOn} />
-        </label>
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <span>
+            <span className="font-semibold">Music</span>
+            <span className="block text-xs text-muted">A chiptune loop for the office. Off by default.</span>
+          </span>
+          <Toggle checked={musicOn} onChange={setMusicOn} />
+        </div>
       </Panel>
 
       <p className="mt-6 text-xs text-muted/70 text-center">Deal Desk · a game, not investment advice.</p>
@@ -272,9 +288,9 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-revenue' : 'bg-line'}`}
+      className={`px-btn min-w-[64px] ${checked ? 'px-btn-primary' : ''}`}
     >
-      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-ink transition ${checked ? 'left-[22px]' : 'left-0.5'}`} />
+      {checked ? 'ON' : 'OFF'}
     </button>
   )
 }

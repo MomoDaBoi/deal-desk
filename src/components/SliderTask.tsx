@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Role, SliderTask as SliderTaskType } from '../engine/types'
 import { formatSliderValue } from '../engine/graders/slider'
 import { Panel } from './ui'
@@ -18,7 +19,7 @@ const ROLE_FILL: Record<Role, string> = {
   debt: 'bg-debt',
   equity: 'bg-equity',
   cash: 'bg-cash',
-  neutral: 'bg-ink/50',
+  neutral: 'bg-muted',
 }
 
 /**
@@ -40,6 +41,26 @@ function formatReadout(value: number, unit?: string): string {
 }
 
 export type SliderValue = { values: Record<string, number>; choice: string | null }
+
+/**
+ * Chunky pixel styling for the native <input type="range">, scoped to this
+ * component via the `.px-range` class so it never leaks onto other widgets.
+ * The thumb colour comes from the `--slider-accent` custom property set
+ * per-slider inline; the 44px tap target is kept by the input's own h-11.
+ */
+function RangeStyle() {
+  return (
+    <style>{`
+      .px-range { -webkit-appearance: none; appearance: none; height: 12px; background: var(--color-shade); border: 2px solid var(--color-bg); }
+      .px-range::-webkit-slider-runnable-track { height: 12px; background: transparent; }
+      .px-range::-moz-range-track { height: 12px; background: var(--color-shade); border: 2px solid var(--color-bg); }
+      .px-range::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 26px; margin-top: -9px; background: var(--slider-accent, var(--color-ink)); border: 2px solid var(--color-bg); border-radius: 0; }
+      .px-range::-moz-range-thumb { width: 18px; height: 26px; background: var(--slider-accent, var(--color-ink)); border: 2px solid var(--color-bg); border-radius: 0; }
+      .px-range:disabled::-webkit-slider-thumb { opacity: 0.5; }
+      .px-range:disabled::-moz-range-thumb { opacity: 0.5; }
+    `}</style>
+  )
+}
 
 export function SliderTask({
   task,
@@ -70,6 +91,7 @@ export function SliderTask({
 
   return (
     <div className="flex flex-col gap-5">
+      <RangeStyle />
       {task.sliders.map((slider) => {
         const current = value.values[slider.id] ?? slider.min
         const accent = ROLE_ACCENT[slider.role ?? 'neutral']
@@ -82,13 +104,13 @@ export function SliderTask({
         }
 
         return (
-          <div key={slider.id} className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
+          <div key={slider.id} className="px-box px-box-dark p-3 flex flex-col gap-2">
             <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
               <div className="flex flex-col min-w-0">
                 <span className="text-ink font-semibold break-words">{slider.label}</span>
                 {slider.hint && <span className="text-xs text-muted break-words">{slider.hint}</span>}
               </div>
-              <span className="font-mono text-xl sm:text-2xl text-ink tabular-nums shrink-0 whitespace-nowrap">
+              <span className="font-pixel text-[11px] text-ink text-right shrink-0 whitespace-nowrap">
                 {formatSliderValue(current, slider)}
               </span>
             </div>
@@ -99,7 +121,7 @@ export function SliderTask({
                 aria-label={`Decrease ${slider.label}`}
                 disabled={disabled}
                 onClick={() => nudge(-1)}
-                className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
               >
                 −
               </button>
@@ -112,21 +134,21 @@ export function SliderTask({
                 value={current}
                 disabled={disabled}
                 onChange={(e) => setSlider(slider.id, Number(e.target.value))}
-                style={{ accentColor: accent }}
-                className="h-11 flex-1 min-w-0 disabled:opacity-40"
+                style={{ accentColor: accent, '--slider-accent': accent } as CSSProperties}
+                className="px-range h-11 flex-1 min-w-0 disabled:opacity-40"
               />
               <button
                 type="button"
                 aria-label={`Increase ${slider.label}`}
                 disabled={disabled}
                 onClick={() => nudge(1)}
-                className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
               >
                 +
               </button>
             </div>
 
-            <div className="flex items-center justify-between gap-2 text-xs text-muted font-mono tabular-nums">
+            <div className="flex items-center justify-between gap-2 text-xs text-muted">
               <span className="truncate">{formatSliderValue(slider.min, slider)}</span>
               <span className="truncate">{formatSliderValue(slider.max, slider)}</span>
             </div>
@@ -140,7 +162,7 @@ export function SliderTask({
             <div key={readout.id} className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
               <span className="text-sm text-muted min-w-0 break-words">{readout.label}</span>
               <span
-                className="font-mono text-lg tabular-nums text-ink shrink-0 whitespace-nowrap"
+                className="font-pixel text-[11px] text-ink shrink-0 whitespace-nowrap"
                 style={readout.role ? { color: `var(--color-${readout.role})` } : undefined}
               >
                 {formatReadout(readout.compute(currentValues), readout.unit)}
@@ -164,12 +186,12 @@ export function SliderTask({
                   <div key={`${s.label}-${i}`} className="flex flex-col gap-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs text-muted">
                       <span className="min-w-0 break-words">{s.label}</span>
-                      <span className="font-mono text-ink tabular-nums shrink-0 whitespace-nowrap">
+                      <span className="px-num text-[11px] text-ink shrink-0 whitespace-nowrap">
                         {formatReadout(s.value, task.chart!.unit)}
                       </span>
                     </div>
-                    <div className="h-2.5 rounded-full bg-panel-2 overflow-hidden">
-                      <div className={`h-full rounded-full ${ROLE_FILL[role]}`} style={{ width: `${widthPct}%` }} />
+                    <div className="h-3 bg-shade border-2 border-bg overflow-hidden">
+                      <div className={`h-full border-2 border-bg ${ROLE_FILL[role]}`} style={{ width: `${widthPct}%` }} />
                     </div>
                   </div>
                 )
@@ -180,7 +202,7 @@ export function SliderTask({
       )}
 
       {task.question && (
-        <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+        <div className="px-box p-4 flex flex-col gap-3">
           <p className="text-ink font-semibold">{task.question.text}</p>
           <div className="flex flex-col gap-2">
             {task.question.choices.map((choice) => {
@@ -192,8 +214,8 @@ export function SliderTask({
                   onClick={() => pickChoice(choice.id)}
                   disabled={disabled}
                   aria-pressed={selected}
-                  className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
-                    ${selected ? 'border-ink ring-2 ring-ink' : ''}
+                  className={`w-full min-h-12 px-4 py-2 px-chip border-l-4 text-left font-medium break-words bg-panel-2 text-ink transition
+                    ${selected ? 'bg-equity/30 border-l-equity' : 'border-l-line'}
                     disabled:opacity-60`}
                 >
                   {choice.label}

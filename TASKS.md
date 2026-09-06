@@ -312,6 +312,46 @@ Sub-tasks refined against `PLAN.md` (sections e, f, i):
 - [x] (2026-09-05) Pass over every chart board at 360px width; move any overflowing
       Recharts axis or legend to custom SVG.
 
+## Milestone 7 — Pixel office (owner request 2026-09-06)
+
+The owner asked for "a much better looking game, with a real environment
+like an office and with proper graphics and animations in an 8 bit style
+but a bit better and with color". Decisions taken with the owner that day:
+walkable office hub replaces the ladder/rung lists; Kairosoft / Game Dev
+Story look; all art drawn in code (text-grid sprites, no image files);
+full re-skin of the mission screens.
+
+- [x] (2026-09-06) Sprite engine: shared palette (`src/pixel/palette.ts`),
+      text-grid `Sprite` format with validation, cached canvas renderer,
+      `Px` React component, authoring spec in `src/pixel/sprites/README.md`.
+- [x] (2026-09-06) Art: six character sets (player, MD, HR, three
+      coworkers), four portrait sets with expressions and talking frames,
+      ~50 office tiles and furniture, ~45 UI icons and emblems, the logo.
+      Every sprite is covered by a validation test.
+- [x] (2026-09-06) Office hub (`src/office/`): 11-wide, five-zone floor
+      plan with one desk per mission, tap-to-walk BFS pathfinding, camera
+      follow, y-sorted drawing, wandering NPCs with quips, locked floors
+      roped off, arrow-key nudging, mission card on arrival, floor roster
+      card. Reachability tests in `world.test.ts`.
+- [x] (2026-09-06) Theme: pixel fonts (Press Start 2P for headings,
+      Pixelify Sans for body), bevelled `px-box`/`px-btn` chrome, no
+      radius anywhere, confetti/pop/shake keyframes.
+- [x] (2026-09-06) Mission screens as RPG scenes: talking MD portrait
+      with typewriter text for briefings and verdicts, HR for the
+      performance review, champagne + confetti bonus season, count-up comp
+      with coin sounds.
+- [x] (2026-09-06) Chiptune music (three synthesized loops, off by
+      default) and seven new SFX kinds, all Web Audio, no files.
+- [ ] Task widgets restyled to the pixel theme (order, sort, quiz,
+      balance, slider, waterfall, bridge, football field, heatmap,
+      auction, multi, written, lesson visuals).
+- [ ] Settings, share card and Ask-the-MD restyled.
+- [ ] Mission content audit (finance correctness, clarity, tone) with
+      confirmed fixes applied.
+- [ ] Browser playtest of the office and every task kind at desktop and
+      360px widths; fix what breaks.
+- [ ] Opus review pass over the office engine and the reskinned screens.
+
 ## Backlog / ideas
 
 - [x] (2026-09-05) Lazy-load `src/lib/anthropic.ts` (dynamic import) so the Anthropic

@@ -86,9 +86,7 @@ export function NumberField({
       aria-label={ariaLabel}
       value={text}
       onChange={(e) => handleChange(e.target.value)}
-      className={
-        className ?? 'min-h-11 w-28 max-w-full shrink-0 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60'
-      }
+      className={className ?? 'px-input px-num w-28 max-w-full shrink-0 text-right disabled:opacity-60'}
     />
   )
 
@@ -141,36 +139,36 @@ export function BalanceTask({
   return (
     <div className="flex flex-col gap-4">
       {task.sections.map((section) => (
-        <div key={section.id} className="bg-panel border border-line rounded-2xl overflow-hidden">
-          <div className={`px-4 py-2 border-b text-xs font-semibold uppercase tracking-wide ${ROLE_BG[section.role ?? 'neutral']}`}>
+        <div key={section.id} className="px-box px-box-paper overflow-hidden">
+          <div className={`px-4 py-2 border-b-2 border-[#241f3a] px-eyebrow ${ROLE_BG[section.role ?? 'neutral']}`}>
             {section.label}
           </div>
-          <div className="flex flex-col divide-y divide-line">
+          <div className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 p-4">
             {section.lines.map((line) => {
               const isBlank = line.value === undefined && line.answer !== undefined
               const raw = value[line.id]
               const lineUnit = line.unit ?? task.unit
+              const totalCls = line.total ? 'font-pixel text-[10px] pt-2 border-t-2 border-[#241f3a]' : ''
               return (
-                <div
-                  key={line.id}
-                  className={`flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2 ${line.total ? 'font-bold border-t-2 border-line' : ''}`}
-                >
-                  <span className="min-w-0 break-words text-ink">{line.label}</span>
-                  {isBlank ? (
-                    <NumberField
-                      id={line.id}
-                      value={raw ?? null}
-                      onChange={(n) => setLine(line.id, n)}
-                      unit={lineUnit}
-                      disabled={disabled}
-                      ariaLabel={line.label}
-                    />
-                  ) : (
-                    <span className="font-mono text-ink shrink-0 whitespace-nowrap tabular-nums">
-                      {formatNumber(line.value ?? 0)}
-                      {lineUnit ? ` ${lineUnit}` : ''}
-                    </span>
-                  )}
+                <div key={line.id} className="contents">
+                  <span className={`min-w-0 break-words self-center ${totalCls}`}>{line.label}</span>
+                  <span className={`shrink-0 self-center ${totalCls}`}>
+                    {isBlank ? (
+                      <NumberField
+                        id={line.id}
+                        value={raw ?? null}
+                        onChange={(n) => setLine(line.id, n)}
+                        unit={lineUnit}
+                        disabled={disabled}
+                        ariaLabel={line.label}
+                      />
+                    ) : (
+                      <span className="px-num shrink-0 whitespace-nowrap">
+                        {formatNumber(line.value ?? 0)}
+                        {lineUnit ? ` ${lineUnit}` : ''}
+                      </span>
+                    )}
+                  </span>
                 </div>
               )
             })}
@@ -179,18 +177,18 @@ export function BalanceTask({
       ))}
 
       {isBalanceSheet && (
-      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+      <div className="px-box px-box-dark p-4 flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">Balance check</span>
-          <span className={`text-sm font-semibold min-w-0 break-words ${balanced ? 'text-revenue' : 'text-cost'}`}>
+          <span className="px-eyebrow text-muted shrink-0">Balance check</span>
+          <span className={`font-pixel text-[10px] min-w-0 break-words ${balanced ? 'text-revenue' : 'text-cost'}`}>
             {balanced ? 'Balanced' : `Off by ${formatNumber(Math.abs(diff))}${task.unit ? ` ${task.unit}` : ''}`}
           </span>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="h-3 rounded-full bg-panel-2 overflow-hidden flex" aria-label="Assets">
+          <div className="h-3 bg-shade border-2 border-bg flex" aria-label="Assets">
             <div className="h-full bg-cash" style={{ width: `${assetsPct}%` }} />
           </div>
-          <div className="h-3 rounded-full bg-panel-2 overflow-hidden flex" aria-label="Liabilities and equity">
+          <div className="h-3 bg-shade border-2 border-bg flex" aria-label="Liabilities and equity">
             <div className="h-full bg-debt" style={{ width: `${liabPct}%` }} />
             <div className="h-full bg-equity" style={{ width: `${equityPct}%` }} />
           </div>

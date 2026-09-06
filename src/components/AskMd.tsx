@@ -6,6 +6,8 @@ import { useMentorMode } from '../store/settings'
 import { formatUsd } from '../lib/pricing'
 import { useUsage } from '../store/usage'
 import { Button } from './ui'
+import { Dialog } from './Dialog'
+import { PORTRAITS } from '../pixel/sprites/portraits'
 
 type Status = 'idle' | 'streaming' | 'done' | 'error'
 
@@ -79,8 +81,8 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
 
   return (
     <div className="mt-4">
-      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
-        <div className="text-xs uppercase tracking-[0.18em] font-semibold text-debt">Ask the MD</div>
+      <div className="px-box p-4 flex flex-col gap-3">
+        <div className="px-eyebrow text-debt">Ask the MD</div>
 
         <div className="flex gap-2">
           <input
@@ -92,21 +94,24 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
             }}
             placeholder="Why does interest come before tax?"
             disabled={sending}
-            className="flex-1 min-w-0 min-h-11 rounded-xl bg-panel-2 border border-line px-3 text-ink placeholder:text-muted disabled:opacity-60"
+            className="px-input flex-1 min-w-0 w-full disabled:opacity-60"
           />
           <Button className="shrink-0" onClick={handleSend} disabled={sending || !question.trim()}>
             Send
           </Button>
         </div>
 
-        {sending && (
-          <div className="space-y-1">
-            <div className="text-sm font-semibold text-ink break-words">{lastQuestion}</div>
-            <div className="text-sm text-muted italic">The MD is typing…</div>
-            {streamingText && (
-              <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-ink">{streamingText}</div>
+        {(sending || (status === 'done' && streamingText)) && (
+          <Dialog
+            portrait={PORTRAITS.md}
+            expression={sending ? 'smug' : 'neutral'}
+            name="The MD"
+            text={streamingText}
+          >
+            {status === 'done' && lastCost !== null && (
+              <div className="mt-2 font-pixel text-[9px] text-muted">about {formatUsd(lastCost)}</div>
             )}
-          </div>
+          </Dialog>
         )}
 
         {status === 'error' && (
@@ -119,22 +124,22 @@ export function AskMd({ mission, grade }: { mission: Mission; grade: GradeResult
         )}
 
         {pairs.length > 0 && !sending && (
-          <div className="flex flex-col gap-3 border-t border-line pt-3">
-            {[...pairs].reverse().map((p, i) => (
-              <div key={pairs.length - i} className="space-y-1">
-                <div className="text-sm font-semibold text-ink break-words">{p.q}</div>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap break-words text-ink/90">{p.a}</div>
-                {i === 0 && status === 'done' && lastCost !== null && (
-                  <div className="text-xs text-muted">about {formatUsd(lastCost)}</div>
-                )}
-              </div>
-            ))}
+          <div className="flex flex-col gap-3 border-t-[3px] border-line pt-3">
+            {[...pairs]
+              .reverse()
+              .slice(1)
+              .map((p, i) => (
+                <div key={pairs.length - i} className="px-box px-box-paper p-3 space-y-1">
+                  <div className="text-sm font-semibold break-words">{p.q}</div>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap break-words">{p.a}</div>
+                </div>
+              ))}
           </div>
         )}
       </div>
 
       {pairs.length === 0 && status === 'idle' && (
-        <div className="text-xs text-muted mt-2">
+        <div className="mt-2 font-pixel text-[9px] text-muted">
           Answers cost a fraction of a cent to a few cents each on your key.
         </div>
       )}

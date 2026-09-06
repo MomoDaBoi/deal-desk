@@ -88,9 +88,9 @@ export function WaterfallTask({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto bg-panel border border-line rounded-2xl px-3 pb-3 pt-7">
+      <div className="overflow-x-auto px-box px-3 pb-3 pt-7">
         <div className="relative flex items-stretch gap-2 h-56" style={{ minWidth: `${draws.length * 72}px` }}>
-          <div className="absolute left-0 right-0 border-t border-line/60" style={{ top: `${pct(0)}%` }} />
+          <div className="absolute left-0 right-0 border-t-2 border-dashed border-panel-2" style={{ top: `${pct(0)}%` }} />
           {draws.map((d) => {
             const roleClass = d.step.role ? ROLE_BAR[d.step.role] : d.step.total || d.displayValue >= 0 ? ROLE_BAR.revenue : ROLE_BAR.cost
             const missing = d.isBlank && !d.filled
@@ -100,17 +100,17 @@ export function WaterfallTask({
               <div key={d.step.id} className="flex flex-col items-center w-16 shrink-0">
                 <div className="relative flex-1 w-full">
                   <span
-                    className="absolute left-1/2 -translate-x-1/2 -translate-y-full font-mono text-xs tabular-nums text-ink whitespace-nowrap"
+                    className="absolute left-1/2 -translate-x-1/2 -translate-y-full px-num text-[11px] text-ink whitespace-nowrap"
                     style={{ top: `calc(${top}% - 4px)` }}
                   >
                     {missing ? '?' : formatNumber(d.displayValue)}
                   </span>
                   <div
-                    className={`absolute left-1 right-1 rounded-t-sm ${missing ? 'border-2 border-dashed border-muted bg-transparent' : roleClass}`}
+                    className={`absolute left-1 right-1 ${missing ? 'border-2 border-dashed border-muted bg-transparent' : `${roleClass} border-2 border-bg`}`}
                     style={{ top: `${top}%`, height: `${height}%` }}
                   />
                 </div>
-                <span className="mt-1 text-[10px] leading-tight text-muted text-center break-words w-full">{d.step.label}</span>
+                <span className="mt-1 text-xs leading-tight text-muted text-center break-words w-full">{d.step.label}</span>
               </div>
             )
           })}
@@ -124,21 +124,23 @@ export function WaterfallTask({
           return (
             <div
               key={step.id}
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 bg-panel border border-line rounded-xl px-4 py-2"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-box px-3 py-2"
             >
               <span className="min-w-0 break-words text-ink text-sm">{step.label}</span>
               {isBlank ? (
-                <NumberField
-                  id={step.id}
-                  value={raw ?? null}
-                  onChange={(n) => setValue(step.id, n)}
-                  unit={task.unit}
-                  disabled={disabled}
-                  ariaLabel={step.label}
-                  className="min-h-11 w-32 max-w-full shrink-0 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
-                />
+                <div className="w-32 max-w-full shrink-0">
+                  <NumberField
+                    id={step.id}
+                    value={raw ?? null}
+                    onChange={(n) => setValue(step.id, n)}
+                    unit={task.unit}
+                    disabled={disabled}
+                    ariaLabel={step.label}
+                    className="px-input w-full text-right px-num text-[11px]"
+                  />
+                </div>
               ) : (
-                <span className="font-mono text-ink text-sm shrink-0 whitespace-nowrap tabular-nums">
+                <span className="px-num text-[11px] text-ink shrink-0 whitespace-nowrap">
                   {formatNumber(step.value ?? 0)}
                   {task.unit ? ` ${task.unit}` : ''}
                 </span>

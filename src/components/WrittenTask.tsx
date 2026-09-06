@@ -13,7 +13,7 @@ function WordCounter({ text, limit }: { text: string; limit: number }) {
   const count = wordCount(text)
   const over = count > limit
   return (
-    <div className={`text-xs text-right tabular-nums ${over ? 'text-cost' : 'text-muted'}`}>
+    <div className={`font-pixel text-[9px] text-right tabular-nums ${over ? 'text-cost' : 'text-muted'}`}>
       {count} / {limit} words
     </div>
   )
@@ -23,8 +23,8 @@ function RubricList({ rubric }: { rubric: string[] }) {
   if (rubric.length === 0) return null
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="text-xs uppercase tracking-[0.14em] text-muted font-semibold">The MD will look for</div>
-      <ul className="flex flex-col gap-1 text-sm text-ink/90">
+      <div className="px-eyebrow text-muted">The MD will look for</div>
+      <ul className="flex flex-col gap-1 text-sm">
         {rubric.map((item, i) => (
           <li key={i} className="flex gap-2">
             <span className="text-muted shrink-0">•</span>
@@ -36,8 +36,7 @@ function RubricList({ rubric }: { rubric: string[] }) {
   )
 }
 
-const TEXTAREA_CLASS =
-  'min-h-40 w-full bg-panel-2 border border-line rounded-xl p-3 text-base text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-ink disabled:opacity-60'
+const TEXTAREA_CLASS = 'px-input w-full min-h-[10rem] leading-relaxed disabled:opacity-60'
 
 export function WrittenTask({
   task,
@@ -53,7 +52,7 @@ export function WrittenTask({
   if (!task.questions) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-lg font-bold text-ink">{task.prompt}</p>
+        <p className="px-h2">{task.prompt}</p>
         <textarea
           className={TEXTAREA_CLASS}
           value={value.text}
@@ -73,14 +72,14 @@ export function WrittenTask({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-lg font-bold text-ink">{task.prompt}</p>
+      <p className="px-h2">{task.prompt}</p>
       {questions.map((q, i) => {
         const text = value.answers[q.id] ?? ''
         return (
-          <div key={q.id} className="flex flex-col gap-2 bg-panel border border-line rounded-2xl p-4">
+          <div key={q.id} className="flex flex-col gap-2 px-box px-box-paper p-4">
             <div className="flex gap-2">
-              <span className="text-muted font-semibold shrink-0">{i + 1}.</span>
-              <p className="font-semibold text-ink min-w-0 break-words">{q.text}</p>
+              <span className="font-semibold shrink-0">{i + 1}.</span>
+              <p className="font-semibold min-w-0 break-words">{q.text}</p>
             </div>
             <textarea
               className={TEXTAREA_CLASS}

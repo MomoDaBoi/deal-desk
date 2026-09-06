@@ -4,6 +4,16 @@ import { ROLE_BG } from './ui'
 
 type SortItem = SortTaskShape['items'][number]
 
+/** Solid role colour for a bucket's top bar (ROLE_BG's tones are for chip fills, not a full-bleed strip). */
+const ROLE_BAR: Record<string, string> = {
+  revenue: 'bg-revenue',
+  cost: 'bg-cost',
+  debt: 'bg-debt',
+  equity: 'bg-equity',
+  cash: 'bg-cash',
+  neutral: 'bg-line-hi',
+}
+
 /** Hold this long before a press becomes a drag, in ms. */
 const HOLD_MS = 150
 /** Pointer movement past this (px) before the hold timer fires cancels the hold. */
@@ -172,14 +182,14 @@ export function SortTask({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <div className="text-xs uppercase tracking-[0.14em] text-muted font-semibold mb-2">In tray</div>
+        <div className="px-eyebrow text-muted mb-2">In tray</div>
         <DropZone
           onDrop={returnToTray}
           active={held !== null}
           hovered={dragId !== null && hoverZone === TRAY_ZONE}
           disabled={disabled}
           label="Return held item to tray"
-          className="border-dashed"
+          dark
           zoneRef={(el) => registerZone(TRAY_ZONE, el)}
         >
           {tray.length === 0 && held === null && <span className="text-sm text-muted px-1">All placed.</span>}
@@ -201,7 +211,7 @@ export function SortTask({
         </DropZone>
       </div>
 
-      {held !== null && <div className="text-center text-sm text-muted animate-pulse">Tap a bucket to place it</div>}
+      {held !== null && <div className="text-center px-eyebrow text-muted animate-pulse">Tap a bucket to place it</div>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-flow-col sm:auto-cols-fr">
         {task.buckets.map((bucket) => {
@@ -214,12 +224,12 @@ export function SortTask({
               hovered={dragId !== null && hoverZone === bucket.id}
               disabled={disabled}
               label={`Place in ${bucket.label}`}
-              className={ROLE_BG[bucket.role ?? 'neutral']}
+              topBarClassName={ROLE_BAR[bucket.role ?? 'neutral']}
               zoneRef={(el) => registerZone(bucket.id, el)}
             >
               <div className="w-full min-w-0">
-                <div className="font-semibold break-words">{bucket.label}</div>
-                {bucket.hint && <div className="text-xs text-muted font-normal break-words">{bucket.hint}</div>}
+                <div className="px-eyebrow break-words">{bucket.label}</div>
+                {bucket.hint && <div className="text-xs text-muted font-normal break-words mt-1">{bucket.hint}</div>}
               </div>
               <div className="flex flex-wrap gap-2 min-h-11 w-full">
                 {bucketItems.length === 0 && <span className="text-xs text-muted font-normal">Empty</span>}
@@ -258,7 +268,8 @@ function DropZone({
   hovered,
   disabled,
   label,
-  className = '',
+  dark = false,
+  topBarClassName,
   zoneRef,
   children,
 }: {
@@ -267,7 +278,10 @@ function DropZone({
   hovered?: boolean
   disabled?: boolean
   label: string
-  className?: string
+  /** Unplaced tray styling: px-box px-box-dark instead of the default panel box. */
+  dark?: boolean
+  /** Bucket role colour, rendered as a coloured top bar (e.g. from ROLE_BG). */
+  topBarClassName?: string
   zoneRef?: (el: HTMLDivElement | null) => void
   children: ReactNode
 }) {
@@ -286,11 +300,12 @@ function DropZone({
           onDrop()
         }
       }}
-      className={`min-h-11 w-full min-w-0 text-left rounded-xl border p-3 flex flex-col flex-wrap gap-2 items-start transition
-        ${className}
-        ${active ? 'ring-2 ring-ink/40 cursor-pointer' : ''}
-        ${hovered ? 'ring-2 ring-ink' : ''}`}
+      className={`min-h-11 w-full min-w-0 text-left px-box ${dark ? 'px-box-dark' : ''} flex flex-col flex-wrap gap-2 items-start transition overflow-hidden p-3
+        ${active ? 'cursor-pointer' : ''}
+        ${active && !hovered ? 'outline outline-2 outline-line-hi -outline-offset-2' : ''}
+        ${hovered ? 'outline outline-3 outline-ink -outline-offset-3' : ''}`}
     >
+      {topBarClassName && <div className={`h-1.5 w-full shrink-0 -mx-3 -mt-3 mb-2 ${topBarClassName}`} />}
       {children}
     </div>
   )
@@ -330,10 +345,10 @@ function Chip({
       onPointerCancel={onPointerCancel}
       disabled={disabled}
       aria-pressed={held}
-      className={`inline-flex items-center min-h-11 max-w-full px-3 py-1.5 rounded-lg border text-sm font-medium text-left break-words transition select-none
+      className={`inline-flex items-center min-h-11 max-w-full px-3 py-1.5 px-chip border-l-4 text-sm font-medium text-left break-words transition select-none
         ${ROLE_BG[item.role ?? 'neutral']}
-        ${held ? 'ring-2 ring-ink scale-[1.04] shadow-lg' : ''}
-        ${dragging ? 'relative z-10 scale-105 shadow-lg touch-none' : ''}`}
+        ${held ? 'outline outline-3 outline-ink -outline-offset-3' : ''}
+        ${dragging ? 'relative z-10 shadow-lg touch-none' : ''}`}
     >
       {item.label}
     </button>

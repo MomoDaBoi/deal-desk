@@ -169,24 +169,36 @@ export function Office({ focusRung, returnTo }: { focusRung?: Rung; returnTo?: s
         {card?.kind === 'mission' && (
           <MissionCard mission={card.mission} best={best[card.mission.id] ?? 0} onClose={() => setCard(null)} onStart={() => go({ name: 'mission', missionId: card.mission.id })} />
         )}
-        {card?.kind === 'rung' && <RungCard rung={card.rung} status={status[card.rung]} unlocked={unlocked[card.rung]} onClose={() => setCard(null)} />}
+        {card?.kind === 'rung' && (
+          <RungCard
+            rung={card.rung}
+            status={status[card.rung]}
+            unlocked={unlocked[card.rung]}
+            missions={missionsForRung(card.rung, mentor)}
+            best={best}
+            onClose={() => setCard(null)}
+            onPick={(id) => {
+              setCard(null)
+              world.walkToMission(id)
+            }}
+          />
+        )}
       </div>
 
       <footer className="shrink-0 border-t-[3px] border-line-hi bg-bg/95">
         <div className="mx-auto max-w-3xl px-3 py-2 flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-xs text-muted">
-              <span className="px-eyebrow">{RUNG_TITLES[currentRung]}</span>
-              <span className="px-num text-[10px] text-ink ml-auto">
+            <div className="flex items-center gap-2 text-xs text-muted min-w-0">
+              <span className="px-eyebrow truncate">{RUNG_TITLES[currentRung]}</span>
+              <span className="px-num text-[9px] text-ink ml-auto whitespace-nowrap">
                 {formatComp(status[currentRung].earned)} / {formatComp(status[currentRung].possible)}
               </span>
             </div>
             <PixelBar fraction={status[currentRung].fraction} className="mt-1" gold={status[currentRung].perfect} />
           </div>
-          <Button variant="ghost" className="px-3" onClick={() => setCard({ kind: 'rung', rung: currentRung })}>
+          <Button variant="ghost" className="px-3 shrink-0" onClick={() => setCard({ kind: 'rung', rung: currentRung })}>
             Floor
           </Button>
-          <ShareCard />
         </div>
         <p className="text-[10px] text-muted/70 text-center pb-[max(0.25rem,env(safe-area-inset-bottom))] px-3">
           A game, not investment advice.
@@ -240,10 +252,26 @@ function MissionCard({ mission, best, onClose, onStart }: { mission: Mission; be
   )
 }
 
-function RungCard({ rung, status, unlocked, onClose }: { rung: Rung; status: ReturnType<typeof rungStatus>; unlocked: boolean; onClose: () => void }) {
+function RungCard({
+  rung,
+  status,
+  unlocked,
+  missions,
+  best,
+  onClose,
+  onPick,
+}: {
+  rung: Rung
+  status: ReturnType<typeof rungStatus>
+  unlocked: boolean
+  missions: Mission[]
+  best: Record<string, number>
+  onClose: () => void
+  onPick: (missionId: string) => void
+}) {
   return (
     <div className="absolute inset-x-0 bottom-0 p-3 px-rise z-20">
-      <div className="px-box mx-auto max-w-md p-4">
+      <div className="px-box mx-auto max-w-md p-4 max-h-[70vh] overflow-y-auto">
         <Eyebrow>{unlocked ? 'Floor' : 'Locked floor'} · {RUNG_SUBTITLES[rung]}</Eyebrow>
         <div className="px-h1 mt-1">{RUNG_TITLES[rung]}</div>
         <p className="text-sm text-muted mt-1">
@@ -255,7 +283,24 @@ function RungCard({ rung, status, unlocked, onClose }: { rung: Rung; status: Ret
           <span className={`ml-auto ${status.passed ? 'text-revenue' : 'text-muted'}`}>{status.passed ? (status.perfect ? 'Bonus season' : 'Passed') : `${Math.round(status.fraction * 100)}% · need 70%`}</span>
         </div>
         <PixelBar fraction={status.fraction} className="mt-2" gold={status.perfect} />
+        {unlocked && (
+          <ol className="mt-3 flex flex-col gap-1.5">
+            {missions.map((m) => {
+              const b = best[m.id] ?? 0
+              return (
+                <li key={m.id}>
+                  <button type="button" onClick={() => onPick(m.id)} className="w-full text-left px-chip bg-panel-2 border-l-4 border-l-line-hi min-h-11 px-3 py-1.5 flex items-center gap-2">
+                    <Px sprite={stateIcon(m, b)} scale={1} />
+                    <span className="min-w-0 flex-1 truncate text-sm">{m.title}</span>
+                    <span className="px-num text-[9px] text-muted shrink-0">{b > 0 ? formatComp(b) : formatComp(m.baseComp)}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        )}
         <div className="mt-3 flex gap-2">
+          <ShareCard />
           <Button className="flex-1" onClick={onClose}>
             Back to the floor
           </Button>

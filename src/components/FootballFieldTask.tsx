@@ -7,15 +7,6 @@ import type { FootballFieldTask as FootballFieldTaskType, Role } from '../engine
  * question renders after the rows as a set of full-width choice buttons.
  */
 
-const ROLE_FILL: Record<Role, string> = {
-  revenue: 'bg-revenue',
-  cost: 'bg-cost',
-  debt: 'bg-debt',
-  equity: 'bg-equity',
-  cash: 'bg-cash',
-  neutral: 'bg-ink/50',
-}
-
 const ROLE_VAR: Record<Role, string> = {
   revenue: 'var(--color-revenue)',
   cost: 'var(--color-cost)',
@@ -24,6 +15,18 @@ const ROLE_VAR: Record<Role, string> = {
   cash: 'var(--color-cash)',
   neutral: 'var(--color-ink)',
 }
+
+/** Hex values for the SVG `fill`/`stroke` props, which cannot take a Tailwind class. */
+const ROLE_HEX: Record<Role, string> = {
+  revenue: '#4fc46a',
+  cost: '#d94a4a',
+  debt: '#f2b632',
+  equity: '#4a7ad9',
+  cash: '#3bbfb0',
+  neutral: '#a7a9c4',
+}
+
+const OUTLINE = '#1b1a2e'
 
 function decimalsOf(step: number): number {
   const s = String(step)
@@ -85,7 +88,7 @@ export function FootballFieldTask({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-2 px-1 text-xs font-mono tabular-nums text-muted">
+      <div className="flex items-center justify-between gap-2 px-1 text-xs text-muted">
         <span className="truncate">{formatValue(axis.min, decimals, task.unit)}</span>
         <span className="truncate">{formatValue(axis.max, decimals, task.unit)}</span>
       </div>
@@ -97,6 +100,7 @@ export function FootballFieldTask({
           const leftPct = ((low - axis.min) / span) * 100
           const widthPct = ((high - low) / span) * 100
           const accent = ROLE_VAR[role]
+          const hex = ROLE_HEX[role]
 
           return (
             <div key={row.id} className="flex flex-col gap-2">
@@ -105,18 +109,43 @@ export function FootballFieldTask({
               </div>
               {row.hint && <p className="text-xs text-muted break-words">{row.hint}</p>}
 
-              <div className="relative h-3 rounded-full bg-panel-2 overflow-hidden">
+              {/* Range as a flat pixel rect, with 12px square markers at the low/high edges. */}
+              <div className="relative h-4">
+                <svg
+                  viewBox="0 0 100 16"
+                  preserveAspectRatio="none"
+                  className="absolute inset-0 w-full h-full"
+                  aria-hidden="true"
+                >
+                  <rect x={0} y={2} width={100} height={12} fill="#14132a" />
+                  <rect
+                    x={leftPct}
+                    y={2}
+                    width={Math.max(widthPct, 0.6)}
+                    height={12}
+                    fill={hex}
+                    stroke={OUTLINE}
+                    strokeWidth={2}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
                 <div
-                  className={`absolute top-0 h-full rounded-full ${ROLE_FILL[role]}`}
-                  style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                  className="absolute top-1/2 w-3 h-3 border-2"
+                  style={{ left: `${leftPct}%`, transform: 'translate(-50%, -50%)', background: accent, borderColor: OUTLINE }}
+                  aria-hidden="true"
+                />
+                <div
+                  className="absolute top-1/2 w-3 h-3 border-2"
+                  style={{ left: `${leftPct + widthPct}%`, transform: 'translate(-50%, -50%)', background: accent, borderColor: OUTLINE }}
+                  aria-hidden="true"
                 />
               </div>
 
               <div className="flex flex-col gap-3 pt-1">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">Low</span>
-                    <span className="font-mono text-sm text-ink tabular-nums shrink-0 whitespace-nowrap">
+                    <span className="px-eyebrow text-muted shrink-0">Low</span>
+                    <span className="font-pixel text-[9px] text-ink shrink-0 whitespace-nowrap">
                       {formatValue(low, decimals, task.unit)}
                     </span>
                   </div>
@@ -126,7 +155,7 @@ export function FootballFieldTask({
                       aria-label={`Decrease ${row.label} low`}
                       disabled={disabled}
                       onClick={() => setLow(row.id, clampToAxis(snapToGrid(low - axis.step)))}
-                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       −
                     </button>
@@ -147,7 +176,7 @@ export function FootballFieldTask({
                       aria-label={`Increase ${row.label} low`}
                       disabled={disabled}
                       onClick={() => setLow(row.id, clampToAxis(snapToGrid(low + axis.step)))}
-                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       +
                     </button>
@@ -155,8 +184,8 @@ export function FootballFieldTask({
                 </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-xs uppercase tracking-wide text-muted font-semibold shrink-0">High</span>
-                    <span className="font-mono text-sm text-ink tabular-nums shrink-0 whitespace-nowrap">
+                    <span className="px-eyebrow text-muted shrink-0">High</span>
+                    <span className="font-pixel text-[9px] text-ink shrink-0 whitespace-nowrap">
                       {formatValue(high, decimals, task.unit)}
                     </span>
                   </div>
@@ -166,7 +195,7 @@ export function FootballFieldTask({
                       aria-label={`Decrease ${row.label} high`}
                       disabled={disabled}
                       onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high - axis.step)))}
-                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       −
                     </button>
@@ -187,7 +216,7 @@ export function FootballFieldTask({
                       aria-label={`Increase ${row.label} high`}
                       disabled={disabled}
                       onClick={() => setHigh(row.id, clampToAxis(snapToGrid(high + axis.step)))}
-                      className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
+                      className="min-h-11 min-w-11 shrink-0 bg-panel-2 border-2 border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
                     >
                       +
                     </button>
@@ -200,7 +229,7 @@ export function FootballFieldTask({
       </div>
 
       {task.question && (
-        <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+        <div className="px-box p-4 flex flex-col gap-3">
           <p className="text-ink font-semibold">{task.question.text}</p>
           <div className="flex flex-col gap-2">
             {task.question.choices.map((choice) => {
@@ -212,8 +241,8 @@ export function FootballFieldTask({
                   onClick={() => pickChoice(choice.id)}
                   disabled={disabled}
                   aria-pressed={selected}
-                  className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
-                    ${selected ? 'border-ink ring-2 ring-ink' : ''}
+                  className={`w-full min-h-12 px-4 py-2 px-chip border-l-4 text-left font-medium break-words bg-panel-2 text-ink transition
+                    ${selected ? 'bg-equity/30 border-l-equity' : 'border-l-line'}
                     disabled:opacity-60`}
                 >
                   {choice.label}

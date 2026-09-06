@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { AuctionTask as AuctionTaskType } from '../engine/types'
 import { simulateAuction, snapToStep } from '../engine/graders/auction'
-import { Eyebrow } from './ui'
+import { Eyebrow, Button } from './ui'
+import { Px } from '../pixel/Px'
+import { PORTRAITS } from '../pixel/sprites/portraits'
+
+/** Which portrait plays which bot seat, cycled if there are more than three bots. */
+const BOT_PORTRAIT_KEYS = ['client', 'hr', 'md'] as const
 
 /** A unit starting with "$" is a prefix currency (thousands-grouped) with the rest of the unit as a suffix, e.g. "$k" -> "$1,185,000k". Any other unit is a plain suffix. */
 function formatUnit(n: number, unit?: string): string {
@@ -55,88 +60,69 @@ export function AuctionTask({
     onChange({ ...value, walked: true })
   }
 
+  const lastRound = completedRounds[completedRounds.length - 1]
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
+      <div className="px-box p-4 flex flex-col gap-2">
         <Eyebrow>Teaser</Eyebrow>
-        <p className="text-ink text-sm leading-relaxed">{task.teaser}</p>
-        <div className="flex flex-col gap-2 mt-2">
-          {task.bots.map((bot) => (
-            <div key={bot.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
-              <span className="font-semibold text-ink shrink-0">{bot.name}</span>
-              <span className="text-muted min-w-0 break-words">{bot.blurb}</span>
+        <p className="text-sm leading-relaxed">{task.teaser}</p>
+      </div>
+
+      {/* Bot bidders as small character cards: portrait smirks when standing
+          high, scowls when outbid, stays neutral before the first round. */}
+      <div className="flex flex-wrap gap-3">
+        {task.bots.map((bot, i) => {
+          const portraitKey = BOT_PORTRAIT_KEYS[i % BOT_PORTRAIT_KEYS.length]
+          const portrait = PORTRAITS[portraitKey]
+          const entry = lastRound?.bots.find((b) => b.id === bot.id)
+          const isLeader = lastRound?.leader?.id === bot.id
+          const expression: 'smug' | 'annoyed' | 'neutral' = !lastRound ? 'neutral' : isLeader ? 'smug' : 'annoyed'
+          const bidText = !lastRound ? '—' : entry?.bid == null ? 'out' : formatUnit(entry.bid, task.unit)
+          return (
+            <div key={bot.id} className="px-box px-box-dark p-2 w-24 flex flex-col items-center gap-1">
+              <Px sprite={portrait[expression]} scale={2} title={`${bot.name} (${bot.blurb})`} />
+              <span className="px-eyebrow text-muted text-center truncate w-full">{bot.name}</span>
+              <span className="font-pixel text-[10px] text-ink">{bidText}</span>
             </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
 
       {completedRounds.length > 0 && (
-        <div className="bg-panel border border-line rounded-2xl overflow-hidden">
-          <div className="px-4 py-2 border-b border-line text-xs font-semibold uppercase tracking-wide text-muted">Rounds so far</div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="text-muted text-xs uppercase tracking-wide">
-                  <th className="text-left px-4 py-2">Round</th>
-                  <th className="text-right px-2 py-2">You</th>
-                  {task.bots.map((bot) => (
-                    <th key={bot.id} className="text-right px-2 py-2">
-                      {bot.name}
-                    </th>
-                  ))}
-                  <th className="text-right px-4 py-2">Leader</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {completedRounds.map((r) => {
-                  const leaderName =
-                    r.leader === null ? '—' : r.leader.id === 'player' ? 'You' : task.bots.find((b) => b.id === r.leader!.id)?.name ?? r.leader.id
-                  return (
-                    <tr key={r.round}>
-                      <td className="px-4 py-2 text-ink font-semibold">{r.round}</td>
-                      <td className="px-2 py-2 text-right font-mono text-ink">{r.playerBid === null ? 'out' : formatUnit(r.playerBid, task.unit)}</td>
-                      {r.bots.map((b) => (
-                        <td key={b.id} className="px-2 py-2 text-right font-mono text-ink">
-                          {b.bid === null ? 'out' : formatUnit(b.bid, task.unit)}
-                        </td>
-                      ))}
-                      <td className="px-4 py-2 text-right font-mono text-revenue">{leaderName}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="flex flex-col gap-2">
+          <Eyebrow>Rounds so far</Eyebrow>
+          {completedRounds.map((r) => {
+            const leaderName =
+              r.leader === null ? 'no one' : r.leader.id === 'player' ? 'You' : task.bots.find((b) => b.id === r.leader!.id)?.name ?? r.leader.id
+            const youText = r.playerBid === null ? 'passed' : `bid ${formatUnit(r.playerBid, task.unit)}`
+            const highText = r.leader === null ? '—' : formatUnit(r.leader.bid, task.unit)
+            return (
+              <div key={r.round} className="px-box px-box-paper px-3 py-2 text-sm">
+                <span className="font-semibold">Round {r.round}:</span> You {youText}. High bid {highText} by {leaderName}.
+              </div>
+            )
+          })}
         </div>
       )}
 
-      {walked && (
-        <div className="bg-panel border border-line rounded-2xl p-4 text-center text-muted font-semibold">You walked away.</div>
-      )}
+      {walked && <div className="px-box px-box-dark p-4 text-center px-eyebrow text-muted">You walked away.</div>}
 
       {isOver ? (
-        <div className="bg-panel-2 border border-line rounded-2xl p-4 text-center text-ink font-semibold">Bidding closed. Tap Submit.</div>
+        <div className="px-box p-4 text-center px-h2">Bidding closed. Tap Submit.</div>
       ) : (
-        <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+        <div className="px-box p-4 flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-            <span className="text-ink font-semibold min-w-0">
+            <span className="px-eyebrow text-muted">
               Round {currentRoundNumber} of {task.rounds}
             </span>
-            <span className="font-mono text-xl sm:text-2xl text-ink tabular-nums shrink-0 whitespace-nowrap">
-              {formatUnit(currentBid, task.unit)}
-            </span>
+            <span className="font-pixel text-base text-ink px-num shrink-0 whitespace-nowrap">{formatUnit(currentBid, task.unit)}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Decrease bid"
-              disabled={disabled}
-              onClick={() => nudge(-1)}
-              className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
-            >
+            <Button type="button" variant="ghost" aria-label="Decrease bid" disabled={disabled} onClick={() => nudge(-1)} className="min-w-11 px-2 shrink-0">
               −
-            </button>
+            </Button>
             <input
               type="range"
               aria-label="Bid amount"
@@ -147,41 +133,25 @@ export function AuctionTask({
               disabled={disabled}
               onChange={(e) => setCurrentBid(Number(e.target.value))}
               style={{ accentColor: 'var(--color-equity)' }}
-              className="h-11 flex-1 min-w-0 disabled:opacity-40"
+              className="px-input h-11 flex-1 min-w-0 disabled:opacity-40"
             />
-            <button
-              type="button"
-              aria-label="Increase bid"
-              disabled={disabled}
-              onClick={() => nudge(1)}
-              className="min-h-11 min-w-11 shrink-0 rounded-xl bg-panel-2 border border-line text-ink text-lg font-semibold disabled:opacity-40 active:scale-[0.98]"
-            >
+            <Button type="button" variant="ghost" aria-label="Increase bid" disabled={disabled} onClick={() => nudge(1)} className="min-w-11 px-2 shrink-0">
               +
-            </button>
+            </Button>
           </div>
 
-          <div className="flex items-center justify-between gap-2 text-xs text-muted font-mono tabular-nums">
+          <div className="flex items-center justify-between gap-2 px-eyebrow text-muted px-num">
             <span className="truncate">{formatUnit(bidFloor, task.unit)}</span>
             <span className="truncate">{formatUnit(task.bidMax, task.unit)}</span>
           </div>
 
           <div className="flex flex-wrap gap-3 mt-1">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={placeBid}
-              className="flex-1 basis-32 min-h-11 px-3 rounded-xl bg-revenue text-bg font-semibold disabled:opacity-40 active:scale-[0.98]"
-            >
+            <Button type="button" variant="primary" disabled={disabled} onClick={placeBid} className="flex-1 basis-32">
               Place bid
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={walkAway}
-              className="flex-1 basis-32 min-h-11 px-3 rounded-xl bg-panel-2 border border-line text-ink font-semibold disabled:opacity-40 active:scale-[0.98]"
-            >
+            </Button>
+            <Button type="button" variant="danger" disabled={disabled} onClick={walkAway} className="flex-1 basis-32">
               Walk away
-            </button>
+            </Button>
           </div>
         </div>
       )}

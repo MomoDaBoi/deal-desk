@@ -17,7 +17,12 @@ function fmt(n: number, unit?: string): string {
   return `${sign}${abs}${unit}`
 }
 
-/** Renders a lesson card's visual: numbered bullets, a bar row, or a compact waterfall. */
+/**
+ * Renders a lesson card's visual: numbered bullets, a bar row, or a compact
+ * waterfall. This is always mounted inside a paper dialog box (cream
+ * background, dark ink text), so labels and values are set to the paper ink
+ * colour explicitly rather than relying on an inherited light-theme token.
+ */
 export function LessonVisual({ visual }: { visual?: Visual }) {
   if (!visual || visual.kind === 'none') return null
 
@@ -25,8 +30,8 @@ export function LessonVisual({ visual }: { visual?: Visual }) {
     return (
       <ul className="mt-4 flex flex-col gap-2">
         {visual.items.map((b, i) => (
-          <li key={i} className="flex gap-3 text-sm">
-            <span className="font-mono text-muted w-4 text-right shrink-0">{i + 1}</span>
+          <li key={i} className="flex gap-3 text-sm text-[#241f3a]">
+            <span className="font-pixel text-[9px] text-muted w-4 text-right shrink-0 pt-0.5">{i + 1}</span>
             <span>{b}</span>
           </li>
         ))}
@@ -41,10 +46,10 @@ export function LessonVisual({ visual }: { visual?: Visual }) {
         {visual.items.map((it, i) => (
           <div key={i} className="flex items-center gap-2 text-sm">
             <span className="w-28 shrink-0 truncate text-muted">{it.label}</span>
-            <div className="flex-1 h-4 rounded bg-panel-2 overflow-hidden">
-              <div className={`h-full ${ROLE_BG[it.role ?? 'neutral']}`} style={{ width: `${(Math.abs(it.value) / max) * 100}%` }} />
+            <div className="flex-1 min-h-[14px] bg-paper-2 border-2 border-[#1b1a2e] overflow-hidden">
+              <div className={`h-full min-h-[14px] ${ROLE_BG[it.role ?? 'neutral']}`} style={{ width: `${(Math.abs(it.value) / max) * 100}%` }} />
             </div>
-            <span className="w-20 shrink-0 text-right font-mono text-xs">{fmt(it.value, visual.unit)}</span>
+            <span className="w-20 shrink-0 text-right font-pixel text-[9px] text-[#241f3a]">{fmt(it.value, visual.unit)}</span>
           </div>
         ))}
       </div>
@@ -65,13 +70,13 @@ export function LessonVisual({ visual }: { visual?: Visual }) {
       {rows.map((r, i) => (
         <div key={i} className="flex items-center gap-2 text-sm">
           <span className="w-28 shrink-0 truncate text-muted">{r.label}</span>
-          <div className="relative flex-1 h-4 rounded bg-panel-2 overflow-hidden">
+          <div className="relative flex-1 min-h-[14px] bg-paper-2 border-2 border-[#1b1a2e] overflow-hidden">
             <div
-              className={`absolute top-0 h-full ${r.total ? ROLE_BG[r.role ?? 'equity'] : ROLE_BG[r.role ?? (r.value < 0 ? 'cost' : 'revenue')]}`}
+              className={`absolute top-0 h-full min-h-[14px] ${r.total ? ROLE_BG[r.role ?? 'equity'] : ROLE_BG[r.role ?? (r.value < 0 ? 'cost' : 'revenue')]}`}
               style={{ left: `${(r.lo / max) * 100}%`, width: `${Math.max(1, ((r.hi - r.lo) / max) * 100)}%` }}
             />
           </div>
-          <span className={`w-20 shrink-0 text-right font-mono text-xs ${r.total ? 'font-bold' : ''}`}>{fmt(r.value, visual.unit)}</span>
+          <span className={`w-20 shrink-0 text-right font-pixel text-[9px] text-[#241f3a] ${r.total ? 'font-bold' : ''}`}>{fmt(r.value, visual.unit)}</span>
         </div>
       ))}
     </div>

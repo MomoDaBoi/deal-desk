@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { QuizTask as QuizTaskType } from '../engine/types'
+import { Px } from '../pixel/Px'
+import { ICON_CLOCK } from '../pixel/sprites/icons'
+import { PixelBar } from './ui'
 
 /**
  * One question at a time, tap-to-answer, auto-advance. Optional whole-quiz
@@ -98,28 +101,25 @@ export function QuizTask({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <span className="text-sm text-muted min-w-0">
+        <span className="px-eyebrow text-muted min-w-0">
           Question {index + 1} of {questions.length}
         </span>
         {limit !== undefined && (
-          <span className={`font-mono text-sm tabular-nums shrink-0 ${urgent ? 'text-cost' : 'text-muted'}`}>{clock}</span>
+          <span className={`inline-flex items-center gap-1 px-num text-sm shrink-0 ${urgent ? 'text-cost' : 'text-muted'}`}>
+            <Px sprite={ICON_CLOCK} scale={1} title="Time left" />
+            {clock}
+          </span>
         )}
       </div>
 
-      {limit !== undefined && (
-        <div className="h-1 rounded-full bg-panel-2 overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-[width] duration-200 ${urgent ? 'bg-cost' : 'bg-revenue'}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-      )}
+      {limit !== undefined && <PixelBar fraction={pct / 100} gold={urgent} />}
 
       <p className="text-lg font-bold text-ink">{current.text}</p>
 
       <div className="flex flex-col gap-2">
-        {current.choices.map((choice) => {
+        {current.choices.map((choice, i) => {
           const selected = value[current.id] === choice.id
+          const letter = String.fromCharCode(65 + i)
           return (
             <button
               key={choice.id}
@@ -127,11 +127,14 @@ export function QuizTask({
               onClick={() => pick(choice.id)}
               disabled={disabled}
               aria-pressed={selected}
-              className={`min-h-12 px-4 py-2 rounded-xl border text-left font-medium break-words bg-panel-2 border-line text-ink transition
-                ${selected ? 'border-ink ring-2 ring-ink' : ''}
+              className={`w-full min-h-12 px-4 py-2 px-chip border-l-4 border-l-line-hi flex items-center gap-3 text-left font-medium break-words bg-panel-2 text-ink transition
+                ${selected ? 'bg-equity/30 border-l-equity outline outline-3 outline-ink -outline-offset-3' : ''}
                 disabled:opacity-60`}
             >
-              {choice.label}
+              <span className="shrink-0 w-6 h-6 flex items-center justify-center font-pixel text-[10px] bg-panel-2 border-2 border-line-hi">
+                {letter}
+              </span>
+              <span className="min-w-0 break-words">{choice.label}</span>
             </button>
           )
         })}
@@ -159,9 +162,9 @@ export function QuizTask({
               className="min-h-11 min-w-11 flex items-center justify-center"
             >
               <span
-                className={`h-6 w-6 rounded-full text-[10px] font-mono flex items-center justify-center border transition
+                className={`h-6 w-6 font-pixel text-[9px] flex items-center justify-center border-2 transition
                   ${answered ? 'bg-revenue/25 border-revenue text-revenue' : 'bg-panel-2 border-line text-muted'}
-                  ${isCurrent ? 'ring-2 ring-ink' : ''}`}
+                  ${isCurrent ? 'outline outline-2 outline-ink' : ''}`}
               >
                 {i + 1}
               </span>

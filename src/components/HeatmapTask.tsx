@@ -48,10 +48,10 @@ export function HeatmapTask({
   return (
     <div className="flex flex-col gap-3">
       {task.tap && (
-        <div className="text-sm font-medium text-ink bg-panel-2 border border-line rounded-xl px-3 py-2">{task.tap.prompt}</div>
+        <div className="px-box px-box-dark p-3 text-sm">{task.tap.prompt}</div>
       )}
 
-      <div className="overflow-x-auto rounded-2xl border border-line bg-panel">
+      <div className="overflow-x-auto px-box p-0">
         {/* The header corner is its own fixed track: left in the `1fr` set its
             long "rows \ cols" label would win the equalisation and blow every
             data column out to match it, which at 360px means a wall of scroll. */}
@@ -59,14 +59,14 @@ export function HeatmapTask({
           className="grid w-max"
           style={{ gridTemplateColumns: `5rem repeat(${task.cols.length}, minmax(64px, 1fr))` }}
         >
-          <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center text-center text-[11px] leading-tight text-muted font-semibold bg-panel-2 border-b border-r border-line px-1 break-words">
+          <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center text-center px-eyebrow text-muted bg-panel-2 border-b-2 border-r-2 border-[#1b1a2e] px-1 break-words">
             {task.rowsLabel} \ {task.colsLabel}
           </div>
 
           {task.cols.map((col) => (
             <div
               key={col.id}
-              className="min-h-11 min-w-16 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-b border-line px-1 text-center"
+              className="min-h-11 min-w-16 flex items-center justify-center px-eyebrow text-ink bg-panel-2 border-b-2 border-[#1b1a2e] px-1 text-center"
             >
               {col.label}
             </div>
@@ -74,7 +74,7 @@ export function HeatmapTask({
 
           {task.rows.map((row) => (
             <Fragment key={row.id}>
-              <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center text-xs font-semibold text-ink bg-panel-2 border-r border-line px-1 text-center">
+              <div className="sticky left-0 z-10 min-h-11 w-20 flex items-center justify-center px-eyebrow text-ink bg-panel-2 border-r-2 border-[#1b1a2e] px-1 text-center">
                 {row.label}
               </div>
 
@@ -84,14 +84,14 @@ export function HeatmapTask({
 
                 if (isBlank) {
                   return (
-                    <div key={key} className="min-h-11 min-w-16 flex items-center justify-center border-b border-line px-1">
+                    <div key={key} className="min-h-11 min-w-16 flex items-center justify-center border-2 border-[#1b1a2e] px-1">
                       <NumberField
                         id={key}
                         value={value.values[key] ?? null}
                         onChange={(n) => setBlank(key, n)}
                         disabled={disabled}
                         ariaLabel={`${row.label}, ${col.label}`}
-                        className="min-h-11 w-20 text-right font-mono bg-panel-2 border border-line rounded-lg px-2 text-ink disabled:opacity-60"
+                        className="px-input px-num min-h-11 w-20 text-right disabled:opacity-60"
                       />
                     </div>
                   )
@@ -108,8 +108,8 @@ export function HeatmapTask({
                     aria-pressed={task.tap ? tapped : undefined}
                     aria-label={`${row.label}, ${col.label}: ${fmtCell(cellValue, unit)}`}
                     style={{ backgroundColor: knownCellColor(cellValue, min, max) }}
-                    className={`min-h-11 min-w-16 flex items-center justify-center font-mono text-sm text-ink border-b border-line px-1 disabled:opacity-60 ${
-                      tapped ? 'ring-2 ring-ink' : ''
+                    className={`min-h-11 min-w-16 flex items-center justify-center px-num text-sm text-ink border-2 border-[#1b1a2e] px-1 disabled:opacity-60 ${
+                      tapped ? 'outline outline-3 outline-ink -outline-offset-3' : ''
                     }`}
                   >
                     {fmtCell(cellValue, unit)}

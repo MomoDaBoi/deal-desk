@@ -70,10 +70,35 @@ about the owner may ever land in it. Every session must follow these:
 - `src/store/` — `progress.ts` (exportable save, versioned),
   `settings.ts` (API key + toggles, its own localStorage key, never
   exported), `nav.ts`.
-- `src/screens/` — Ladder, RungScreen, MissionScreen (the engine loop:
+- `src/screens/` — Office (the hub), MissionScreen (the engine loop:
   lesson → task → result → review/bonus), Settings.
 - `src/components/` — small shared UI. Task widgets (e.g. `OrderTask`) go
   here, one per task kind.
+
+## Pixel art and the office (Milestone 7)
+
+- The look is Kairosoft / Game Dev Story: chunky, saturated 16-bit, dark
+  blue-purple `K` outlines, one shadow shade per hue. All art is text-grid
+  sprites under `src/pixel/sprites/` using the single palette in
+  `src/pixel/palette.ts`; read `src/pixel/sprites/README.md` before drawing
+  anything. Never add image files; never add a colour outside the palette.
+  Every sprite module has a validation test; keep it that way.
+- `src/pixel/` is the renderer (`sprite.ts`, `Px.tsx`). `src/office/` is
+  the hub: `map.ts` (floor plan data), `pathfind.ts` (pure BFS),
+  `world.ts` (simulation + drawing, no React), `OfficeCanvas.tsx` (rAF loop
+  and input). `src/screens/Office.tsx` is the hub screen and replaces the
+  old ladder and rung lists; `#/rung/n` opens the floor card on it.
+- One desk per mission. Slots come from `deskSlots(rung)` in `map.ts`;
+  index 6 is the mentor mission. Any change to the floor plan must keep
+  `src/office/world.test.ts` green (every chair reachable from spawn).
+- DOM chrome uses the `px-*` classes in `src/index.css` (`px-box`,
+  `px-btn`, `px-chip`, `px-input`, `px-bar`, `px-eyebrow`, `px-h1/2`,
+  `px-num`). No border radius anywhere. Headings use Press Start 2P (keep
+  sizes 9-15px), body uses Pixelify Sans at 18px. Icons are sprites via
+  `Px`, not emoji.
+- Talking heads: `src/components/Dialog.tsx` with `PORTRAITS.md/hr/intern/
+  client` and expressions neutral/pleased/annoyed/smug.
+- `#/sprites` is a developer contact sheet; it is not linked from the game.
 
 ## Hard rules from the brief
 

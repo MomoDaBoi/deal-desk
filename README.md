@@ -10,6 +10,18 @@ Standard mode is a static site with no AI, no backend, no cost. Mentor mode
 (optional) uses your own Anthropic API key, stored only in your browser, to
 grade written answers and let you "Ask the MD".
 
+The game is a 16-bit pixel office in the spirit of Game Dev Story: you walk
+a chibi banker around five floors (intern bullpen up to the executive
+floor), tap a desk to sit down for a mission, and get graded by a talking
+MD in an RPG dialog box. Every sprite is hand-drawn as a text grid in
+`src/pixel/sprites/` and rendered to canvas at runtime; there are no image
+files. Music and sound effects are synthesized with the Web Audio API and
+are off by default.
+
+Controls: tap or click a desk to walk to it; arrow keys or WASD nudge on a
+keyboard; the Floor button lists the floor's missions if you would rather
+not walk. `#/sprites` shows every sprite in the game.
+
 ## Run locally
 
 ```

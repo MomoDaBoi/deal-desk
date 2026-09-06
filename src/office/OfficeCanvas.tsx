@@ -35,6 +35,7 @@ export function OfficeCanvas({ world, onScale }: { world: OfficeWorld; onScale?:
     const resize = () => {
       const w = Math.max(160, Math.floor(parent.clientWidth))
       const h = Math.max(160, Math.floor(parent.clientHeight))
+      if (canvas.width === w && canvas.height === h) return
       canvas.width = w
       canvas.height = h
       canvas.style.width = `${w}px`
@@ -52,6 +53,9 @@ export function OfficeCanvas({ world, onScale }: { world: OfficeWorld; onScale?:
     let last = performance.now()
     let acc = 0
     const loop = (now: number) => {
+      // Belt and braces: if layout changed without a ResizeObserver
+      // callback (first paint, orientation change), resize now.
+      if (canvas.width !== Math.floor(parent.clientWidth) || canvas.height !== Math.floor(parent.clientHeight)) resize()
       // Fixed 60Hz simulation regardless of display refresh.
       acc += Math.min(100, now - last)
       last = now

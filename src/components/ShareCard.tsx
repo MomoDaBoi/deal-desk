@@ -4,6 +4,10 @@ import { formatComp, rungStatus } from '../engine/scoring'
 import { missionsForRung } from '../missions'
 import { useProgress } from '../store/progress'
 import { useMentorMode } from '../store/settings'
+import { drawSprite, spriteHeight, spriteWidth } from '../pixel/sprite'
+import { DEAL_DESK_LOGO, EMBLEM_PROMOTION, ICON_COIN, ICON_SHARE } from '../pixel/sprites/icons'
+import { CHARACTERS } from '../pixel/sprites/characters'
+import { Px } from '../pixel/Px'
 import { Button } from './ui'
 
 const RUNGS: Rung[] = [1, 2, 3, 4, 5]
@@ -17,80 +21,148 @@ const CAPTIONS: Record<Rung, string> = {
   5: 'Takes credit for everything.',
 }
 
-const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+const PIXEL_FONT = '"Press Start 2P", "Pixelify Sans", monospace'
+const SANS_FONT = '"Pixelify Sans", ui-sans-serif, system-ui, sans-serif'
 const CARD_SIZE = 1080
 
-function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
+// Palette lifted from src/index.css so the card reads as the same world.
+const COLOR_BG = '#1b1a2e'
+const COLOR_PAPER = '#e5dccb'
+const COLOR_PAPER_INK = '#241f3a'
+const COLOR_REVENUE = '#4fc46a'
+const COLOR_GOLD = '#f2b632'
+const COLOR_MUTED = '#a7a9c4'
+
+/** Subtle 8px pixel grid over the background, matching the page ground. */
+function drawGrid(ctx: CanvasRenderingContext2D, size: number) {
+  ctx.strokeStyle = 'rgba(255,255,255,0.035)'
+  ctx.lineWidth = 1
+  for (let x = 0; x <= size; x += 8) {
+    ctx.beginPath()
+    ctx.moveTo(x + 0.5, 0)
+    ctx.lineTo(x + 0.5, size)
+    ctx.stroke()
+  }
+  for (let y = 0; y <= size; y += 8) {
+    ctx.beginPath()
+    ctx.moveTo(0, y + 0.5)
+    ctx.lineTo(size, y + 0.5)
+    ctx.stroke()
+  }
+}
+
+/** Greedy word-wrap using the context's current font. */
+function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let line = ''
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w
+    if (line && ctx.measureText(test).width > maxWidth) {
+      lines.push(line)
+      line = w
+    } else {
+      line = test
+    }
+  }
+  if (line) lines.push(line)
+  return lines
 }
 
 function drawCard(ctx: CanvasRenderingContext2D, opts: { rung: Rung; passedCount: number; totalComp: number }) {
   const size = CARD_SIZE
+  ctx.imageSmoothingEnabled = false
   ctx.clearRect(0, 0, size, size)
 
-  // Background
-  ctx.fillStyle = '#0b0f17'
+  // Background + pixel grid.
+  ctx.fillStyle = COLOR_BG
   ctx.fillRect(0, 0, size, size)
+  drawGrid(ctx, size)
 
   ctx.textBaseline = 'alphabetic'
 
-  // Wordmark: "Deal" in ink, "Desk" in revenue green.
-  ctx.font = `900 64px ${FONT_STACK}`
-  const dealText = 'Deal'
-  const deskText = 'Desk'
-  const dealWidth = ctx.measureText(dealText).width
-  const deskWidth = ctx.measureText(deskText).width
-  const startX = size / 2 - (dealWidth + deskWidth) / 2
+  // Logo, 8x scale, centred at the top.
+  const logoScale = 8
+  const logoW = spriteWidth(DEAL_DESK_LOGO) * logoScale
+  drawSprite(ctx, DEAL_DESK_LOGO, (size - logoW) / 2, 40, logoScale, 0)
+
+  // Dialog box: cream fill, dark 12px border, on the right.
+  const dialogX = 300
+  const dialogY = 230
+  const dialogW = size - dialogX - 60
+  const dialogH = 560
+  const border = 12
+  ctx.fillStyle = COLOR_PAPER_INK
+  ctx.fillRect(dialogX, dialogY, dialogW, dialogH)
+  ctx.fillStyle = COLOR_PAPER
+  ctx.fillRect(dialogX + border, dialogY + border, dialogW - border * 2, dialogH - border * 2)
+
+  const padX = 40
+  const innerW = dialogW - padX * 2
+  let cursorY = dialogY + border + 70
+
+  // Rung title, pixel font.
   ctx.textAlign = 'left'
-  ctx.fillStyle = '#e6edf7'
-  ctx.fillText(dealText, startX, 150)
-  ctx.fillStyle = '#22c55e'
-  ctx.fillText(deskText, startX + dealWidth, 150)
+  ctx.fillStyle = COLOR_PAPER_INK
+  ctx.font = `56px ${PIXEL_FONT}`
+  ctx.fillText(RUNG_TITLES[opts.rung].toUpperCase(), dialogX + padX, cursorY)
+  cursorY += 40
 
-  ctx.textAlign = 'center'
+  // Divider.
+  ctx.fillStyle = COLOR_PAPER_INK
+  ctx.fillRect(dialogX + padX, cursorY, innerW, 4)
+  cursorY += 56
 
-  // Title
-  ctx.fillStyle = '#e6edf7'
-  ctx.font = `800 88px ${FONT_STACK}`
-  ctx.fillText(RUNG_TITLES[opts.rung], size / 2, 300)
-
-  // Lifetime comp
-  ctx.font = `700 32px ${FONT_STACK}`
-  ctx.fillStyle = '#8b98ad'
-  ctx.fillText('LIFETIME COMP', size / 2, 400)
-
-  ctx.font = `800 96px ${FONT_STACK}`
-  ctx.fillStyle = '#22c55e'
-  ctx.fillText(formatComp(opts.totalComp), size / 2, 510)
-
-  // Rung squares row (passed rungs out of 5)
-  const square = 64
-  const gap = 24
-  const rowWidth = square * 5 + gap * 4
-  let sx = size / 2 - rowWidth / 2
-  const sy = 590
-  for (let i = 0; i < 5; i++) {
-    ctx.fillStyle = i < opts.passedCount ? '#22c55e' : '#263145'
-    roundRectPath(ctx, sx, sy, square, square, 12)
-    ctx.fill()
-    sx += square + gap
+  // Caption, sans font, word-wrapped.
+  ctx.font = `32px ${SANS_FONT}`
+  const captionLines = wrapText(ctx, CAPTIONS[opts.rung], innerW)
+  for (const line of captionLines) {
+    ctx.fillText(line, dialogX + padX, cursorY)
+    cursorY += 44
   }
+  cursorY += 30
 
-  // Caption
-  ctx.font = `600 38px ${FONT_STACK}`
-  ctx.fillStyle = '#e6edf7'
-  ctx.fillText(CAPTIONS[opts.rung], size / 2, 780)
+  // Rung progress pips (segmented pixel bar, 5 cells).
+  const pipW = 60
+  const pipH = 24
+  const pipGap = 10
+  for (let i = 0; i < 5; i++) {
+    ctx.fillStyle = i < opts.passedCount ? COLOR_REVENUE : '#bfb39c'
+    ctx.fillRect(dialogX + padX + i * (pipW + pipGap), cursorY, pipW, pipH)
+  }
+  cursorY += pipH + 56
 
-  // Footer
-  ctx.font = `500 26px ${FONT_STACK}`
-  ctx.fillStyle = '#8b98ad'
-  ctx.fillText('A game, not investment advice.', size / 2, 1020)
+  // Lifetime comp, coin icon beside the number.
+  ctx.font = `20px ${PIXEL_FONT}`
+  ctx.fillStyle = '#5b5670'
+  ctx.fillText('LIFETIME COMP', dialogX + padX, cursorY)
+  cursorY += 30
+  const coinScale = 6
+  const coinH = spriteHeight(ICON_COIN) * coinScale
+  drawSprite(ctx, ICON_COIN, dialogX + padX, cursorY, coinScale, 0)
+  ctx.font = `44px ${PIXEL_FONT}`
+  ctx.fillStyle = COLOR_GOLD
+  ctx.textBaseline = 'middle'
+  ctx.fillText(formatComp(opts.totalComp), dialogX + padX + spriteWidth(ICON_COIN) * coinScale + 20, cursorY + coinH / 2)
+  ctx.textBaseline = 'alphabetic'
+
+  // Player sprite, 10x scale, on the left, vertically centred on the dialog.
+  const charScale = 10
+  const charSprite = CHARACTERS.player.down
+  const charH = spriteHeight(charSprite) * charScale
+  drawSprite(ctx, charSprite, 90, dialogY + dialogH / 2 - charH / 2, charScale, 0)
+
+  // Promotion emblem, 6x scale, tucked in the bottom-right corner.
+  const emblemScale = 6
+  const emblemW = spriteWidth(EMBLEM_PROMOTION) * emblemScale
+  const emblemH = spriteHeight(EMBLEM_PROMOTION) * emblemScale
+  drawSprite(ctx, EMBLEM_PROMOTION, size - emblemW - 40, size - emblemH - 40, emblemScale, 0)
+
+  // Footer.
+  ctx.textAlign = 'center'
+  ctx.font = `18px ${SANS_FONT}`
+  ctx.fillStyle = COLOR_MUTED
+  ctx.fillText('A game, not investment advice.', size / 2, size - 20)
 }
 
 function renderCardBlob(opts: { rung: Rung; passedCount: number; totalComp: number }): Promise<Blob> {
@@ -103,11 +175,19 @@ function renderCardBlob(opts: { rung: Rung; passedCount: number; totalComp: numb
       reject(new Error('Canvas is not supported here.'))
       return
     }
-    drawCard(ctx, opts)
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob)
-      else reject(new Error('Could not render the image.'))
-    }, 'image/png')
+    // Wait for the pixel + sans webfonts to be ready so the title and
+    // caption do not fall back to a system font on first paint. If a font
+    // never loads, the font stack's own fallback (monospace / sans-serif)
+    // still renders something legible.
+    document.fonts.ready
+      .catch(() => undefined)
+      .then(() => {
+        drawCard(ctx, opts)
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error('Could not render the image.'))
+        }, 'image/png')
+      })
   })
 }
 
@@ -178,6 +258,7 @@ export function ShareCard() {
   return (
     <div className="flex flex-col items-end gap-2">
       <Button type="button" variant="ghost" onClick={handleShare} disabled={busy}>
+        <Px sprite={ICON_SHARE} scale={2} />
         {busy ? 'Rendering…' : 'Share'}
       </Button>
       {error && <p className="text-xs text-cost">{error}</p>}
@@ -185,7 +266,7 @@ export function ShareCard() {
         <img
           src={previewUrl}
           alt="Deal Desk share card preview"
-          className="h-[120px] w-[120px] rounded-lg border border-line object-cover"
+          className="h-[120px] w-[120px] border-[3px] border-line-hi object-cover"
         />
       )}
     </div>

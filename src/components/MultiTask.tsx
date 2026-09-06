@@ -2,6 +2,8 @@ import type { Answer, BridgeAnswer, MultiAnswer, MultiTask as MultiTaskType, Qui
 import { BridgeTask } from './BridgeTask'
 import { SliderTask, type SliderValue } from './SliderTask'
 import { QuizTask } from './QuizTask'
+import { Px } from '../pixel/Px'
+import { ICON_CHECK } from '../pixel/sprites/icons'
 
 /**
  * The capstone: several ordinary tasks played one after another. This widget
@@ -76,42 +78,32 @@ export function MultiTask({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Progress pills: "1 Value / 2 Structure / 3 Defend". Tapping a
-          completed stage's pill jumps back to it; the current stage and any
+      {/* Stage indicator strip: "1 Value / 2 Structure / 3 Defend". Tapping a
+          completed stage's chip jumps back to it; the current stage and any
           not-yet-reached stage are not tap targets. */}
       <ol className="flex flex-wrap items-center gap-1.5">
         {stages.map((s, i) => {
           const done = value.answers[s.id] !== undefined
           const current = i === index
           const canJump = done && !current
-          const look = current
-            ? 'bg-panel-2 border-ink text-ink'
-            : done
-              ? 'bg-revenue/15 border-revenue/50 text-revenue'
-              : 'bg-panel border-line text-muted'
-          const pill = (
-            <span
-              className="font-mono tabular-nums opacity-70 shrink-0"
-              aria-hidden={true}
-            >
+          const look = current ? 'bg-equity/30 text-ink' : done ? 'bg-revenue/20 text-revenue' : 'bg-panel-2 text-muted'
+          const mark = done ? (
+            <Px sprite={ICON_CHECK} scale={1} title="Done" />
+          ) : (
+            <span className="font-pixel text-[9px] opacity-70 shrink-0" aria-hidden={true}>
               {i + 1}
             </span>
           )
           return (
             <li key={s.id} aria-current={current ? 'step' : undefined} className="min-w-0 max-w-full">
               {canJump ? (
-                <button
-                  type="button"
-                  onClick={() => goto(i)}
-                  disabled={disabled}
-                  className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}
-                >
-                  {pill}
+                <button type="button" onClick={() => goto(i)} disabled={disabled} className={`px-chip flex max-w-full items-center gap-1.5 px-2.5 py-1 px-eyebrow ${look}`}>
+                  {mark}
                   <span className="truncate">{s.title}</span>
                 </button>
               ) : (
-                <span className={`flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold ${look}`}>
-                  {pill}
+                <span className={`px-chip flex max-w-full items-center gap-1.5 px-2.5 py-1 px-eyebrow ${look}`}>
+                  {mark}
                   <span className="truncate">{s.title}</span>
                 </span>
               )}
@@ -122,7 +114,7 @@ export function MultiTask({
 
       {/* Current stage */}
       <div className="flex flex-col gap-1">
-        <h3 className="text-lg font-bold text-ink break-words">{stage.title}</h3>
+        <h3 className="px-h2 break-words">{stage.title}</h3>
         {stage.intro && <p className="text-sm text-muted break-words">{stage.intro}</p>}
       </div>
 

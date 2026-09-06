@@ -61,12 +61,12 @@ export function BridgeTask({
   return (
     <div className="flex flex-col gap-4">
       {/* Start anchor */}
-      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
-        <span className="text-xs uppercase tracking-wide text-muted font-semibold">{task.start.label}</span>
-        <div className="h-4 rounded-full bg-panel-2 overflow-hidden">
-          <div className={`h-full rounded-full ${SOLID_BG[task.start.role ?? 'equity']}`} style={{ width: `${pct(task.start.value, scale)}%` }} />
+      <div className="px-box p-4 flex flex-col gap-2">
+        <span className="px-eyebrow text-muted">{task.start.label}</span>
+        <div className="h-4 bg-shade border-2 border-bg overflow-hidden">
+          <div className={`h-full ${SOLID_BG[task.start.role ?? 'equity']}`} style={{ width: `${pct(task.start.value, scale)}%` }} />
         </div>
-        <span className="font-mono text-ink text-sm">
+        <span className="px-num text-[11px] text-ink">
           {formatNumber(task.start.value)}
           {unit}
         </span>
@@ -82,7 +82,7 @@ export function BridgeTask({
         const left = Math.min(pct(prevTotal, scale), pct(newTotal, scale))
         const width = Math.abs(pct(newTotal, scale) - pct(prevTotal, scale))
         return (
-          <div key={adj.id} className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-2">
+          <div key={adj.id} className="px-box p-4 flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
               <div className="flex flex-col min-w-0">
                 <span className="text-ink text-sm font-semibold break-words">{adj.label}</span>
@@ -94,22 +94,25 @@ export function BridgeTask({
                   disabled={disabled || got === null}
                   onClick={() => setAdjustment(adj.id, got === null ? null : -got)}
                   aria-label={`Flip sign for ${adj.label}`}
-                  className="min-w-11 min-h-11 shrink-0 flex items-center justify-center font-mono text-ink bg-panel-2 border border-line rounded-lg disabled:opacity-60"
+                  className="min-w-11 min-h-11 shrink-0 flex items-center justify-center px-num text-ink bg-panel-2 border-2 border-line disabled:opacity-60"
                 >
                   {positive ? '+' : '−'}
                 </button>
-                <NumberField
-                  id={adj.id}
-                  value={got}
-                  onChange={(n) => setAdjustment(adj.id, n)}
-                  ariaLabel={adj.label}
-                  disabled={disabled}
-                />
+                <div className="w-28 max-w-full shrink-0">
+                  <NumberField
+                    id={adj.id}
+                    value={got}
+                    onChange={(n) => setAdjustment(adj.id, n)}
+                    ariaLabel={adj.label}
+                    disabled={disabled}
+                    className="px-input w-full text-right px-num text-[11px]"
+                  />
+                </div>
               </div>
             </div>
-            <div className="relative h-4 rounded-full bg-panel-2 overflow-hidden">
+            <div className="relative h-4 bg-shade border-2 border-bg overflow-hidden">
               <div
-                className={`absolute inset-y-0 rounded-full ${positive ? 'bg-debt' : 'bg-cash'}`}
+                className={`absolute inset-y-0 ${positive ? 'bg-debt' : 'bg-cash'}`}
                 style={{ left: `${left}%`, width: `${width}%` }}
               />
             </div>
@@ -118,28 +121,28 @@ export function BridgeTask({
       })}
 
       {/* Reconciliation */}
-      <div className="bg-panel border border-line rounded-2xl p-4 flex flex-col gap-3">
+      <div className="px-box p-4 flex flex-col gap-3">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <span className="text-xs uppercase tracking-wide text-muted font-semibold min-w-0 break-words">{task.end.label}</span>
+          <span className="px-eyebrow text-muted min-w-0 break-words">{task.end.label}</span>
           <span className={`text-sm font-semibold min-w-0 break-words ${anyBlank ? 'text-muted' : reconciled ? 'text-revenue' : 'text-cost'}`}>
             {anyBlank ? 'Fill in every bar' : reconciled ? 'Reconciled' : `Off by ${formatNumber(Math.abs(diff))}${unit}`}
           </span>
         </div>
         <div className="flex flex-col gap-2">
-          <div className="h-4 rounded-full bg-panel-2 overflow-hidden" aria-label="Running total">
+          <div className="h-4 bg-shade border-2 border-bg overflow-hidden" aria-label="Running total">
             <div
-              className={`h-full rounded-full ${SOLID_BG[task.end.role ?? 'equity']}`}
+              className={`h-full ${SOLID_BG[task.end.role ?? 'equity']}`}
               style={{ width: `${pct(runningTotal, scale)}%` }}
             />
           </div>
-          <div className="h-4 rounded-full bg-panel-2 overflow-hidden" aria-label="Target">
+          <div className="h-4 bg-shade border-2 border-bg overflow-hidden" aria-label="Target">
             <div
-              className={`h-full rounded-full opacity-40 border-2 border-dashed border-ink ${SOLID_BG[task.end.role ?? 'equity']}`}
+              className={`h-full opacity-40 border-2 border-dashed border-ink ${SOLID_BG[task.end.role ?? 'equity']}`}
               style={{ width: `${pct(task.end.value, scale)}%` }}
             />
           </div>
         </div>
-        <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 font-mono text-sm text-ink tabular-nums">
+        <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 px-num text-[11px] text-ink">
           <span>
             {formatNumber(runningTotal)}
             {unit}
