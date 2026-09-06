@@ -399,16 +399,16 @@ export const CONFETTI: Sprite = spriteFrames(
 // around every letter, 1px K drop shadow offset (+1, +1).
 // ---------------------------------------------------------------------------
 
-type Bitmap5x7 = readonly [string, string, string, string, string, string, string]
+type Bitmap5x7 = string[]
 
-const FONT = {
+const FONT: Record<string, Bitmap5x7> = {
   D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
   E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
   A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
   L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
   S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
   K: ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
-} satisfies Record<string, Bitmap5x7>
+}
 
 type Letter = keyof typeof FONT
 

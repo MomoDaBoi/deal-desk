@@ -23,9 +23,22 @@ on a labelled stand-in until the owner runs the fetch script. The GitHub
 repo is public; local history was rewritten to the noreply email and
 must be force-pushed by the owner before any push works.
 
-**Next up:** the Owner to-dos (force-push, EDGAR snapshot, play it),
-then a browser playtest of every rung once Chrome is reachable, then the
-remaining Milestone 6 items (360px pass, deep links) and owner notes.
+**Update 2026-09-06 (Milestone 7, pixel office).** The game is now a
+Kairosoft-style pixel office: title screen, elevator arrival, a walkable
+five-floor office with one desk per mission, talking-portrait dialog
+scenes, restyled task widgets, chiptune music and SFX (off by default),
+share card as pixel art. 903 tests pass; `npm run build` passes. All art
+is code-drawn text-grid sprites (no image files). A 64-agent content
+audit plus an Opus pass fixed finance wording in nine missions and made
+the auction's top scoring bands reachable. An Opus engine review's 14
+findings are fixed. Verified with phone-emulated screenshots
+(`scripts/shot.mjs`); the Chrome extension was only briefly available.
+Not yet exercised: Mentor mode against the live API (no key here), real
+touch devices, and the EDGAR snapshot (still the empty placeholder).
+
+**Next up:** owner plays it (phone + PC) and leaves notes; owner to-dos
+below; then Backlog ideas for the office (more NPC life, boss-desk MD
+walk-over, day counter toast).
 
 ## Owner to-dos (admin, not code)
 
@@ -373,9 +386,15 @@ full re-skin of the mission screens.
       camera snap after viewport is known, NPC collision, scale 1 for
       narrow screens, pushState back-gesture support, remember position
       on every arrive, Dialog onDone guard).
-- [ ] Browser playtest of the office and every task kind at desktop and
-      360px widths; fix what breaks.
-- [ ] Opus review pass over the office engine and the reskinned screens.
+- [x] (2026-09-06) Office life: the MD walks over when you sit at a boss
+      desk (card opens when he arrives or after 4s), idle glance, footstep
+      blips, first-visit-of-the-day toast, accessible label on the canvas.
+- [x] (2026-09-06) Phone-emulated playtest (360x740 via `scripts/shot.mjs`)
+      of the office, every task kind, result, settings, title, arrival and
+      the return-to-desk flow; desktop check at 1280x800. Fixed: footer
+      overflow, Settings key row overflow, first-paint canvas sizing.
+- [x] (2026-09-06) Opus review pass over the office engine (see above).
+- [ ] Owner playtest on a real phone and PC; notes under "Owner notes".
 
 ## Backlog / ideas
 

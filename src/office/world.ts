@@ -4,7 +4,8 @@ import type { CharacterSet } from '../pixel/sprites/characters'
 import { CHARACTERS } from '../pixel/sprites/characters'
 import * as T from '../pixel/sprites/tiles'
 import { ICON_BOSS, ICON_CHECK, ICON_DOC, ICON_MENTOR, ICON_TROPHY } from '../pixel/sprites/icons'
-import { ELEVATOR_OPEN } from '../pixel/sprites/props'
+import { BUBBLE_EXCLAIM, ELEVATOR_OPEN } from '../pixel/sprites/props'
+import { playSound } from '../lib/sounds'
 import { deskSlots, doorTiles, ELEVATOR_DRAW, ELEVATOR_TILE, MAP_H, MAP_W, rungAtRow, SPAWN, TILE, WALL_UPPER, zoneDecor, zoneTop, type DeskSlot, type Furniture } from './map'
 import { findPath, nearestWalkable, type Tile } from './pathfind'
 
@@ -360,8 +361,58 @@ export class OfficeWorld {
     if (this.pendingArrive) {
       const id = this.pendingArrive
       this.pendingArrive = null
+      // Boss desk: the MD walks over before the card opens (or after a
+      // short timeout if he cannot reach you).
+      const md = this.npcs.find((n) => n.id === 'md')
+      if (desk?.mission?.boss && md && !md.sitting) {
+        const spot = this.adjacentFreeTile(p.tile, md)
+        const path = spot ? findPath(MAP_W, MAP_H, (x, y) => !this.isBlocked(x, y) && !this.occupiedByOther(x, y, md), md.tile, spot) : null
+        if (path && path.length > 0 && path.length < 30) {
+          md.path = path
+          md.sitting = false
+          md.idle = 400
+          this.bossWait = { missionId: id, until: this.tick_ + 240, md }
+          md.emote = { sprite: BUBBLE_EXCLAIM, until: this.tick_ + 60 }
+          return
+        }
+      }
       this.onEvent({ kind: 'arrive', missionId: id })
     }
+  }
+
+  private bossWait: { missionId: string; until: number; md: Entity } | null = null
+
+  private adjacentFreeTile(t: Tile, self: Entity): Tile | null {
+    const c: Tile[] = [
+      { x: t.x - 1, y: t.y },
+      { x: t.x + 1, y: t.y },
+      { x: t.x, y: t.y - 1 },
+      { x: t.x, y: t.y + 1 },
+    ]
+    return c.find((n) => !this.isBlocked(n.x, n.y) && !this.occupiedByOther(n.x, n.y, self)) ?? null
+  }
+
+  private tickBossWait() {
+    const w = this.bossWait
+    if (!w) return
+    const near = Math.abs(w.md.tile.x - this.player.tile.x) + Math.abs(w.md.tile.y - this.player.tile.y) <= 1
+    if ((near && !w.md.moving) || this.tick_ >= w.until) {
+      this.bossWait = null
+      w.md.path = []
+      w.md.moving = false
+      w.md.dir = w.md.tile.x < this.player.tile.x ? 'right' : w.md.tile.x > this.player.tile.x ? 'left' : w.md.tile.y < this.player.tile.y ? 'down' : 'up'
+      w.md.idle = 240
+      this.onEvent({ kind: 'arrive', missionId: w.missionId })
+    }
+  }
+
+  /** Idle fidget: a standing player glances around now and then. */
+  private tickIdle() {
+    const p = this.player
+    if (p.moving || p.sitting || this.arrival.phase !== 'done') return
+    if (this.tick_ % 200 !== 0) return
+    const dirs: Dir[] = ['down', 'left', 'right', 'down']
+    p.dir = dirs[(this.tick_ / 200) % dirs.length]
   }
 
   private tickArrival() {
@@ -388,7 +439,10 @@ export class OfficeWorld {
     this.tick_++
     if (this.arrival.phase !== 'done') this.tickArrival()
     this.step(this.player, true)
+    if (this.player.moving && this.tick_ % 12 === 0) playSound('walk')
     for (const n of this.npcs) this.wander(n)
+    this.tickBossWait()
+    this.tickIdle()
     // Camera follows the player with a little lag; clamp to the map.
     const target = this.clampCam(this.player.py - this.viewH / 2 + TILE)
     if (this.snapCam) {

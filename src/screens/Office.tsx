@@ -32,7 +32,9 @@ function seenRung(): number {
 }
 function markSeenRung(r: number) {
   try {
-    localStorage.setItem(OFFICE_KEY, JSON.stringify({ seenRung: Math.max(r, seenRung()) }))
+    const raw = localStorage.getItem(OFFICE_KEY)
+    const data = raw ? (JSON.parse(raw) as Record<string, unknown>) : {}
+    localStorage.setItem(OFFICE_KEY, JSON.stringify({ ...data, seenRung: Math.max(r, seenRung()) }))
   } catch {
     // storage unavailable; the scene will simply replay next time
   }
@@ -172,6 +174,22 @@ export function Office({ focusRung, returnTo, arrive = false }: { focusRung?: Ru
   useEffect(() => {
     if (promo) playSound('promote')
   }, [promo])
+
+  // First visit of the day: a small "Day N" toast (cosmetic, local only).
+  useEffect(() => {
+    if (arrive || returnTo || focusRung) return
+    const today = new Date().toISOString().slice(0, 10)
+    try {
+      const raw = localStorage.getItem(OFFICE_KEY)
+      const data = raw ? (JSON.parse(raw) as { seenRung?: number; lastDay?: string }) : {}
+      if (data.lastDay === today) return
+      localStorage.setItem(OFFICE_KEY, JSON.stringify({ ...data, lastDay: today }))
+      if (daysSurvived > 0) setToast({ text: `Day ${daysSurvived + 1} at the desk. The coffee machine is still broken.`, icon: 'doc' })
+    } catch {
+      // storage unavailable
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="h-full flex flex-col relative overflow-hidden">

@@ -98,6 +98,8 @@ export function OfficeCanvas({ world, onScale, inputLocked = false }: { world: O
       ref={ref}
       className="block touch-none select-none"
       style={{ imageRendering: 'pixelated' }}
+      role="img"
+      aria-label="Office floor map. Tap a desk to walk to it, or use the Floor button to pick a mission from a list."
       onPointerDown={(e) => {
         downRef.current = { x: e.clientX, y: e.clientY, t: performance.now() }
       }}

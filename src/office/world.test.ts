@@ -70,6 +70,20 @@ describe('OfficeWorld layout', () => {
     expect(world.playerTile).toEqual(SPAWN)
   })
 
+  it('sitting at a boss desk fires the mission after the MD walks over (or times out)', () => {
+    const events: string[] = []
+    const world = new OfficeWorld(cfg(1), (e) => events.push(e.kind === 'arrive' ? `arrive:${e.missionId}` : e.kind))
+    const boss = deskSlots(1)[4] // rung 1 has 5 missions; the boss is index 4
+    world.tap({ x: boss.x, y: boss.y })
+    let ticksToArrive = 0
+    for (let i = 0; i < 4000 && !events.some((e) => e.startsWith('arrive')); i++) {
+      world.tick()
+      ticksToArrive++
+    }
+    expect(events).toContain('arrive:1-4')
+    expect(ticksToArrive).toBeLessThan(4000)
+  })
+
   it('tapping a desk paths to its chair and arriving fires the mission', () => {
     const events: string[] = []
     const world = new OfficeWorld(cfg(1), (e) => events.push(e.kind === 'arrive' ? `arrive:${e.missionId}` : e.kind))
