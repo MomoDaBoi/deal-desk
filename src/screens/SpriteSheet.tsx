@@ -3,6 +3,7 @@ import type { Sprite } from '../pixel/sprite'
 import { CHARACTERS } from '../pixel/sprites/characters'
 import { ICONS } from '../pixel/sprites/icons'
 import { PORTRAITS } from '../pixel/sprites/portraits'
+import { PROPS } from '../pixel/sprites/props'
 import { TILES } from '../pixel/sprites/tiles'
 import { Page } from '../components/ui'
 import { useNav } from '../store/nav'
@@ -29,6 +30,8 @@ export function SpriteSheet() {
       </div>
       <h2 className="px-h2 mb-2">Tiles and furniture</h2>
       <div className="flex flex-wrap gap-2 mb-6">{Object.entries(TILES).map(([k, s]) => cell(k, s))}</div>
+      <h2 className="px-h2 mb-2">Props</h2>
+      <div className="flex flex-wrap gap-2 mb-6">{Object.entries(PROPS).map(([k, s]) => cell(k, s))}</div>
       <h2 className="px-h2 mb-2">Icons</h2>
       <div className="flex flex-wrap gap-2 mb-6">{Object.entries(ICONS).map(([k, s]) => cell(k, s))}</div>
     </Page>

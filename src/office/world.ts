@@ -4,7 +4,8 @@ import type { CharacterSet } from '../pixel/sprites/characters'
 import { CHARACTERS } from '../pixel/sprites/characters'
 import * as T from '../pixel/sprites/tiles'
 import { ICON_BOSS, ICON_CHECK, ICON_DOC, ICON_MENTOR, ICON_TROPHY } from '../pixel/sprites/icons'
-import { deskSlots, doorTiles, MAP_H, MAP_W, rungAtRow, SPAWN, TILE, WALL_UPPER, zoneDecor, zoneTop, type DeskSlot, type Furniture } from './map'
+import { ELEVATOR_OPEN } from '../pixel/sprites/props'
+import { deskSlots, doorTiles, ELEVATOR_DRAW, ELEVATOR_TILE, MAP_H, MAP_W, rungAtRow, SPAWN, TILE, WALL_UPPER, zoneDecor, zoneTop, type DeskSlot, type Furniture } from './map'
 import { findPath, nearestWalkable, type Tile } from './pathfind'
 
 export type SlotState = 'todo' | 'started' | 'passed' | 'perfect'
@@ -29,6 +30,7 @@ export interface WorldConfig {
 
 export type WorldEvent =
   | { kind: 'arrive'; missionId: string }
+  | { kind: 'arrived' }
   | { kind: 'npc'; npc: string; x: number; y: number }
   | { kind: 'locked'; rung: Rung }
   | { kind: 'move' }
@@ -104,14 +106,28 @@ export class OfficeWorld {
   /** Last emote seed so quips rotate. */
   private quipSeed = 0
 
-  constructor(cfg: WorldConfig, onEvent: (e: WorldEvent) => void) {
+  /** Elevator arrival: doors open, the player steps out and walks to SPAWN. */
+  private arrival: { phase: 'doors' | 'walk' | 'done'; t: number } = { phase: 'done', t: 0 }
+  /** Snap (not lerp) the camera on the next tick, once the viewport is known. */
+  private snapCam = true
+
+  constructor(cfg: WorldConfig, onEvent: (e: WorldEvent) => void, opts: { arrive?: boolean } = {}) {
     this.cfg = cfg
     this.onEvent = onEvent
-    const start = savedPlayer ?? { tile: SPAWN, dir: 'down' as Dir }
+    const start = opts.arrive ? { tile: ELEVATOR_TILE, dir: 'down' as Dir } : (savedPlayer ?? { tile: SPAWN, dir: 'down' as Dir })
     this.player = this.makeEntity('player', CHARACTERS.player, start.tile, start.dir)
     this.player.isPlayer = true
+    if (opts.arrive) this.arrival = { phase: 'doors', t: 0 }
     this.configure(cfg)
-    this.camY = Math.max(0, this.player.py - this.viewH / 2)
+  }
+
+  /** Replace the event sink (React callbacks change identity over time). */
+  setOnEvent(fn: (e: WorldEvent) => void) {
+    this.onEvent = fn
+  }
+
+  private clampCam(y: number): number {
+    return Math.max(0, Math.min(MAP_H * TILE - this.viewH, y))
   }
 
   private makeEntity(id: string, set: CharacterSet, tile: Tile, dir: Dir = 'down', zone?: Rung): Entity {
@@ -157,8 +173,9 @@ export class OfficeWorld {
         for (let y = top; y < top + 9; y++) for (let x = 0; x < MAP_W; x++) this.block(x, y)
       }
     }
-    // Player must stand somewhere walkable.
-    if (this.isBlocked(this.player.tile.x, this.player.tile.y)) {
+    // Player must stand somewhere walkable (the elevator tile is exempt
+    // during the arrival sequence).
+    if (this.arrival.phase === 'done' && this.isBlocked(this.player.tile.x, this.player.tile.y)) {
       const t = nearestWalkable(MAP_W, MAP_H, (x, y) => !this.isBlocked(x, y), this.player.tile, 6) ?? SPAWN
       this.player.tile = { ...t }
       this.player.px = t.x * TILE
@@ -257,7 +274,8 @@ export class OfficeWorld {
     this.player.path = []
     this.player.sitting = true
     this.player.dir = 'down'
-    this.camY = Math.max(0, this.player.py - this.viewH / 2)
+    rememberPlayerAt(t, 'down')
+    this.snapCam = true
   }
 
   /** Walk to a mission's desk from the roster (no tap involved). */
@@ -269,6 +287,7 @@ export class OfficeWorld {
 
   /** Handle a tap at a tile. */
   tap(tile: Tile) {
+    if (this.arrival.phase !== 'done') return
     const p = this.player
     // NPC?
     const npc = this.npcs.find((n) => n.tile.x === tile.x && n.tile.y === tile.y)
@@ -312,12 +331,14 @@ export class OfficeWorld {
 
   /** Keyboard nudge one tile in a direction. */
   nudge(dir: Dir) {
+    if (this.arrival.phase !== 'done') return
     const p = this.player
     if (p.moving) return
     const d = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[dir]
     const t = { x: p.tile.x + d[0], y: p.tile.y + d[1] }
     p.dir = dir
     p.sitting = false
+    this.onEvent({ kind: 'move' })
     if (this.isBlocked(t.x, t.y)) {
       const r = rungAtRow(t.y)
       if (!this.cfg.unlocked[r]) this.onEvent({ kind: 'locked', rung: r })
@@ -335,20 +356,46 @@ export class OfficeWorld {
       p.sitting = true
       p.dir = 'down'
     }
+    rememberPlayerAt(p.tile, p.dir)
     if (this.pendingArrive) {
       const id = this.pendingArrive
       this.pendingArrive = null
-      rememberPlayerAt(p.tile, p.dir)
       this.onEvent({ kind: 'arrive', missionId: id })
     }
   }
 
+  private tickArrival() {
+    const a = this.arrival
+    a.t++
+    if (a.phase === 'doors' && a.t > 45) {
+      a.phase = 'walk'
+      const out = { x: ELEVATOR_TILE.x, y: ELEVATOR_TILE.y + 1 }
+      const rest = findPath(MAP_W, MAP_H, (x, y) => !this.isBlocked(x, y), out, SPAWN) ?? []
+      this.player.path = [out, ...rest]
+      this.player.dir = 'down'
+    } else if (a.phase === 'walk' && this.player.path.length === 0 && !this.player.moving) {
+      a.phase = 'done'
+      rememberPlayerAt(this.player.tile, this.player.dir)
+      this.onEvent({ kind: 'arrived' })
+    }
+  }
+
+  get arriving(): boolean {
+    return this.arrival.phase !== 'done'
+  }
+
   tick() {
     this.tick_++
+    if (this.arrival.phase !== 'done') this.tickArrival()
     this.step(this.player, true)
     for (const n of this.npcs) this.wander(n)
     // Camera follows the player with a little lag; clamp to the map.
-    const target = Math.max(0, Math.min(MAP_H * TILE - this.viewH, this.player.py - this.viewH / 2 + TILE))
+    const target = this.clampCam(this.player.py - this.viewH / 2 + TILE)
+    if (this.snapCam) {
+      this.snapCam = false
+      this.camY = target
+      return
+    }
     this.camY += (target - this.camY) * 0.12
     if (Math.abs(target - this.camY) < 0.3) this.camY = target
   }
@@ -379,8 +426,13 @@ export class OfficeWorld {
       return
     }
     const next = e.path[0]
-    if (isPlayer && this.isBlocked(next.x, next.y)) {
+    if (isPlayer && this.isBlocked(next.x, next.y) && this.arrival.phase === 'done') {
       e.path = []
+      e.moving = false
+      return
+    }
+    // NPCs wait rather than walk through someone standing on the next tile.
+    if (!isPlayer && this.occupiedByOther(next.x, next.y, e)) {
       e.moving = false
       return
     }
@@ -476,6 +528,11 @@ export class OfficeWorld {
         const iy = d.slot.y * TILE - 26 + bob
         items.push({ y: 1e6, draw: () => drawSprite(ctx, icon, ix * scale, (iy - camY) * scale, scale) })
       }
+    }
+    // Open elevator doors during the arrival, drawn just behind the player.
+    if (this.arrival.phase !== 'done' || (this.arrival.t < 60 && this.arrival.t > 0)) {
+      const ey = ELEVATOR_DRAW.y * TILE
+      items.push({ y: ey + 32 - 1, draw: () => drawSprite(ctx, ELEVATOR_OPEN, ELEVATOR_DRAW.x * TILE * scale, (ey - camY) * scale, scale) })
     }
     const all = [...this.npcs, this.player]
     for (const e of all) {

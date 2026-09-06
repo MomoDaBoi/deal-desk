@@ -18,9 +18,11 @@ MD in an RPG dialog box. Every sprite is hand-drawn as a text grid in
 files. Music and sound effects are synthesized with the Web Audio API and
 are off by default.
 
-Controls: tap or click a desk to walk to it; arrow keys or WASD nudge on a
-keyboard; the Floor button lists the floor's missions if you would rather
-not walk. `#/sprites` shows every sprite in the game.
+Controls: tap the title card to clock in, then tap or click a desk to walk
+to it; arrow keys or WASD nudge on a keyboard; the Floor button (or the
+sidebar on a wide screen) lists each floor's missions if you would rather
+not walk. Tap a coworker for gossip. `#/sprites` shows every sprite in the
+game.
 
 ## Run locally
 

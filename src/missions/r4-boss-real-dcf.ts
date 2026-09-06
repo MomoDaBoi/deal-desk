@@ -76,7 +76,7 @@ export const BASE_FCF = EBITDA_PROXY * 0.55
 const COMPANY_NET_DEBT = requireNumber(netDebt(COMPANY), 'netDebt')
 const COMPANY_MARKET_VALUE = requireNumber(impliedMarketValue(COMPANY), 'impliedMarketValue')
 
-/** Market-implied enterprise value: public float (proxy for market cap) plus net debt. */
+/** Market-implied enterprise value: public float value (a dollar proxy for market cap) plus net debt. */
 export const MARKET_EV = COMPANY_MARKET_VALUE + COMPANY_NET_DEBT
 
 /** One year's projected FCF at each of years 1-5, compounding at `growthPct`. */
@@ -129,7 +129,7 @@ export function judgeVsMarket(impliedEv: number): { correctId: 'high' | 'low' | 
   const ratio = impliedEv / MARKET_EV
   const correctId: 'high' | 'low' | 'fair' = ratio > 1.15 ? 'high' : ratio < 0.85 ? 'low' : 'fair'
   const verdictWord = correctId === 'fair' ? 'roughly in line with' : correctId === 'high' ? 'higher than' : 'lower than'
-  const explanation = `Your DCF implies ${fmtMoney(impliedEv, '$auto')} of enterprise value for ${COMPANY.name}. The market's implied EV (public float plus net debt) is ${fmtMoney(MARKET_EV, '$auto')} — that makes your DCF ${verdictWord} the market.`
+  const explanation = `Your DCF implies ${fmtMoney(impliedEv, '$auto')} of enterprise value for ${COMPANY.name}. The market's implied EV (public float value plus net debt) is ${fmtMoney(MARKET_EV, '$auto')} — that makes your DCF ${verdictWord} the market.`
   return { correctId, verdictWord, explanation }
 }
 
@@ -153,13 +153,14 @@ const mission: Mission = {
   parSeconds: 300,
   lesson: {
     title: 'Real data begins',
-    body: `Every mission so far used a fictional company. This one runs on ${USING_STAND_IN ? 'a stand-in until the SEC snapshot is generated' : `${COMPANY.name}'s real SEC filing`}. A discounted cash flow (DCF) projects free cash flow (FCF: cash left after running and reinvesting) five years out and discounts it at the weighted average cost of capital (WACC: the blended return lenders and shareholders demand). Filings do not report FCF, so EBITDA times 0.55 stands in. Terminal growth is the FCF growth assumed forever after year five. Public float (shares held outside insiders) stands in for market cap. No DCF matches the market exactly; a defensible band beats a point answer.`,
+    body: `Every mission so far used a fictional company. This one runs on ${USING_STAND_IN ? 'a stand-in until the SEC snapshot is generated' : `${COMPANY.name}'s real SEC filing`}. A discounted cash flow (DCF) projects free cash flow (FCF: cash left after running and reinvesting) five years out and discounts it at the weighted average cost of capital (WACC: the blended return lenders and shareholders demand). Filings do not report FCF, so EBITDA times 0.55 stands in. That proxy strips interest, so discounting at WACC gives enterprise value, not equity: subtract net debt before comparing with market cap. Terminal growth is the FCF growth assumed forever after year five. Public float value stands in for market cap. A defensible band beats a point answer.`,
     visual: {
       kind: 'bullets',
       items: [
         USING_STAND_IN ? `${COMPANY.name} — placeholder figures until the snapshot is generated` : `${COMPANY.name}, straight from its SEC filing`,
         'EBITDA × 0.55 ≈ a rough stand-in for free cash flow',
-        'Public float ≈ a rough stand-in for market cap',
+        'Public float value (shares held outside insiders, at market) ≈ a rough stand-in for market cap',
+        'The discounted total is enterprise value — take off net debt before comparing with market cap',
         'A defensible band beats a confident point answer',
       ],
     },
@@ -215,7 +216,7 @@ const mission: Mission = {
       },
       {
         id: 'marketEV',
-        label: 'Market value (public float) + net debt',
+        label: 'Market value (public float value) + net debt',
         unit: '$B',
         role: 'cash',
         compute: () => MARKET_EV / 1e9,

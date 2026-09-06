@@ -17,7 +17,7 @@ const mission: Mission = {
   lesson: {
     title: 'Assets = Liabilities + Equity',
     body:
-      'Every balance sheet is one equation: Assets = Liabilities + Equity. Everything a company owns (assets) was paid for either with money it borrowed (liabilities) or money the owners put in and kept (equity). At year-end, Pucker Up Lemonade owns $800k across cash, receivables, inventory, and 40 lemonade stands. It owes $400k to suppliers and lenders. The remaining $400k belongs to the founder, since it is what is left after every debt is paid. The two sides must always match. Know any two of assets, liabilities, and equity, and the third is forced arithmetic, not a guess.',
+      'Every balance sheet is one equation: Assets = Liabilities + Equity. Everything a company owns (assets) was paid for either with money it borrowed (liabilities) or money the owners put in and kept (equity). At year-end, Pucker Up Lemonade owns $800k across cash, receivables, inventory, and 40 lemonade stands. It owes $400k to suppliers and lenders. The remaining $400k is equity: the accounting residual, assets at their book value minus liabilities. It is not what a sale would fetch. The two sides must always match. Know any two of assets, liabilities, and equity, and the third is forced arithmetic, not a guess.',
     visual: {
       kind: 'bars',
       unit: '$k',
@@ -100,7 +100,7 @@ const mission: Mission = {
         )
       if (wrongIds.includes('shareholders-equity'))
         hints.push(
-          "Shareholders' equity is total assets minus total liabilities: 800 − 400 = 400. It is what would be left for the founder if every debt were paid off today.",
+          "Shareholders' equity is total assets minus total liabilities: 800 − 400 = 400. It is the accounting residual — assets carried at book value, less what is owed — not the cash a sale of the business would put in the founder's pocket.",
         )
       hints.push('Total assets (800) must equal total liabilities plus equity (400 + 400 = 800), always.')
       return {

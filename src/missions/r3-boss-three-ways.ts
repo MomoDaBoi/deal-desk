@@ -74,7 +74,7 @@ const mission: Mission = {
   lesson: {
     title: 'Every method prices something different',
     body:
-      "A football field chart lines up several valuation ranges for the same company. Each multiplies EBITDA (operating profit before interest, tax, depreciation, and amortization) by a multiple for enterprise value (EV, the price for the whole business), subtracts net debt (debt minus cash) for equity value, then divides by shares outstanding for a price per share. Trading comps use multiples for similar public peers today — quote the pack's middle, not the extremes. Precedents use multiples from same-industry deals, so they carry a control premium: the extra a buyer pays to take control. The 52-week range is just where the stock traded. Selling the whole company? Defend the precedent range — it is the only one priced for control.",
+      "A football field chart lines up several valuation ranges for the same company. Each multiplies EBITDA (earnings before interest, taxes, depreciation and amortisation — operating profit with D&A added back: Brickhouse's 64,000 EBIT plus 32,000 of D&A is 96,000) by a multiple for enterprise value, subtracts net debt, then divides by shares outstanding for a price per share. Trading comps use multiples for similar public peers today — quote the pack's middle, not the extremes. Precedents use same-industry deal multiples, so they carry a control premium: the extra a buyer pays for control. The 52-week range is just where the stock traded. Selling the whole company? Defend the precedent range — it is the only one priced for control.",
     visual: {
       kind: 'bullets',
       items: [

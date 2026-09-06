@@ -139,7 +139,7 @@ export function zoneDecor(rung: Rung): ZoneDecor {
           { sprite: T.WATER_COOLER, x: 0, y: top + 1, blockRows: 1 },
           { sprite: T.PRINTER, x: 0, y: corridor },
           { sprite: T.TRASH_CAN, x: 10, y: top + 4 },
-          { sprite: T.VENDING_MACHINE, x: 10, y: corridor - 1, blockRows: 1 },
+          { sprite: T.VENDING_MACHINE, x: 10, y: corridor - 1 },
           { sprite: T.PAPER_STACK, x: 3, y: top + 4 },
         ],
       }
@@ -152,7 +152,7 @@ export function zoneDecor(rung: Rung): ZoneDecor {
           { sprite: T.WHITEBOARD, x: 0, y: top, blockRows: 0, onWall: true },
           { sprite: T.COFFEE_MACHINE, x: 0, y: top + 1, blockRows: 1 },
           { sprite: T.PLANT, x: 10, y: top + 1, blockRows: 1 },
-          { sprite: T.FILING_CABINET, x: 0, y: corridor - 1, blockRows: 1 },
+          { sprite: T.FILING_CABINET, x: 0, y: corridor - 1 },
           { sprite: T.TRASH_CAN, x: 10, y: corridor },
         ],
       }
@@ -177,8 +177,8 @@ export function zoneDecor(rung: Rung): ZoneDecor {
           { sprite: T.WHITEBOARD, x: 6, y: top, blockRows: 0, onWall: true },
           { sprite: T.PLANT, x: 0, y: top + 1, blockRows: 1 },
           { sprite: T.FILING_CABINET, x: 10, y: top + 1, blockRows: 1 },
-          { sprite: T.WATER_COOLER, x: 0, y: corridor - 1, blockRows: 1 },
-          { sprite: T.PLANT, x: 10, y: corridor - 1, blockRows: 1 },
+          { sprite: T.WATER_COOLER, x: 0, y: corridor - 1 },
+          { sprite: T.PLANT, x: 10, y: corridor - 1 },
           { sprite: T.PAPER_STACK, x: 3, y: top + 7 },
         ],
       }
@@ -201,8 +201,8 @@ export function zoneDecor(rung: Rung): ZoneDecor {
           { sprite: T.BOOKSHELF, x: 0, y: top + 1, blockRows: 1 },
           { sprite: T.PLANT, x: 10, y: top + 4 },
           { sprite: T.SOFA, x: 0, y: corridor, blockRows: 1 },
-          { sprite: T.PLANT, x: 3, y: corridor - 1, blockRows: 1 },
-          { sprite: T.COFFEE_MACHINE, x: 10, y: corridor - 1, blockRows: 1 },
+          { sprite: T.PLANT, x: 3, y: corridor - 1 },
+          { sprite: T.COFFEE_MACHINE, x: 10, y: corridor - 1 },
         ],
       }
     }
@@ -210,4 +210,7 @@ export function zoneDecor(rung: Rung): ZoneDecor {
 }
 
 /** Where a fresh player stands: in front of the elevator on the intern floor. */
-export const SPAWN = { x: 8, y: zoneTop(1) + 4 }
+export const SPAWN = { x: 5, y: zoneTop(1) + 4 }
+/** Inside the intern-floor elevator; the arrival sequence walks from here to SPAWN. */
+export const ELEVATOR_TILE = { x: 9, y: zoneTop(1) + 1 }
+export const ELEVATOR_DRAW = { x: 9, y: zoneTop(1) }

@@ -98,7 +98,7 @@ const mission: Mission = {
   lesson: {
     title: 'How an LBO makes money',
     body:
-      "A leveraged buyout (LBO) buys a company mostly with borrowed money (debt), plus a smaller slice of cash — the equity check. Debt is sized as a multiple of EBITDA (earnings before interest, taxes, depreciation and amortization): that multiple is the leverage. Each hold year, cash flow pays down some debt, shrinking what is owed. At the end, the buyer sells at an exit multiple of that year's EBITDA — the exit enterprise value (EV, the whole business, debt included). Equity out is exit EV minus remaining debt; IRR (internal rate of return, the annualized return on the equity check) measures the payoff. Paying down debt usually drives more gain than a fancier exit price.",
+      "A leveraged buyout (LBO) buys a company mostly with debt, plus a smaller equity check. Debt is sized as a multiple of EBITDA (earnings before interest, taxes, depreciation and amortization) — that multiple is the leverage. Lenders will lend a cyclical industrial about 5x EBITDA before a downturn makes the interest bill unpayable. Cash flow each year pays down debt. At exit, the buyer sells at a multiple of that year's EBITDA — the exit enterprise value (EV); a disciplined base case exits at the multiple it paid, not a richer one. Equity out is exit EV minus remaining debt. IRR (internal rate of return) measures the annualized payoff. Debt paydown usually drives more gain than the exit price.",
     visual: {
       kind: 'bullets',
       items: [
@@ -123,7 +123,7 @@ const mission: Mission = {
         tolerance: 0.5,
         unit: 'x',
         role: 'debt',
-        hint: 'Debt as a multiple of entry EBITDA ($96,000k). More leverage = less equity in, more debt to pay down.',
+        hint: 'Lenders here will fund up to about 5.0x EBITDA ($96,000k) — more debt means a smaller equity cheque but a bigger fixed interest bill.',
       },
       {
         id: 'exit',
@@ -135,7 +135,7 @@ const mission: Mission = {
         tolerance: 0.3,
         unit: 'x',
         role: 'equity',
-        hint: 'What a buyer pays for Brickhouse’s EBITDA in 5 years, applied to that year’s (grown) EBITDA.',
+        hint: "Base case: you sell at the multiple you bought at, 8.3x, applied to that year's grown EBITDA.",
       },
     ],
     readouts: [

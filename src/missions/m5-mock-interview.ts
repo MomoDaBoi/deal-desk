@@ -28,7 +28,7 @@ const QUESTIONS: InterviewQuestion[] = [
     text: 'Walk me through the three financial statements.',
     rubric: [
       'Starts with the income statement: revenue down to net income over a period.',
-      'Says net income flows into the cash flow statement, where it is adjusted for non-cash items (like depreciation) and working capital changes to get cash from operations, investing and financing.',
+      'Says net income flows into the cash flow statement, where non-cash add-backs (like depreciation) and working capital changes turn it into cash from operations only — capex sits in investing, and debt and dividends in financing.',
       'Says the balance sheet is a snapshot: ending cash from the cash flow statement rolls onto it, and net income (less dividends) rolls into retained earnings.',
     ],
     modelAnswer:

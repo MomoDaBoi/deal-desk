@@ -79,21 +79,20 @@ export const useNav = create<NavState>()((set) => ({
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 })
       // Assigning location.hash directly scrolls to any matching element
-      // id; replaceState swaps the URL without touching scroll position
-      // or pushing a new history entry for every in-app navigation.
+      // id; pushState changes the URL without scrolling and gives the phone
+      // back gesture something to return to (the office) instead of exiting.
       const hash = hashFor(screen)
       const url = window.location.pathname + window.location.search + hash
-      window.history.replaceState(null, '', url)
+      if (window.location.hash !== hash) window.history.pushState(null, '', url)
     }
     set({ screen })
   },
 }))
 
-// Back/forward button support: the browser changes the hash on its own
-// (e.g. via history entries from a previous session or a manual edit),
-// so mirror it into the store.
+// Back/forward support: popstate covers pushState entries, hashchange
+// covers a hand-edited hash. Both just mirror the URL into the store.
 if (typeof window !== 'undefined') {
-  window.addEventListener('hashchange', () => {
-    useNav.setState({ screen: screenFromHash(window.location.hash) })
-  })
+  const sync = () => useNav.setState({ screen: screenFromHash(window.location.hash) })
+  window.addEventListener('popstate', sync)
+  window.addEventListener('hashchange', sync)
 }

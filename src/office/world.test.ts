@@ -56,6 +56,20 @@ describe('OfficeWorld layout', () => {
     expect(events).toEqual(['locked'])
   })
 
+  it('the elevator arrival walks the player from the elevator to spawn and then unlocks input', () => {
+    const events: string[] = []
+    const world = new OfficeWorld(cfg(1), (e) => events.push(e.kind), { arrive: true })
+    world.viewH = 200
+    expect(world.arriving).toBe(true)
+    // Taps are ignored until the sequence is over.
+    world.tap({ x: 1, y: zoneTop(1) + 3 })
+    expect(events).toEqual([])
+    for (let i = 0; i < 3000 && world.arriving; i++) world.tick()
+    expect(world.arriving).toBe(false)
+    expect(events).toContain('arrived')
+    expect(world.playerTile).toEqual(SPAWN)
+  })
+
   it('tapping a desk paths to its chair and arriving fires the mission', () => {
     const events: string[] = []
     const world = new OfficeWorld(cfg(1), (e) => events.push(e.kind === 'arrive' ? `arrive:${e.missionId}` : e.kind))

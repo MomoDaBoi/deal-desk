@@ -178,7 +178,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'task') {
     const quizTimed = task.kind === 'quiz' && !!task.timeLimitSeconds
     return (
-      <Page title={mission.title} onBack={back} right={quizTimed ? null : <Timer />}>
+      <Page title={mission.title} onBack={back} right={quizTimed ? null : <Timer startedAt={startedAt.current} />}>
         <div className="px-box px-box-paper px-3 py-2 mb-4 text-base">
           <span className="px-eyebrow text-[#5b5670] block mb-1">The ask</span>
           {task.prompt}
@@ -602,13 +602,13 @@ function Confetti() {
   )
 }
 
-function Timer() {
-  const [t, setT] = useState(0)
+/** Reads the authoritative attempt clock so peeking at the brief does not reset it. */
+function Timer({ startedAt }: { startedAt: number }) {
+  const [t, setT] = useState(() => Math.floor((performance.now() - startedAt) / 1000))
   useEffect(() => {
-    const start = performance.now()
-    const id = setInterval(() => setT(Math.floor((performance.now() - start) / 1000)), 250)
+    const id = setInterval(() => setT(Math.floor((performance.now() - startedAt) / 1000)), 250)
     return () => clearInterval(id)
-  }, [])
+  }, [startedAt])
   return (
     <span className="px-num text-[10px] text-muted tabular-nums flex items-center gap-1">
       <Px sprite={ICON_CLOCK} scale={1} />

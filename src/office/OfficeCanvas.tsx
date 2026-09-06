@@ -5,23 +5,27 @@ import type { OfficeWorld } from './world'
 /** Integer pixel scale that fits the map width and shows enough rows. */
 export function pickScale(w: number, h: number): number {
   const byW = Math.floor(w / (MAP_W * TILE))
-  const byH = Math.floor(h / (14 * TILE))
-  return Math.max(2, Math.min(5, byW, byH))
+  const byH = Math.floor(h / (12 * TILE))
+  return Math.max(1, Math.min(5, byW, byH))
 }
 
 /**
  * Fills its parent. Runs the rAF loop, resizes with the container, and
  * turns pointer taps and arrow keys into world calls. All mutable state
  * stays on the world instance; React never re-renders for movement.
+ * `inputLocked` pauses taps and keys while a card is open over the map.
  */
-export function OfficeCanvas({ world, onScale }: { world: OfficeWorld; onScale?: (scale: number, offX: number) => void }) {
+export function OfficeCanvas({ world, onScale, inputLocked = false }: { world: OfficeWorld; onScale?: (scale: number, offX: number) => void; inputLocked?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const scaleRef = useRef(2)
   const downRef = useRef<{ x: number; y: number; t: number } | null>(null)
   const lastTapRef = useRef(0)
+  const lockedRef = useRef(inputLocked)
+  lockedRef.current = inputLocked
 
   function tap(canvas: HTMLCanvasElement, clientX: number, clientY: number) {
     lastTapRef.current = performance.now()
+    if (lockedRef.current) return
     const rect = canvas.getBoundingClientRect()
     world.tap(world.tileAt(clientX - rect.left, clientY - rect.top, scaleRef.current, canvas.width))
   }
@@ -69,8 +73,9 @@ export function OfficeCanvas({ world, onScale }: { world: OfficeWorld; onScale?:
     raf = requestAnimationFrame(loop)
 
     const keys = (e: KeyboardEvent) => {
+      if (lockedRef.current) return
       const tag = (e.target as HTMLElement | null)?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
       const map: Record<string, 'up' | 'down' | 'left' | 'right'> = {
         ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
         w: 'up', s: 'down', a: 'left', d: 'right', W: 'up', S: 'down', A: 'left', D: 'right',
@@ -100,8 +105,11 @@ export function OfficeCanvas({ world, onScale }: { world: OfficeWorld; onScale?:
         const d = downRef.current
         downRef.current = null
         if (!d) return
-        // A drag (scroll attempt) is not a tap.
-        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12 || performance.now() - d.t > 600) return
+        // A drag (scroll attempt) is not a tap, but it still ends in a
+        // synthetic click, so stamp the guard either way.
+        const dragged = Math.hypot(e.clientX - d.x, e.clientY - d.y) > 12 || performance.now() - d.t > 600
+        lastTapRef.current = performance.now()
+        if (dragged) return
         tap(e.currentTarget, e.clientX, e.clientY)
       }}
       onClick={(e) => {

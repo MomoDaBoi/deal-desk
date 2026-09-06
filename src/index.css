@@ -169,3 +169,7 @@ input, textarea, select { font-family: inherit; }
 /* Iris wipe on screen change: a dark frame that opens in 5 chunky steps. */
 @keyframes px-iris { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(50% 50% 50% 50%); } }
 .px-iris { background: var(--color-bg); animation: px-iris 220ms steps(5) forwards; }
+
+/* Comp floating up from a desk after a pass. */
+@keyframes px-fly { 0% { transform: translate(-50%, -100%); opacity: 0 } 15% { opacity: 1 } 100% { transform: translate(-50%, -260%); opacity: 0 } }
+.px-fly { animation: px-fly 2.2s steps(12) forwards; }

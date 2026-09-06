@@ -47,33 +47,63 @@ describe('simulateAuction bot policies', () => {
   })
 
   it('round 1 leader is the player when the player bids highest', () => {
-    const result = simulateAuction(task, [990])
-    expect(result.rounds[0].leader).toEqual({ id: 'player', bid: 990 })
+    const result = simulateAuction(task, [960])
+    expect(result.rounds[0].leader).toEqual({ id: 'player', bid: 960 })
   })
 
-  it('later rounds follow min(ceiling, prevHigh * followRate)', () => {
-    // Round 1: player bids 990, beating strategic (900), sponsor (850), overbidder (950).
-    // Standing high after round 1 = 990. Round 2's player bid (500) is at or below that
-    // standing high, so it does not count as a bid this round (covered separately below) -
-    // it has no bearing on the bot bids, which only look at the standing high.
-    const result = simulateAuction(task, [990, 500])
+  it('two of the three bots have a walk-away ceiling below intrinsic value', () => {
+    // Left alone, the room stops at the sponsor's 0.92x and the strategic's
+    // 0.97x; only the overbidder is still bidding above intrinsic value.
+    const result = simulateAuction(task, [])
+    const bids = (r: number, id: string) => result.rounds[r].bots.find((b) => b.id === id)?.bid
+    expect(bids(1, 'sponsor')).toBeNull() // ceiling 920, standing high 950
+    expect(bids(2, 'strat')).toBeNull() // ceiling 970, standing high 1020
+    expect(result.winner).toBe('yolo')
+    expect(result.winningBid).toBe(1100)
+  })
+
+  it('later rounds follow min(ceiling, prevHigh * followRate), floored to the step so no bot bids through its ceiling', () => {
+    // Round 1: player bids 960, beating strategic (900), sponsor (850), overbidder (950),
+    // but staying under the 0.98x pre-emption threshold, so the room keeps bidding.
+    // Standing high after round 1 = 960. Round 2's player bid (500) is at or below that
+    // standing high, so it does not count as a bid this round - it has no bearing on the
+    // bot bids, which only look at the standing high.
+    const result = simulateAuction(task, [960, 500])
     const round2 = result.rounds[1]
     const strat = round2.bots.find((b) => b.id === 'strat')
     const sponsor = round2.bots.find((b) => b.id === 'sponsor')
     const yolo = round2.bots.find((b) => b.id === 'yolo')
-    // strategic ceiling = 1060, min(1060, 990*1.03=1019.7 -> snap to 1020)
-    expect(strat?.bid).toBe(1020)
-    // sponsor ceiling = 970; standing high 990 > ceiling 970 -> drops out
+    // strategic: min(ceiling 970, 960*1.03 = 988.8) = 970
+    expect(strat?.bid).toBe(970)
+    // sponsor ceiling = 920; standing high 960 > ceiling -> drops out
     expect(sponsor?.bid).toBeNull()
-    // overbidder ceiling = 1250, min(1250, 990*1.08=1069.2 -> snap 1070)
-    expect(yolo?.bid).toBe(1070)
+    // overbidder: min(ceiling 1250, 960*1.08 = 1036.8) -> floored to 1030
+    expect(yolo?.bid).toBe(1030)
   })
 
   it('a bot that drops out stays out for the rest of the auction', () => {
-    const result = simulateAuction(task, [990, 500, 500])
+    const result = simulateAuction(task, [960, 500, 500])
     const round3 = result.rounds[2]
     const sponsor = round3.bots.find((b) => b.id === 'sponsor')
     expect(sponsor?.bid).toBeNull()
+    // The strategic is at its 970 ceiling and the standing high (1030) is past it.
+    expect(round3.bots.find((b) => b.id === 'strat')?.bid).toBeNull()
+  })
+
+  it('a pre-emptive bid - taking the lead at >= 0.98x intrinsic value - clears the room for good', () => {
+    const result = simulateAuction(task, [980])
+    expect(result.rounds[0].leader).toEqual({ id: 'player', bid: 980 })
+    for (const bot of result.rounds[1].bots) expect(bot.bid).toBeNull()
+    for (const bot of result.rounds[2].bots) expect(bot.bid).toBeNull()
+    expect(result.winner).toBe('player')
+    expect(result.winningBid).toBe(980)
+  })
+
+  it('a lead below the pre-emption threshold does not clear the room', () => {
+    const result = simulateAuction(task, [970])
+    expect(result.rounds[0].leader).toEqual({ id: 'player', bid: 970 })
+    expect(result.rounds[1].bots.find((b) => b.id === 'yolo')?.bid).toBe(1040)
+    expect(result.winner).toBe('yolo')
   })
 
   it('bids are snapped to bidStep and clamped to [bidMin, bidMax]', () => {
@@ -103,12 +133,12 @@ describe('simulateAuction bot policies', () => {
   })
 
   it('a bid at or below the standing high does not count as a bid', () => {
-    // Round 1: player leads at 990. Round 2: the player "bids" 990 again (a
+    // Round 1: player leads at 960. Round 2: the player "bids" 960 again (a
     // tie with their own standing bid) and 900 (below it) - neither is a valid
     // bid, so both rounds record playerBid: null even though bids[] has values.
-    const tie = simulateAuction(task, [990, 990])
+    const tie = simulateAuction(task, [960, 960])
     expect(tie.rounds[1].playerBid).toBeNull()
-    const below = simulateAuction(task, [990, 900])
+    const below = simulateAuction(task, [960, 900])
     expect(below.rounds[1].playerBid).toBeNull()
   })
 
@@ -145,10 +175,10 @@ describe('simulateAuction bot policies', () => {
 
 describe('gradeAuction shaping', () => {
   const task = makeTask()
-  // The overbidder's own opening bid compounds well past intrinsic value
-  // within a couple of rounds, so a single-round task isolates the shaping
-  // math (winner/winningBid) from the multi-round escalation dynamics,
-  // which are covered separately above.
+  // The overbidder's own opening bid compounds past intrinsic value within a
+  // couple of rounds, so a single-round task isolates the shaping math
+  // (winner/winningBid) from the multi-round escalation dynamics, which are
+  // covered separately above.
   const oneRoundTask = makeTask({ rounds: 1 })
 
   it('winning at or below intrinsic value scores 1.0', () => {
@@ -158,18 +188,50 @@ describe('gradeAuction shaping', () => {
     expect(result.accuracy).toBe(1)
   })
 
-  it('winning ~10% over intrinsic value scores ~0.65', () => {
+  it('a full-value pre-emptive bid wins at or below intrinsic value over the full three rounds', () => {
+    // The top band has to be reachable against the shipped bot policy, not
+    // just in a one-round toy: 980 clears the room and holds to the end.
+    const answer: AuctionAnswer = { kind: 'auction', bids: [980] }
+    const result = gradeAuction(task, answer, noJoke)
+    expect(result.accuracy).toBe(1)
+  })
+
+  it('winning 5% over intrinsic value scores 0.85', () => {
+    const answer: AuctionAnswer = { kind: 'auction', bids: [1050] }
+    const result = gradeAuction(oneRoundTask, answer, noJoke)
+    expect(result.accuracy).toBe(0.85)
+  })
+
+  it('winning ~10% over intrinsic value scores below a narrow loss', () => {
     // 1100 = 1.10 * IV, still beats every bot's round-1 ceiling (max 950).
     const answer: AuctionAnswer = { kind: 'auction', bids: [1100] }
     const result = gradeAuction(oneRoundTask, answer, noJoke)
-    expect(result.accuracy).toBeCloseTo(0.65, 5)
+    expect(result.accuracy).toBeCloseTo(0.55, 5)
+    expect(result.accuracy).toBeLessThan(0.6)
   })
 
-  it('losing with a disciplined last bid (>= 0.9x IV) scores 0.6', () => {
-    // A single disciplined opening bid, then walking away. The overbidder's
-    // ceiling (1250) guarantees it eventually outbids an absent player.
+  it('losing to a room that ran past intrinsic value, with a last bid within 5% of it, scores 1.0', () => {
+    // 960 leads round 1 but is under the pre-emption threshold, so the
+    // overbidder keeps climbing and takes it at 1110. Refusing to follow it
+    // above intrinsic value is the point of the mission.
+    const answer: AuctionAnswer = { kind: 'auction', bids: [960] }
+    const result = gradeAuction(task, answer, noJoke)
+    expect(result.accuracy).toBe(1)
+  })
+
+  it('losing with a disciplined but early last bid (>= 0.9x IV) scores 0.6', () => {
+    // 900 is 10% under intrinsic value: serious, but short of the player's own
+    // number, so there was a deal here they did not take.
     const answer: AuctionAnswer = { kind: 'auction', bids: [900] }
     const result = gradeAuction(task, answer, noJoke)
+    expect(result.accuracy).toBe(0.6)
+  })
+
+  it('losing after being willing to overpay scores 0.6, not full marks', () => {
+    // Round 3: the player bids 1090 (9% over IV) and is outbid at 1100.
+    const answer: AuctionAnswer = { kind: 'auction', bids: [800, 1000, 1090] }
+    const result = gradeAuction(task, answer, noJoke)
+    expect(result.winner).not.toBe('player')
     expect(result.accuracy).toBe(0.6)
   })
 

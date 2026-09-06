@@ -44,7 +44,7 @@ const QUESTIONS = [
     ],
     correctId: 'cf',
     explanation:
-      'Only the cash flow statement reconciles profit to actual cash. It adds back non-cash depreciation ($40k) and a working-capital swing ($20k) for $260k of operating cash, then subtracts $120k of capex and $100k of debt repayment plus dividends — netting to +$40k.',
+      'Only the cash flow statement reconciles profit to actual cash. It adds back the non-cash depreciation ($40k, already buried inside the $420k opex line) and a working-capital swing ($20k) for $260k of operating cash, then subtracts $120k of capex and $100k of debt repayment plus dividends — netting to +$40k.',
   },
   {
     id: 'q-grossprofit',
@@ -88,7 +88,7 @@ const mission: Mission = {
     visual: {
       kind: 'bullets',
       items: [
-        'Income statement: Revenue $1,200k − COGS $480k = Gross profit $720k. − Opex $420k = EBIT $300k. − Interest $30k − Tax $70k = Net income $200k.',
+        'Income statement: Revenue $1,200k − COGS $480k = Gross profit $720k. − Opex $420k (includes $40k depreciation) = EBIT $300k. − Interest $30k − Tax $70k = Net income $200k.',
         'Balance sheet: Cash $150k + AR $90k + Inventory $60k + PP&E $500k = Assets $800k. Payables $70k + Long-term debt $330k = Liabilities $400k. + Equity $400k = $800k.',
         'Cash flow: Net income $200k + Depreciation $40k + Working capital $20k = Operating $260k. Capex −$120k. Debt repayment −$60k, dividends −$40k = Financing −$100k. Net change +$40k (cash $110k → $150k).',
       ],

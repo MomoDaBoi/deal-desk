@@ -88,22 +88,23 @@ const mission: Mission = {
   baseComp: 14_000,
   parSeconds: 240,
   lesson: {
-    title: "Read the teaser, don't chase the room",
+    title: "Bid your number, then stop",
     body:
-      "A teaser is the one-page summary of a target a banker sends to buyers before an auction — enough to spark interest, not enough to price the deal precisely. Every bidder estimates intrinsic value: what the business is genuinely worth to a disciplined buyer. Because several buyers bid against each other, the highest bidder wins — and the highest bidder is often the one who guessed most wrong. That gap is the winner's curse: winning proves you valued it above everyone else in the room, not that you were right. Walking away once the price runs past your number is not losing. It means refusing to own a business at a price it cannot support.",
+      "A teaser is the one-page summary a banker sends buyers before an auction — enough to spark interest, never enough to price the deal for you. Do that yourself. Intrinsic value is what the target is worth to a disciplined buyer paying for control, and it is a ceiling, not a target. Two outcomes score full marks. Bid your number early and decisively: a credible full-value bid usually ends a process before it becomes a war. Or let the room run past your number and stop — walking away costs nothing. Winning above your number costs plenty, because the high bidder is usually the one who guessed most wrong. That is the winner's curse.",
     visual: {
       kind: 'bullets',
       items: [
-        "Nan's Pantry: 210 stores, $144,000k EBITDA",
-        'Shares trade around 7.0x EBITDA; grocery control deals have cleared at 8.4x-9.2x',
-        'Multiply EBITDA by the control range yourself — that is your ceiling',
+        "Nan's Pantry: 210 stores, $144,000k EBITDA, $300,000k net debt",
+        'Shares trade at 7.0x EBITDA — a quote for a sliver, not a price for the whole company',
+        'Control math: 7.0x EBITDA, strip net debt, add a 25% premium, put net debt back',
+        'Bid that number once and mean it; above it, let the room have it',
       ],
     },
   },
   task: {
     kind: 'auction',
     prompt:
-      "Read the teaser, then bid for Nan's Pantry Markets across three rounds. Win it cheap, win it fair, or walk away — just don't win it by overpaying.",
+      "Read the teaser, work out what Nan's Pantry is worth, then bid across three rounds. Take it at or under your number, or let the room have it above yours — both are wins. Winning it by overpaying is not.",
     teaser: TEASER,
     unit: '$k',
     intrinsicValue: INTRINSIC_VALUE,
@@ -122,7 +123,7 @@ const mission: Mission = {
           const under = overpayPct(result.winningBid as number, INTRINSIC_VALUE)
           return {
             verdict: 'Bought it under value. The MD checks the number twice and still cannot find the catch.',
-            explanation: `You won at ${moneyK(result.winningBid as number)}, ${pct(Math.abs(under))} under the ${moneyK(INTRINSIC_VALUE)} intrinsic value (${INTRINSIC_MULTIPLE.toFixed(1)}x Nan's Pantry's ${moneyK(EBITDA)} EBITDA). Everyone else in the room was chasing a headline; you had a number and stuck to it.`,
+            explanation: `You won at ${moneyK(result.winningBid as number)}, ${pct(Math.abs(under))} under the ${moneyK(INTRINSIC_VALUE)} intrinsic value (${INTRINSIC_MULTIPLE.toFixed(1)}x Nan's Pantry's ${moneyK(EBITDA)} EBITDA). A full-value bid, made early and meant, ends a process: Copperline and Trestle were capped below you and Halcyon had nothing left to prove.`,
           }
         }
         case 'won-fair': {
@@ -139,10 +140,25 @@ const mission: Mission = {
             explanation: `You won at ${moneyK(result.winningBid as number)} — ${moneyK(overpaidBy)} over the ${moneyK(INTRINSIC_VALUE)} intrinsic value, ${pct(overPct)} too much. That is the winner's curse in one line: winning an auction only proves you valued Nan's Pantry higher than Copperline, Trestle, and Halcyon. It does not prove you were right.`,
           }
         }
+        case 'walked-away': {
+          const over = overpayPct(result.winningBid as number, INTRINSIC_VALUE)
+          return {
+            verdict: 'You let it go. The MD says nothing, which from him is applause.',
+            explanation: `You stopped at ${moneyK(result.playerLastBid as number)} and let ${winnerName(result.winner)} have it at ${moneyK(result.winningBid as number)}, ${pct(over)} over the ${moneyK(INTRINSIC_VALUE)} intrinsic value. That is a win. You bid your number, the room bid past it, and the winner's curse landed on someone else's balance sheet.`,
+          }
+        }
         case 'lost-narrowly': {
+          const last = result.playerLastBid as number
+          const gap = overpayPct(last, INTRINSIC_VALUE)
+          if (gap < 0) {
+            return {
+              verdict: mdVerdict(accuracy, 'r5-auction'),
+              explanation: `You lost to ${winnerName(result.winner)} at ${moneyK(result.winningBid as number)} after topping out at ${moneyK(last)}, ${pct(Math.abs(gap))} under the ${moneyK(INTRINSIC_VALUE)} intrinsic value. Losing is fine here — but you stopped short of your own number, so this was a business you could have owned at a price that worked.`,
+            }
+          }
           return {
             verdict: mdVerdict(accuracy, 'r5-auction'),
-            explanation: `You lost, but your last bid of ${moneyK(result.playerLastBid as number)} stayed within 10% of the ${moneyK(INTRINSIC_VALUE)} intrinsic value. Losing to ${winnerName(result.winner)} here is fine — a buyer chasing a trophy asset, not a return, just paid more than the business is worth. That is now their problem, not yours.`,
+            explanation: `You lost to ${winnerName(result.winner)} at ${moneyK(result.winningBid as number)}, but your last bid of ${moneyK(last)} was already ${pct(gap)} over the ${moneyK(INTRINSIC_VALUE)} intrinsic value. Being outbid saved you money; it is not the same as bidding well. You were willing to overpay and someone simply wanted it more.`,
           }
         }
         case 'lost-badly': {

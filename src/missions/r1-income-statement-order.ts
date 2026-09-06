@@ -36,7 +36,7 @@ const mission: Mission = {
       { id: 'revenue', label: 'Revenue', role: 'revenue' },
       { id: 'cogs', label: 'Cost of goods sold', role: 'cost' },
       { id: 'gross', label: 'Gross profit', role: 'revenue' },
-      { id: 'opex', label: 'Operating expenses', role: 'cost' },
+      { id: 'opex', label: 'Operating expenses (includes $40k depreciation)', role: 'cost' },
       { id: 'ebit', label: 'Operating profit (EBIT)', role: 'revenue' },
       { id: 'interest', label: 'Interest expense', role: 'debt' },
       { id: 'tax', label: 'Taxes', role: 'cost' },
@@ -59,9 +59,9 @@ const mission: Mission = {
       if (wrongIds.includes('gross') || wrongIds.includes('cogs'))
         hints.push('Gross profit is revenue minus cost of goods sold, so COGS sits directly under revenue and gross profit directly under COGS.')
       if (wrongIds.includes('ebit') || wrongIds.includes('opex'))
-        hints.push('Operating expenses (rent, salaries, marketing) come out of gross profit to give operating profit, also called EBIT.')
+        hints.push('Operating expenses (rent, salaries, marketing, and the $40k of depreciation folded into the $420k line) come out of gross profit to give operating profit, also called EBIT.')
       if (wrongIds.includes('interest') || wrongIds.includes('tax'))
-        hints.push('Lenders get paid before the tax office, so interest sits above taxes.')
+        hints.push('Interest is tax-deductible, so it comes off first and tax is then worked out on what is left: pre-tax income. That is why interest sits above taxes.')
       if (wrongIds.includes('net')) hints.push('Net income is the bottom line. Literally. Nothing goes below it.')
       const verdict =
         accuracy >= 0.75

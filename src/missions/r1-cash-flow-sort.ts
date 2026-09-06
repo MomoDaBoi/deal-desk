@@ -17,11 +17,11 @@ const REASON: Record<string, string> = {
   depreciation:
     'Depreciation is a non-cash expense — it already reduced net income on the income statement, but no cash actually left the building, so operating adds it back.',
   working_capital:
-    'The change in working capital (cash tied up or freed up by unpaid customer bills, inventory, and unpaid supplier bills) is a day-to-day timing effect, so it is an operating adjustment.',
+    'Working capital shrinking releases cash (+20 here); working capital growing consumes it. The change in working capital (cash tied up or freed up by unpaid customer bills, inventory, and unpaid supplier bills) is a day-to-day timing effect, so it is an operating adjustment.',
   capex_stands:
     'Buying new stands is capital expenditure: spending cash on a long-lived asset the business will use for years. That is exactly what investing tracks.',
   debt_repayment:
-    'Repaying debt sends cash back to a lender. That is a financing flow, not a cost of running the stands.',
+    'Repaying the principal on a loan sends cash back to a lender. That is a financing flow, not a cost of running the stands. The interest on that same loan is not: it already ran through net income, so it sits in operating.',
   dividends:
     'A dividend is cash paid out to an owner, not an expense of the business. Money moving between the company and its owners is exactly what financing tracks.',
   hyp_loan:
@@ -41,7 +41,7 @@ const mission: Mission = {
   lesson: {
     title: 'Three drawers for the cash',
     body:
-      "Pucker Up's cash flow statement sorts every dollar into three drawers. Operating is cash from running the stands day to day: start at net income, add back non-cash charges like depreciation, and adjust for working capital swings (unpaid bills, unsold inventory). Investing is cash spent on or earned from long-lived stuff — new stands, equipment, whole businesses. Financing is cash moving between the company and its lenders or owners: loans taken out or repaid, dividends paid out. The same dollar amount can sit in any drawer — what matters is what the cash was actually for, not whether it was a plus or a minus.",
+      "Pucker Up's cash flow statement sorts every dollar into three drawers. Operating is cash from running the stands day to day: start at net income, add back non-cash charges like depreciation, adjust for working capital. Interest sits here too — net income already absorbed it. Investing is cash spent on or earned from long-lived stuff: stands, equipment, whole businesses. Financing is cash between the company and its lenders or owners: loan principal borrowed or repaid, dividends paid. Only principal is financing, never the interest on it. Working capital shrinking releases cash (+20 here); working capital growing consumes it. What matters is what the cash was for, not the sign.",
     visual: {
       kind: 'waterfall',
       unit: '$k',
@@ -64,7 +64,7 @@ const mission: Mission = {
     buckets: [
       { id: 'operating', label: 'Operating', role: 'cash', hint: 'Cash from running the stands, day to day.' },
       { id: 'investing', label: 'Investing', role: 'neutral', hint: 'Buying or selling long-lived stuff.' },
-      { id: 'financing', label: 'Financing', role: 'debt', hint: 'Money to and from lenders and owners.' },
+      { id: 'financing', label: 'Financing', role: 'debt', hint: 'Loan principal to and from lenders (not interest), and cash to and from owners.' },
     ],
     items: [
       { id: 'net_income', label: 'Net income', bucketId: 'operating', role: 'cash' },
@@ -85,7 +85,7 @@ const mission: Mission = {
         return {
           verdict: 'Every dollar in its drawer. The MD is suspicious of you now.',
           explanation:
-            "You sorted it exactly right. Operating is the day job: net income of 200, plus depreciation of 40 added back because no cash left the building, plus the 20 working-capital swing, nets to cash from operations of 260. Investing is negative 120: buying new stands is the only real investing line this year. Financing nets to negative 100: repaying debt cost 60 and the founder's dividend cost another 40. The hypothetical loan and van sale never happened this year — they still belong in their drawers, but they are not part of these totals.",
+            "You sorted it exactly right. Operating is the day job: net income of 200, plus depreciation of 40 added back because no cash left the building, plus the 20 working-capital swing, nets to cash from operations of 260. Investing is negative 120: buying new stands is the only real investing line this year. Financing nets to negative 100: repaying loan principal cost 60 and the founder's dividend cost another 40 (the interest on that loan is not here — it sits inside net income, in operating). The hypothetical loan and van sale never happened this year — they still belong in their drawers, but they are not part of these totals.",
         }
       }
       if (accuracy === 0) {

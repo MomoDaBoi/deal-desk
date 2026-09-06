@@ -26,7 +26,7 @@ const mission: Mission = {
   lesson: {
     title: 'A margin is profit divided by revenue',
     body:
-      'A margin is a slice of revenue expressed as a percentage: margin = profit ÷ revenue × 100. Gross margin uses gross profit, EBITDA margin uses EBITDA, net margin uses net income — same divisor, different profit line. On its own a margin means nothing; it only means something next to another company\'s margin in the same industry. A grocer running a 3% EBIT margin is healthy, because groceries are a low-margin, high-volume business. A software company running 3% is dying, because SaaS is supposed to keep most of every dollar it brings in.',
+      'A margin is a slice of revenue expressed as a percentage: margin = profit ÷ revenue × 100. Gross margin uses gross profit, EBITDA margin uses EBITDA, net margin uses net income — same divisor, different profit line. On its own a margin means nothing. Two comparisons are honest: the same company over time, where the trend says whether it is improving or eroding, and another company in the same industry. A grocer running a 3% EBIT margin is healthy, because groceries are low-margin, high-volume. A software company running 3% is dying, because SaaS is supposed to keep most of every dollar it brings in.',
     visual: {
       kind: 'bars',
       unit: '$k',
@@ -90,7 +90,7 @@ const mission: Mission = {
         return {
           verdict: mdVerdict(accuracy, mission.id),
           explanation:
-            `Gross margin is gross profit divided by revenue: ${grossProfit.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${grossMarginPct}%. EBITDA margin is EBITDA divided by revenue: ${ebitda.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${ebitdaMarginPct}%. Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%. Every margin uses the same divisor, revenue, so they only ever compare against another company's margins in the same industry.`,
+            `Gross margin is gross profit divided by revenue: ${grossProfit.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${grossMarginPct}%. EBITDA margin is EBITDA divided by revenue: ${ebitda.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${ebitdaMarginPct}%. Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%. Every margin uses the same divisor, revenue, so they only mean something against a same-industry peer or against this company's own margin in earlier years.`,
         }
       }
       if (accuracy === 0) {
@@ -113,7 +113,7 @@ const mission: Mission = {
         hints.push(
           `Net margin is net income divided by revenue: ${netIncome.toLocaleString('en-US')} ÷ ${revenue.toLocaleString('en-US')} = ${netMarginPct}%.`,
         )
-      hints.push('Same divisor every time, revenue, so a margin only means something next to a same-industry peer.')
+      hints.push("Same divisor every time, revenue, so a margin only means something next to a same-industry peer or next to this company's own margin last year.")
       return {
         verdict: mdVerdict(accuracy, mission.id),
         explanation: hints.join(' '),

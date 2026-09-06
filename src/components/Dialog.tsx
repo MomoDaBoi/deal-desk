@@ -43,7 +43,9 @@ export function Dialog({
   useEffect(() => {
     if (!typing) {
       setMouth(0)
-      if (!doneRef.current) {
+      // Guard against the render where `text` just changed but `shown`
+      // still holds the previous text's count.
+      if (!doneRef.current && shown >= text.length && shown > 0) {
         doneRef.current = true
         onDone?.()
       }
@@ -54,7 +56,7 @@ export function Dialog({
       setMouth((m) => (m ? 0 : 1))
     }, speed)
     return () => clearInterval(id)
-  }, [typing, text.length, speed, onDone])
+  }, [typing, shown, text.length, speed, onDone])
 
   return (
     <div

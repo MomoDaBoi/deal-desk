@@ -224,6 +224,12 @@ function schedulerTick() {
   const audio = ctx
   const out = masterGain
   if (!audio || !out || !currentTrack) return
+  // A background tab throttles timers to ~1s while the audio clock keeps
+  // running; without a resync every missed step would fire at once.
+  if (nextStepTime < audio.currentTime) {
+    nextStepTime = audio.currentTime + 0.05
+    currentStep = 0
+  }
   while (nextStepTime < audio.currentTime + SCHEDULE_AHEAD_S) {
     scheduleStep(audio, out, currentTrack, currentStep, nextStepTime)
     nextStepTime += stepSeconds(currentTrack)
@@ -315,8 +321,23 @@ export function setMusicTrack(track: Track): void {
 export function useMusic(track: Track): void {
   const musicOn = useSettings((s) => s.musicOn)
   useEffect(() => {
-    if (!musicOn) return
-    startMusic(track)
-    return () => stopMusic()
+    if (!musicOn) {
+      stopMusic()
+      return
+    }
+    // Switch rather than stop/start so screen changes do not restart the
+    // loop from bar one. Consumers count so the last one to leave stops it.
+    consumers++
+    setMusicTrack(track)
+    return () => {
+      consumers--
+      // Defer: the next screen's effect runs right after this cleanup and
+      // takes the loop over without a gap.
+      window.setTimeout(() => {
+        if (consumers <= 0) stopMusic()
+      }, 50)
+    }
   }, [track, musicOn])
 }
+
+let consumers = 0

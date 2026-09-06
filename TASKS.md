@@ -342,12 +342,37 @@ full re-skin of the mission screens.
       with coin sounds.
 - [x] (2026-09-06) Chiptune music (three synthesized loops, off by
       default) and seven new SFX kinds, all Web Audio, no files.
-- [ ] Task widgets restyled to the pixel theme (order, sort, quiz,
+- [x] (2026-09-06) Task widgets restyled to the pixel theme (order, sort, quiz,
       balance, slider, waterfall, bridge, football field, heatmap,
-      auction, multi, written, lesson visuals).
-- [ ] Settings, share card and Ask-the-MD restyled.
-- [ ] Mission content audit (finance correctness, clarity, tone) with
-      confirmed fixes applied.
+      auction, multi, written, lesson visuals). Auction bots are now
+      portrait cards with expressions.
+- [x] (2026-09-06) Settings, share card (now a pixel-art PNG) and Ask-the-MD
+      (MD dialog box) restyled.
+- [x] (2026-09-06) Desktop layout: roster sidebar beside the office on wide
+      screens; phone keeps the Floor card. `scripts/shot.mjs` takes
+      phone-emulated screenshots over the DevTools protocol for checks
+      when the Chrome extension is unavailable.
+- [x] (2026-09-06) Mission content audit: 64-agent workflow (Opus reviewers,
+      Sonnet skeptics, Sonnet fixers) over all 33 missions; 6 fixes applied
+      by the workflow, then an Opus pass applied 7 more that the skeptics
+      had rejected only for word-count/test-shape reasons (interest is
+      operating cash flow, book equity is a residual not sale proceeds,
+      depreciation lives inside opex, interest-above-tax reasoning, margin
+      trends, DCF gives EV not equity, mock-interview rubric). Auction
+      scoring reachability fix in progress.
+- [x] (2026-09-06) Title screen (night skyline, walking intern, tap to clock
+      in, once per session) and an elevator arrival sequence into the
+      intern floor.
+- [x] (2026-09-06) Promotion scene when a new floor opens (MD dialog, once
+      per floor, stored under `deal-desk:office`, not exported) and a
+      floating "+$comp" over the desk after a pass.
+- [x] (2026-09-06) Opus engine review: 14 findings fixed (swipe-as-tap,
+      background-tab music resync and no-restart track switching, tall
+      furniture footprints, task timer reset on brief peek, floor card
+      prev/next navigation, keys locked under cards, event sink refresh,
+      camera snap after viewport is known, NPC collision, scale 1 for
+      narrow screens, pushState back-gesture support, remember position
+      on every arrive, Dialog onDone guard).
 - [ ] Browser playtest of the office and every task kind at desktop and
       360px widths; fix what breaks.
 - [ ] Opus review pass over the office engine and the reskinned screens.

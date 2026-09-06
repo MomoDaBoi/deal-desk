@@ -23,7 +23,7 @@ const QUESTIONS = [
     choices: CHOICES,
     correctId: 'evebitda',
     explanation:
-      'EV/EBITDA divides enterprise value (equity plus debt) by EBITDA, a line that sits above interest expense. The debt-loaded grocer\'s bigger interest bill never touches either number, so its EV/EBITDA still isolates the operating difference. EV/Revenue is equally debt-neutral, but it ignores profitability altogether, so it cannot tell the two apart once their margins differ.',
+      'EV/EBITDA divides enterprise value (market cap plus net debt — debt less the cash already sitting in the business) by EBITDA, a line that sits above interest expense. The debt-loaded grocer\'s bigger interest bill never touches either number, so its EV/EBITDA still isolates the operating difference. EV/Revenue is equally debt-neutral, but it ignores profitability altogether, so it cannot tell the two apart once their margins differ.',
   },
   {
     id: 'q-no-profit-growth',
@@ -43,11 +43,11 @@ const QUESTIONS = [
   },
   {
     id: 'q-depreciation',
-    text: `Two industrial peers post the same EBIT margin, but one depreciates its equipment fast and the other slow, so their D&A lines differ sharply — ${BRICKHOUSE.name} alone books $${((BRICKHOUSE.income.da ?? 0) / 1000).toFixed(0)}m of it a year. Which multiple removes that accounting noise?`,
+    text: `Two industrial peers post the same revenue and the same EBITDA, but one writes its equipment off fast and the other slow, so their depreciation lines — and therefore their EBIT and net income — differ sharply. ${BRICKHOUSE.name} alone books $${((BRICKHOUSE.income.da ?? 0) / 1000).toFixed(0)}m of D&A a year. Which multiple ignores that accounting choice?`,
     choices: CHOICES,
     correctId: 'evebitda',
     explanation:
-      'EBITDA adds depreciation and amortization back before you ever divide, so a faster or slower depreciation schedule — an accounting choice, not an operating difference — no longer moves the multiple. EBIT or net income would still carry the distortion straight through.',
+      'EBITDA adds depreciation and amortization back before you ever divide, so a faster or slower depreciation schedule — an accounting choice, not an operating difference — no longer moves the multiple. EBIT and net income sit below depreciation, so they would still show the two as different businesses when only the write-off schedule differs.',
   },
   {
     id: 'q-negative-ebitda',
