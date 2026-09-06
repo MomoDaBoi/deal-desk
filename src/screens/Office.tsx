@@ -129,12 +129,16 @@ export function Office({ focusRung, returnTo, arrive = false }: { focusRung?: Ru
   )
 
   const cfg: WorldConfig = useMemo(() => ({ slots, unlocked, currentRung }), [slots, unlocked, currentRung])
-  const worldRef = useRef<OfficeWorld | null>(null)
-  if (!worldRef.current) {
-    worldRef.current = new OfficeWorld(cfg, onEvent, { arrive })
-    if (returnTo) worldRef.current.seatPlayerAt(returnTo)
-  }
-  const world = worldRef.current
+  // Built once per mount (useState keeps one instance under StrictMode).
+  const [world] = useState(() => {
+    const w = new OfficeWorld(cfg, onEvent, { arrive: arrive && !returnTo })
+    if (returnTo) w.seatPlayerAt(returnTo)
+    return w
+  })
+  const clearReturnTo = useNav((s) => s.clearReturnTo)
+  useEffect(() => {
+    if (returnTo) clearReturnTo()
+  }, [returnTo, clearReturnTo])
   useEffect(() => world.configure(cfg), [world, cfg])
   useEffect(() => world.setOnEvent(onEvent), [world, onEvent])
 
@@ -171,8 +175,12 @@ export function Office({ focusRung, returnTo, arrive = false }: { focusRung?: Ru
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const promoPlayed = useRef(false)
   useEffect(() => {
-    if (promo) playSound('promote')
+    if (promo && !promoPlayed.current) {
+      promoPlayed.current = true
+      playSound('promote')
+    }
   }, [promo])
 
   // First visit of the day: a small "Day N" toast (cosmetic, local only).

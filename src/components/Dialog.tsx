@@ -30,23 +30,20 @@ export function Dialog({
   className?: string
   onDone?: () => void
 }) {
-  const [shown, setShown] = useState(0)
+  // Typing progress is keyed to the text it belongs to, so a text swap
+  // (even to a shorter string) starts from zero without a stale frame.
+  const [progress, setProgress] = useState<{ text: string; shown: number }>({ text, shown: 0 })
+  const shown = progress.text === text ? progress.shown : 0
+  const setShown = (f: (n: number) => number) => setProgress((p) => ({ text, shown: f(p.text === text ? p.shown : 0) }))
   const [mouth, setMouth] = useState(0)
-  const doneRef = useRef(false)
+  const doneFor = useRef<string | null>(null)
   const typing = shown < text.length
-
-  useEffect(() => {
-    setShown(0)
-    doneRef.current = false
-  }, [text])
 
   useEffect(() => {
     if (!typing) {
       setMouth(0)
-      // Guard against the render where `text` just changed but `shown`
-      // still holds the previous text's count.
-      if (!doneRef.current && shown >= text.length && shown > 0) {
-        doneRef.current = true
+      if (doneFor.current !== text) {
+        doneFor.current = text
         onDone?.()
       }
       return
@@ -61,7 +58,7 @@ export function Dialog({
   return (
     <div
       className={`px-box px-box-paper p-3 ${className}`}
-      onClick={() => typing && setShown(text.length)}
+      onClick={() => typing && setShown(() => text.length)}
       role={typing ? 'button' : undefined}
       aria-live="polite"
     >

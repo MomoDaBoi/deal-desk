@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNav } from './store/nav'
 import { missionById } from './missions'
 import { Office } from './screens/Office'
@@ -17,11 +17,13 @@ function titleSeen(): boolean {
 
 export default function App() {
   const screen = useNav((s) => s.screen)
+  const returnTo = useNav((s) => s.returnTo)
   const go = useNav((s) => s.go)
   // The title card shows once per browser session, and only when the app
   // opened on the office (a deep link into a mission skips it).
   const [showTitle, setShowTitle] = useState(() => screen.name === 'ladder' && !titleSeen())
-  const [arriving, setArriving] = useState(false)
+  // One-shot: the elevator arrival plays only on the first office after the title.
+  const arriveRef = useRef(false)
 
   if (showTitle) {
     const start = () => {
@@ -30,7 +32,7 @@ export default function App() {
       } catch {
         // private mode: the title will simply show again next time
       }
-      setArriving(true)
+      arriveRef.current = true
       setShowTitle(false)
     }
     return (
@@ -46,23 +48,26 @@ export default function App() {
 
   // A short iris wipe on every screen change so transitions feel like a
   // console game rather than a web page swapping divs.
-  const key = screen.name === 'mission' ? `mission:${screen.missionId}` : screen.name === 'rung' ? `rung:${screen.fromMission ?? screen.rung}` : screen.name
+  const key = screen.name === 'mission' ? `mission:${screen.missionId}` : screen.name === 'rung' ? `rung:${screen.rung}` : screen.name
   return (
     <div key={key} className="h-full relative">
       <div className="px-iris pointer-events-none fixed inset-0 z-50" aria-hidden />
-      <Screen screen={screen} arriving={arriving} />
+      <Screen screen={screen} returnTo={returnTo} arriveRef={arriveRef} />
     </div>
   )
 }
 
-function Screen({ screen, arriving }: { screen: ReturnType<typeof useNav.getState>['screen']; arriving: boolean }) {
+function Screen({ screen, returnTo, arriveRef }: { screen: ReturnType<typeof useNav.getState>['screen']; returnTo: string | null; arriveRef: React.MutableRefObject<boolean> }) {
   switch (screen.name) {
-    case 'ladder':
-      return <Office arrive={arriving} />
+    case 'ladder': {
+      const arrive = arriveRef.current
+      arriveRef.current = false
+      return <Office arrive={arrive} returnTo={returnTo ?? undefined} />
+    }
     case 'rung':
-      // Coming back from a mission seats the player at that desk; a plain
-      // rung link opens the floor card instead.
-      return screen.fromMission ? <Office key={screen.fromMission} returnTo={screen.fromMission} /> : <Office key={`rung-${screen.rung}`} focusRung={screen.rung} />
+      // A rung link opens the floor card; returning from a mission goes
+      // through goBack, which lands on the office with `returnTo` set.
+      return <Office key={`rung-${screen.rung}`} focusRung={screen.rung} returnTo={returnTo ?? screen.fromMission} />
     case 'mission': {
       const m = missionById(screen.missionId)
       if (!m) return <Office />

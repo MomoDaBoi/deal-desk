@@ -60,6 +60,7 @@ type Phase =
  */
 export function MissionScreen({ mission }: { mission: Mission }) {
   const go = useNav((s) => s.go)
+  const goBack = useNav((s) => s.goBack)
   const recordAttempt = useProgress((s) => s.recordAttempt)
   const markBonusSeen = useProgress((s) => s.markBonusSeen)
   const mentor = useMentorMode()
@@ -133,10 +134,10 @@ export function MissionScreen({ mission }: { mission: Mission }) {
       playSound('bonus')
       return setPhase({ name: 'bonus' })
     }
-    go({ name: 'rung', rung: mission.rung, fromMission: mission.id })
+    goBack(mission.id)
   }
 
-  const back = () => go({ name: 'rung', rung: mission.rung, fromMission: mission.id })
+  const back = () => goBack(mission.id)
   const speaker = mission.boss ? 'The MD' : mission.rung >= 4 ? 'The MD' : 'Your VP'
   const speakerPortrait = PORTRAITS.md
 
@@ -387,7 +388,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
         </div>
       </div>
       <BottomBar>
-        <Button variant="gold" className="flex-1" onClick={() => go({ name: 'rung', rung: mission.rung, fromMission: mission.id })}>
+        <Button variant="gold" className="flex-1" onClick={() => goBack(mission.id)}>
           Back to the floor
         </Button>
       </BottomBar>

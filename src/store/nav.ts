@@ -17,7 +17,16 @@ export type Screen =
 
 interface NavState {
   screen: Screen
+  /** Mission the player just left; the office seats them at its desk. Not part of the URL. */
+  returnTo: string | null
   go: (s: Screen) => void
+  /**
+   * Leave the current screen for the office. Pops history when this app
+   * pushed the current entry (so the phone back gesture stays sane),
+   * otherwise navigates to the office directly.
+   */
+  goBack: (fromMission?: string) => void
+  clearReturnTo: () => void
 }
 
 /** Build the hash for a screen. Ladder clears the hash entirely. */
@@ -75,18 +84,33 @@ function initialScreen(): Screen {
 
 export const useNav = create<NavState>()((set) => ({
   screen: initialScreen(),
+  returnTo: null,
   go: (screen) => {
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0 })
       // Assigning location.hash directly scrolls to any matching element
       // id; pushState changes the URL without scrolling and gives the phone
       // back gesture something to return to (the office) instead of exiting.
+      // The pushed state carries the app's own depth so goBack can tell an
+      // entry it created from the one the player arrived on.
       const hash = hashFor(screen)
       const url = window.location.pathname + window.location.search + hash
-      if (window.location.hash !== hash) window.history.pushState(null, '', url)
+      if (window.location.hash !== hash) {
+        const depth = (window.history.state?.d as number | undefined) ?? 0
+        window.history.pushState({ d: depth + 1 }, '', url)
+      }
     }
     set({ screen })
   },
+  goBack: (fromMission) => {
+    set({ returnTo: fromMission ?? null })
+    if (typeof window !== 'undefined' && ((window.history.state?.d as number | undefined) ?? 0) > 0) {
+      window.history.back()
+      return
+    }
+    useNav.getState().go({ name: 'ladder' })
+  },
+  clearReturnTo: () => set({ returnTo: null }),
 }))
 
 // Back/forward support: popstate covers pushState entries, hashchange

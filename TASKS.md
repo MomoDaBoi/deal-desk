@@ -394,6 +394,13 @@ full re-skin of the mission screens.
       the return-to-desk flow; desktop check at 1280x800. Fixed: footer
       overflow, Settings key row overflow, first-paint canvas sizing.
 - [x] (2026-09-06) Opus review pass over the office engine (see above).
+- [x] (2026-09-06) Second Opus review (title/arrival/promotion/boss wait):
+      12 findings fixed. Notable: tapping the desk you sit at now opens
+      its card; the elevator cutscene is one-shot and skippable by a tap;
+      `goBack()` pops history when the app pushed the entry so the phone
+      back gesture leaves the mission for the office (post-mission return
+      is a store field, not part of the URL); boss wait re-resolves the MD
+      and is cancelled by any new move; world built with useState.
 - [ ] Owner playtest on a real phone and PC; notes under "Owner notes".
 
 ## Backlog / ideas

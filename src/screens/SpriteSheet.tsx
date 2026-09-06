@@ -10,7 +10,7 @@ import { useNav } from '../store/nav'
 
 /** Developer contact sheet at #/sprites. Not linked from the game. */
 export function SpriteSheet() {
-  const go = useNav((s) => s.go)
+  const goBack = useNav((s) => s.goBack)
   const scale = 4
   const cell = (name: string, s: Sprite, animate = true) => (
     <div key={name} className="px-box px-box-dark p-2 flex flex-col items-center gap-1" style={{ minWidth: 72 }}>
@@ -19,7 +19,7 @@ export function SpriteSheet() {
     </div>
   )
   return (
-    <Page title="Sprite sheet" onBack={() => go({ name: 'ladder' })}>
+    <Page title="Sprite sheet" onBack={() => goBack()}>
       <h2 className="px-h2 mb-2">Characters</h2>
       <div className="flex flex-wrap gap-2 mb-6">
         {Object.entries(CHARACTERS).flatMap(([k, c]) => [cell(`${k} down`, c.down), cell(`${k} up`, c.up), cell(`${k} left`, c.left), cell(`${k} sit`, c.sit)])}

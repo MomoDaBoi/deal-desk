@@ -260,6 +260,9 @@ export class OfficeWorld {
   seatPlayerAt(missionId: string) {
     const d = this.desks.find((x) => x.mission?.missionId === missionId)
     if (!d) return
+    // Seating at a desk cancels any elevator cutscene and boss wait.
+    this.arrival = { phase: 'done', t: 0 }
+    this.bossWait = null
     const t = { x: d.slot.chairX, y: d.slot.y - 1 }
     this.player.tile = { ...t }
     this.player.px = t.x * TILE
@@ -280,7 +283,8 @@ export class OfficeWorld {
 
   /** Handle a tap at a tile. */
   tap(tile: Tile) {
-    if (this.arrival.phase !== 'done') return
+    if (this.arrival.phase !== 'done') this.skipArrival()
+    this.bossWait = null
     const p = this.player
     // NPC?
     const npc = this.npcs.find((n) => n.tile.x === tile.x && n.tile.y === tile.y)
@@ -318,13 +322,35 @@ export class OfficeWorld {
     if (!path) return
     p.path = p.moving && p.path.length ? [p.path[0], ...path] : path
     p.sitting = false
-    if (p.path.length === 0) this.arrive()
+    if (p.path.length === 0) {
+      // Already there (e.g. tapping the desk you sit at): arrive without
+      // the `move` event, which would close the card it just opened.
+      this.arrive()
+      return
+    }
     this.onEvent({ kind: 'move' })
+  }
+
+  /** Cut the elevator cutscene short: snap to spawn and hand control over. */
+  private skipArrival() {
+    if (this.arrival.phase === 'done') return
+    this.arrival = { phase: 'done', t: 0 }
+    this.arrivalDoneAt = this.tick_
+    const p = this.player
+    p.path = []
+    p.moving = false
+    p.tile = { ...SPAWN }
+    p.px = SPAWN.x * TILE
+    p.py = SPAWN.y * TILE
+    p.dir = 'down'
+    rememberPlayerAt(p.tile, p.dir)
+    this.onEvent({ kind: 'arrived' })
   }
 
   /** Keyboard nudge one tile in a direction. */
   nudge(dir: Dir) {
-    if (this.arrival.phase !== 'done') return
+    if (this.arrival.phase !== 'done') this.skipArrival()
+    this.bossWait = null
     const p = this.player
     if (p.moving) return
     const d = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] }[dir]
@@ -359,11 +385,13 @@ export class OfficeWorld {
       if (desk?.mission?.boss && md && !md.sitting) {
         const spot = this.adjacentFreeTile(p.tile, md)
         const path = spot ? findPath(MAP_W, MAP_H, (x, y) => !this.isBlocked(x, y) && !this.occupiedByOther(x, y, md), md.tile, spot) : null
-        if (path && path.length > 0 && path.length < 30) {
+        // Only stage the walk-over when the MD is close enough to arrive
+        // within a few seconds; a distant MD just skips the cutscene.
+        if (path && path.length > 0 && path.length < 14) {
           md.path = path
           md.sitting = false
           md.idle = 400
-          this.bossWait = { missionId: id, until: this.tick_ + 240, md }
+          this.bossWait = { missionId: id, until: this.tick_ + Math.min(300, path.length * 13 + 45), mdId: md.id }
           md.emote = { sprite: BUBBLE_EXCLAIM, until: this.tick_ + 60 }
           return
         }
@@ -372,7 +400,7 @@ export class OfficeWorld {
     }
   }
 
-  private bossWait: { missionId: string; until: number; md: Entity } | null = null
+  private bossWait: { missionId: string; until: number; mdId: string } | null = null
 
   private adjacentFreeTile(t: Tile, self: Entity): Tile | null {
     const c: Tile[] = [
@@ -387,13 +415,20 @@ export class OfficeWorld {
   private tickBossWait() {
     const w = this.bossWait
     if (!w) return
-    const near = Math.abs(w.md.tile.x - this.player.tile.x) + Math.abs(w.md.tile.y - this.player.tile.y) <= 1
-    if ((near && !w.md.moving) || this.tick_ >= w.until) {
+    // Re-resolve every tick: configure() may have rebuilt the NPC list.
+    const md = this.npcs.find((n) => n.id === w.mdId)
+    if (!md) {
       this.bossWait = null
-      w.md.path = []
-      w.md.moving = false
-      w.md.dir = w.md.tile.x < this.player.tile.x ? 'right' : w.md.tile.x > this.player.tile.x ? 'left' : w.md.tile.y < this.player.tile.y ? 'down' : 'up'
-      w.md.idle = 240
+      this.onEvent({ kind: 'arrive', missionId: w.missionId })
+      return
+    }
+    const near = Math.abs(md.tile.x - this.player.tile.x) + Math.abs(md.tile.y - this.player.tile.y) <= 1
+    if ((near && !md.moving) || this.tick_ >= w.until) {
+      this.bossWait = null
+      md.path = []
+      md.moving = false
+      md.dir = md.tile.x < this.player.tile.x ? 'right' : md.tile.x > this.player.tile.x ? 'left' : md.tile.y < this.player.tile.y ? 'down' : 'up'
+      md.idle = 240
       this.onEvent({ kind: 'arrive', missionId: w.missionId })
     }
   }
@@ -418,10 +453,14 @@ export class OfficeWorld {
       this.player.dir = 'down'
     } else if (a.phase === 'walk' && this.player.path.length === 0 && !this.player.moving) {
       a.phase = 'done'
+      this.arrivalDoneAt = this.tick_
       rememberPlayerAt(this.player.tile, this.player.dir)
       this.onEvent({ kind: 'arrived' })
     }
   }
+
+  /** Tick when the arrival finished; the elevator doors linger open a moment after. */
+  private arrivalDoneAt = -1000
 
   get arriving(): boolean {
     return this.arrival.phase !== 'done'
@@ -576,7 +615,7 @@ export class OfficeWorld {
       }
     }
     // Open elevator doors during the arrival, drawn just behind the player.
-    if (this.arrival.phase !== 'done' || (this.arrival.t < 60 && this.arrival.t > 0)) {
+    if (this.arrival.phase !== 'done' || t - this.arrivalDoneAt < 60) {
       const ey = ELEVATOR_DRAW.y * TILE
       items.push({ y: ey + 32 - 1, draw: () => drawSprite(ctx, ELEVATOR_OPEN, ELEVATOR_DRAW.x * TILE * scale, (ey - camY) * scale, scale) })
     }

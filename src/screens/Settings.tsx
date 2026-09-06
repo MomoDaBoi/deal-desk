@@ -12,7 +12,7 @@ import { loadMentor } from '../lib/mentor'
 import { PRICES, PRICING_CHECKED_ON, estimateCallCost, formatUsd } from '../lib/pricing'
 
 export function Settings() {
-  const go = useNav((s) => s.go)
+  const goBack = useNav((s) => s.goBack)
   const { apiKey, mentorEnabled, model, soundOn, musicOn, setApiKey, setMentorEnabled, setModel, setSoundOn, setMusicOn } = useSettings()
   const progress = useProgress()
   const usage = useUsage()
@@ -87,7 +87,7 @@ export function Settings() {
   }
 
   return (
-    <Page title="Settings" onBack={() => go({ name: 'ladder' })}>
+    <Page title="Settings" onBack={() => goBack()}>
       {msg && (
         <div className={`mb-4 px-box p-3 font-pixel text-[9px] ${msg.tone === 'ok' ? 'text-revenue' : 'text-cost'}`}>
           {msg.text}
