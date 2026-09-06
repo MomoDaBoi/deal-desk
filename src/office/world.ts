@@ -8,6 +8,7 @@ import { BUBBLE_EXCLAIM, ELEVATOR_OPEN } from '../pixel/sprites/props'
 import { playSound } from '../lib/sounds'
 import { deskSlots, doorTiles, ELEVATOR_DRAW, ELEVATOR_TILE, MAP_H, MAP_W, rungAtRow, SPAWN, TILE, WALL_UPPER, zoneDecor, zoneTop, type DeskSlot, type Furniture } from './map'
 import { findPath, nearestWalkable, type Tile } from './pathfind'
+import { pickQuip } from './quips'
 
 export type SlotState = 'todo' | 'started' | 'passed' | 'perfect'
 
@@ -71,17 +72,8 @@ function desksFor(slots: MissionSlot[], rung: Rung): { slot: DeskSlot; mission: 
   return defs.map((slot, i) => ({ slot, mission: slots.find((m) => m.rung === rung && m.slot === i) ?? null }))
 }
 
-const NPC_QUIPS: Record<string, string[]> = {
-  md: ['pls fix.', 'Why is this not on my desk yet?', 'Is it bonus season? No. Get back to work.', 'I read your model. I have notes. All of them.'],
-  hr: ['Remember: we are a family here.', 'Your performance review is... scheduled.', 'Have you done the compliance training?'],
-  analystA: ['Third all-nighter this week. Living the dream.', 'The MD wants it in 12-point Garamond now.', 'Have you seen the printer? It hates me.'],
-  analystB: ['Did you align the logos on page 47?', 'EBITDA is just a vibe, honestly.', 'Coffee machine is out again.'],
-  associate: ['The client wants a football field by 9am.', 'Never trust a peer set you did not pick.', 'VP says "circle back". Again.'],
-}
-
 export function quipFor(npc: string, seed: number): string {
-  const q = NPC_QUIPS[npc] ?? ['...']
-  return q[seed % q.length]
+  return pickQuip(npc, seed)
 }
 
 /**
