@@ -9,6 +9,7 @@ import { useNav } from '../store/nav'
 import { useProgress } from '../store/progress'
 import { useMentorMode } from '../store/settings'
 import { BottomBar, Button, Eyebrow, Page, Panel } from '../components/ui'
+import { Dialog, type Expression } from '../components/Dialog'
 import { OrderTask } from '../components/OrderTask'
 import { SortTask } from '../components/SortTask'
 import { BalanceTask } from '../components/BalanceTask'
@@ -26,6 +27,21 @@ import { AskMd } from '../components/AskMd'
 import { MentorError } from '../lib/mentor-error'
 import { loadMentor } from '../lib/mentor'
 import { playSound } from '../lib/sounds'
+import { Px } from '../pixel/Px'
+import { PORTRAITS } from '../pixel/sprites/portraits'
+import { useMusic } from '../lib/music'
+import {
+  EMBLEM_BONUS,
+  EMBLEM_BOSS,
+  EMBLEM_DEAL,
+  EMBLEM_REVIEW,
+  EMBLEM_SENT,
+  ICON_CHECK,
+  ICON_CLOCK,
+  ICON_COIN,
+  ICON_CROSS,
+  ICON_WARNING,
+} from '../pixel/sprites/icons'
 
 type Phase =
   | { name: 'lesson' }
@@ -47,8 +63,8 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   const recordAttempt = useProgress((s) => s.recordAttempt)
   const markBonusSeen = useProgress((s) => s.markBonusSeen)
   const mentor = useMentorMode()
-
   const [phase, setPhase] = useState<Phase>({ name: 'lesson' })
+  useMusic(phase.name === 'bonus' ? 'bonus' : mission.boss ? 'boss' : 'office')
   const [seed, setSeed] = useState(() => Date.now())
   const startedAt = useRef<number>(0)
   const submitted = useRef(false)
@@ -60,6 +76,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     // Peeking at the lesson mid-task must not reset the clock.
     if (startedAt.current === 0) startedAt.current = performance.now()
     submitted.current = false
+    playSound('open')
     setPhase({ name: 'task' })
   }
 
@@ -116,29 +133,42 @@ export function MissionScreen({ mission }: { mission: Mission }) {
       playSound('bonus')
       return setPhase({ name: 'bonus' })
     }
-    go({ name: 'rung', rung: mission.rung })
+    go({ name: 'rung', rung: mission.rung, fromMission: mission.id })
   }
 
-  const back = () => go({ name: 'rung', rung: mission.rung })
+  const back = () => go({ name: 'rung', rung: mission.rung, fromMission: mission.id })
+  const speaker = mission.boss ? 'The MD' : mission.rung >= 4 ? 'The MD' : 'Your VP'
+  const speakerPortrait = PORTRAITS.md
 
   if (phase.name === 'lesson') {
     return (
       <Page title={mission.title} onBack={back}>
-        <Eyebrow>
-          {mission.boss ? 'Boss fight' : 'Lesson'} · {RUNG_TITLES[mission.rung]}
-        </Eyebrow>
-        <h1 className="text-2xl font-black mt-1 mb-4">{mission.lesson.title}</h1>
-        <Panel>
-          <p className="leading-relaxed">{mission.lesson.body}</p>
-          <LessonBullets mission={mission} />
-        </Panel>
-        <p className="mt-4 text-sm text-muted">
-          Par time {mission.parSeconds}s. Base comp {formatComp(mission.baseComp)}.
-          {task.kind === 'quiz' && task.timeLimitSeconds ? ` Hard limit ${task.timeLimitSeconds}s.` : ' Speed is a bonus, accuracy is the job.'}
-        </p>
+        <div className="flex items-center gap-2 mb-3">
+          {mission.boss && <Px sprite={EMBLEM_BOSS} scale={1} />}
+          <Eyebrow>
+            {mission.boss ? 'Boss fight' : 'Briefing'} · {RUNG_TITLES[mission.rung]}
+          </Eyebrow>
+        </div>
+        <h1 className="px-h1 mb-4 px-shadow">{mission.lesson.title}</h1>
+        <Dialog portrait={speakerPortrait} expression={mission.boss ? 'annoyed' : 'neutral'} name={speaker} text={mission.lesson.body}>
+          <div className="mt-2 border-t-2 border-dashed border-[#bfb39c] pt-2">
+            <LessonBullets mission={mission} />
+          </div>
+        </Dialog>
+        <div className="mt-4 flex items-center gap-3 text-sm text-muted">
+          <span className="flex items-center gap-1">
+            <Px sprite={ICON_CLOCK} scale={1} /> par {mission.parSeconds}s
+          </span>
+          <span className="flex items-center gap-1">
+            <Px sprite={ICON_COIN} scale={1} /> {formatComp(mission.baseComp)}
+          </span>
+          <span className="ml-auto text-xs">
+            {task.kind === 'quiz' && task.timeLimitSeconds ? `Hard limit ${task.timeLimitSeconds}s.` : 'Accuracy is the job. Speed is a bonus.'}
+          </span>
+        </div>
         <BottomBar>
           <Button className="flex-1" onClick={startTask}>
-            {mission.boss ? 'Walk in' : 'Start the task'}
+            {mission.boss ? 'Walk in' : 'Got it, start'}
           </Button>
         </BottomBar>
       </Page>
@@ -149,7 +179,10 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     const quizTimed = task.kind === 'quiz' && !!task.timeLimitSeconds
     return (
       <Page title={mission.title} onBack={back} right={quizTimed ? null : <Timer />}>
-        <p className="mb-4 font-medium">{task.prompt}</p>
+        <div className="px-box px-box-paper px-3 py-2 mb-4 text-base">
+          <span className="px-eyebrow text-[#5b5670] block mb-1">The ask</span>
+          {task.prompt}
+        </div>
         {task.kind === 'order' && <OrderTask items={state.order} onChange={state.setOrder} />}
         {task.kind === 'sort' && <SortTask task={task} items={state.sortItems} value={state.sort} onChange={state.setSort} />}
         {task.kind === 'balance' && <BalanceTask task={task} value={state.balance} onChange={state.setBalance} />}
@@ -177,7 +210,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             </Button>
           ) : (
             <Button variant="ghost" onClick={() => setPhase({ name: 'lesson' })}>
-              Lesson
+              Brief
             </Button>
           )}
           {task.kind === 'multi' && state.multi.stageIndex < task.stages.length - 1 ? (
@@ -186,7 +219,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             </Button>
           ) : (
             <Button className="flex-1" onClick={() => submit()}>
-              Submit
+              Send it
             </Button>
           )}
         </BottomBar>
@@ -198,28 +231,26 @@ export function MissionScreen({ mission }: { mission: Mission }) {
     const { grade, comp, newBest, elapsed } = phase
     const pct = Math.round(grade.accuracy * 100)
     const finale = comp.passed && mission.finale ? mission.finale : null
+    const expression: Expression = grade.accuracy === 1 ? 'pleased' : comp.passed ? 'smug' : 'annoyed'
     return (
       <Page title={mission.title} onBack={back}>
         {finale ? (
-          <div className="text-center mb-4">
-            <div className="text-6xl">{finale.emoji ?? '🥂'}</div>
-            <Eyebrow>{finale.eyebrow}</Eyebrow>
-            <h1 className="text-3xl font-black mt-1">{finale.title}</h1>
+          <div className="text-center mb-4 px-pop">
+            <Px sprite={EMBLEM_DEAL} scale={3} className="px-float" />
+            <Eyebrow className="mt-2">{finale.eyebrow}</Eyebrow>
+            <h1 className="px-h1 mt-1 px-shadow">{finale.title}</h1>
             <p className="mt-2 text-muted">{finale.body}</p>
-            <p className="mt-3 font-semibold">{grade.verdict}</p>
           </div>
         ) : (
-          <>
-            <Eyebrow>{comp.passed ? 'Result' : 'Result · fail'}</Eyebrow>
-            <h1 className={`text-2xl font-black mt-1 ${comp.passed ? '' : 'text-cost'}`}>{grade.verdict}</h1>
-          </>
+          <Eyebrow className={`mb-2 ${comp.passed ? '' : '!text-cost'}`}>{comp.passed ? 'Result' : 'Result · fail'}</Eyebrow>
         )}
+        <Dialog portrait={PORTRAITS.md} expression={expression} name="The MD" text={grade.verdict} className={comp.passed ? '' : 'px-shake'} />
 
-        <Panel className="mt-4">
+        <Panel className="mt-3" tone="dark">
           <div className="grid grid-cols-3 gap-3 text-center">
             <Stat label="Accuracy" value={`${pct}%`} tone={grade.accuracy === 1 ? 'text-revenue' : comp.passed ? '' : 'text-cost'} />
             <Stat label="Time" value={`${Math.round(elapsed)}s`} tone={elapsed < mission.parSeconds ? 'text-cash' : 'text-muted'} />
-            <Stat label="Comp" value={formatComp(comp.total)} tone="text-revenue" />
+            <CompStat value={comp.total} />
           </div>
           <div className="mt-3 text-xs text-muted text-center">
             {formatComp(comp.accuracyComp)} for accuracy
@@ -239,8 +270,8 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             <ol className="mt-2 flex flex-col gap-2">
               {grade.details.map((d, i) => (
                 <li key={d.id} className="flex gap-3 text-sm items-start">
-                  <span className="font-mono text-muted w-4 text-right shrink-0">{i + 1}</span>
-                  <span className={`shrink-0 ${d.ok ? 'text-revenue' : 'text-cost'}`}>{d.ok ? '✓' : '✗'}</span>
+                  <span className="px-num text-[9px] text-muted w-4 text-right shrink-0 pt-1">{i + 1}</span>
+                  <Px sprite={d.ok ? ICON_CHECK : ICON_CROSS} scale={1} className="mt-0.5" />
                   <span className="min-w-0">
                     <span>{labelFor(task, d.id)}</span>
                     {d.note && (!d.ok || task.kind === 'auction' || task.kind === 'multi') && (
@@ -260,7 +291,7 @@ export function MissionScreen({ mission }: { mission: Mission }) {
             Retry
           </Button>
           <Button className="flex-1" onClick={finish}>
-            {comp.passed ? 'Continue' : 'Back to rung'}
+            {comp.passed ? 'Continue' : 'Back to the floor'}
           </Button>
         </BottomBar>
       </Page>
@@ -270,10 +301,10 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'grading') {
     return (
       <Page title={mission.title}>
-        <div className="text-center mt-16">
-          <div className="text-5xl">📠</div>
-          <Eyebrow>Sent upstairs</Eyebrow>
-          <h1 className="text-2xl font-black mt-1">The MD is reading it.</h1>
+        <div className="text-center mt-16 px-pop">
+          <Px sprite={EMBLEM_SENT} scale={3} animate />
+          <Eyebrow className="mt-3">Sent upstairs</Eyebrow>
+          <h1 className="px-h1 mt-1">The MD is reading it.</h1>
           <p className="mt-2 text-muted">Usually a few seconds. Occasionally a few seconds and a sigh.</p>
         </div>
       </Page>
@@ -283,8 +314,11 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'gradeError') {
     return (
       <Page title={mission.title} onBack={back}>
-        <Eyebrow>No reply</Eyebrow>
-        <h1 className="text-2xl font-black mt-1 text-cost">{phase.message}</h1>
+        <div className="flex items-center gap-2">
+          <Px sprite={ICON_WARNING} scale={2} />
+          <Eyebrow>No reply</Eyebrow>
+        </div>
+        <h1 className="px-h1 mt-2 text-cost">{phase.message}</h1>
         <p className="mt-2 text-muted">Your answer is still here. Check the key in Settings if this keeps happening.</p>
         <BottomBar>
           <Button variant="ghost" onClick={() => go({ name: 'settings' })}>
@@ -301,15 +335,25 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   if (phase.name === 'review') {
     return (
       <Page title="Performance review" onBack={back}>
-        <Eyebrow>HR would like a word</Eyebrow>
-        <h1 className="text-2xl font-black mt-1 text-cost">{reviewLine(mission.id)}</h1>
-        <p className="mt-2 text-muted">Three misses in a row. Nobody is getting fired. Here is what went wrong, then the lesson again.</p>
+        <div className="flex items-center gap-3 mb-3">
+          <Px sprite={EMBLEM_REVIEW} scale={2} />
+          <div>
+            <Eyebrow>HR would like a word</Eyebrow>
+            <h1 className="px-h2 mt-1 text-cost">{reviewLine(mission.id)}</h1>
+          </div>
+        </div>
+        <Dialog
+          portrait={PORTRAITS.hr}
+          expression="annoyed"
+          name="HR"
+          text="Three misses in a row. Nobody is getting fired. Here is what went wrong, then the briefing again."
+        />
         <Panel className="mt-4">
           <Eyebrow>Why</Eyebrow>
           <p className="mt-2 leading-relaxed">{phase.grade.explanation}</p>
         </Panel>
-        <Panel className="mt-4">
-          <div className="font-bold mb-2">{mission.lesson.title}</div>
+        <Panel className="mt-4" tone="paper">
+          <div className="px-h2 mb-2">{mission.lesson.title}</div>
           <p className="leading-relaxed">{mission.lesson.body}</p>
           <LessonBullets mission={mission} />
         </Panel>
@@ -329,18 +373,22 @@ export function MissionScreen({ mission }: { mission: Mission }) {
   const st = rungStatus(missionsForRung(mission.rung, mentor), useProgress.getState().best)
   return (
     <Page title="Bonus season">
-      <div className="text-center mt-10">
-        <div className="text-6xl">🍾</div>
-        <Eyebrow>Bonus season</Eyebrow>
-        <h1 className="text-3xl font-black mt-1">Perfect rung.</h1>
-        <p className="mt-2 text-muted">
-          Every {RUNG_TITLES[mission.rung]} mission at full comp. {bonusLine(mission.id)}
-        </p>
-        <div className="mt-6 font-mono text-3xl text-revenue">{formatComp(st.earned)}</div>
+      <Confetti />
+      <div className="text-center mt-8 relative px-pop">
+        <Px sprite={EMBLEM_BONUS} scale={4} animate className="px-float" />
+        <Eyebrow className="mt-3 !text-gold">Bonus season</Eyebrow>
+        <h1 className="px-h1 mt-1 px-shadow">Perfect floor.</h1>
+        <div className="mt-4 text-left">
+          <Dialog portrait={PORTRAITS.md} expression="pleased" name="The MD" text={`Every ${RUNG_TITLES[mission.rung]} mission at full comp. ${bonusLine(mission.id)}`} />
+        </div>
+        <div className="mt-6 flex items-center justify-center gap-2 px-num text-2xl text-revenue">
+          <Px sprite={ICON_COIN} scale={2} animate />
+          <CountUp value={st.earned} />
+        </div>
       </div>
       <BottomBar>
-        <Button className="flex-1" onClick={() => go({ name: 'ladder' })}>
-          Back to the ladder
+        <Button variant="gold" className="flex-1" onClick={() => go({ name: 'rung', rung: mission.rung, fromMission: mission.id })}>
+          Back to the floor
         </Button>
       </BottomBar>
     </Page>
@@ -491,8 +539,65 @@ function detailsTitle(task: Task): string {
 function Stat({ label, value, tone = '' }: { label: string; value: string; tone?: string }) {
   return (
     <div>
-      <div className={`font-mono text-xl font-bold ${tone}`}>{value}</div>
-      <div className="text-xs text-muted">{label}</div>
+      <div className={`px-num text-sm ${tone}`}>{value}</div>
+      <div className="text-xs text-muted mt-1">{label}</div>
+    </div>
+  )
+}
+
+/** Comp stat that counts up with a coin sound, like a score tally. */
+function CompStat({ value }: { value: number }) {
+  return (
+    <div>
+      <div className="px-num text-sm text-revenue flex items-center justify-center gap-1">
+        <Px sprite={ICON_COIN} scale={1} animate />
+        <CountUp value={value} />
+      </div>
+      <div className="text-xs text-muted mt-1">Comp</div>
+    </div>
+  )
+}
+
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    const start = performance.now()
+    const dur = 700
+    let raf = 0
+    let lastTick = -1
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / dur)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setN(Math.round(value * eased))
+      const tick = Math.floor(t * 8)
+      if (tick !== lastTick && t < 1 && value > 0) {
+        lastTick = tick
+        playSound('coin')
+      }
+      if (t < 1) raf = requestAnimationFrame(step)
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+  }, [value])
+  return <span>{formatComp(n)}</span>
+}
+
+function Confetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 36 }, (_, i) => ({
+        left: `${(i * 37) % 100}%`,
+        delay: `${(i % 9) * 0.25}s`,
+        dur: `${2.2 + (i % 5) * 0.4}s`,
+        color: ['#4fc46a', '#f2b632', '#4a7ad9', '#d94a4a', '#3bbfb0', '#f4f4f8'][i % 6],
+      })),
+    [],
+  )
+  return (
+    <div className="pointer-events-none fixed inset-0 overflow-hidden z-0" aria-hidden>
+      {pieces.map((p, i) => (
+        <span key={i} className="px-confetti" style={{ left: p.left, animationDelay: p.delay, animationDuration: p.dur, background: p.color }} />
+      ))}
     </div>
   )
 }
@@ -504,5 +609,10 @@ function Timer() {
     const id = setInterval(() => setT(Math.floor((performance.now() - start) / 1000)), 250)
     return () => clearInterval(id)
   }, [])
-  return <span className="font-mono text-sm text-muted tabular-nums">{t}s</span>
+  return (
+    <span className="px-num text-[10px] text-muted tabular-nums flex items-center gap-1">
+      <Px sprite={ICON_CLOCK} scale={1} />
+      {t}s
+    </span>
+  )
 }

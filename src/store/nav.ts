@@ -10,9 +10,10 @@ import type { Rung } from '../engine/types'
  */
 export type Screen =
   | { name: 'ladder' }
-  | { name: 'rung'; rung: Rung }
+  | { name: 'rung'; rung: Rung; fromMission?: string }
   | { name: 'mission'; missionId: string }
   | { name: 'settings' }
+  | { name: 'sprites' }
 
 interface NavState {
   screen: Screen
@@ -28,6 +29,8 @@ function hashFor(screen: Screen): string {
       return `#/rung/${screen.rung}`
     case 'settings':
       return '#/settings'
+    case 'sprites':
+      return '#/sprites'
     case 'ladder':
       return ''
   }
@@ -45,6 +48,9 @@ function screenFromHash(hash: string): Screen {
 
   if (parts.length === 1 && parts[0] === 'settings') {
     return { name: 'settings' }
+  }
+  if (parts.length === 1 && parts[0] === 'sprites') {
+    return { name: 'sprites' }
   }
 
   if (parts.length === 2 && parts[0] === 'rung') {

@@ -6,7 +6,7 @@ import { useSettings } from '../store/settings'
  * unavailable, and never throws (a sound glitch must never break a mission).
  */
 
-type SoundKind = 'pass' | 'fail' | 'perfect' | 'bonus'
+type SoundKind = 'pass' | 'fail' | 'perfect' | 'bonus' | 'tap' | 'open' | 'close' | 'coin' | 'type' | 'walk' | 'promote'
 
 interface Note {
   /** Hz. */
@@ -16,6 +16,8 @@ interface Note {
   /** Seconds. */
   duration: number
   type?: OscillatorType
+  /** Overrides the phrase's default peak gain, for quieter/louder notes. */
+  gain?: number
 }
 
 let ctx: AudioContext | null = null
@@ -30,7 +32,7 @@ function getContext(): AudioContext | null {
 }
 
 /** One short envelope-shaped tone: quick attack, exponential-ish decay. */
-function playNote(audio: AudioContext, note: Note, peakGain: number) {
+function playNote(audio: AudioContext, note: Note, defaultGain: number) {
   const osc = audio.createOscillator()
   const gain = audio.createGain()
   osc.type = note.type ?? 'sine'
@@ -42,9 +44,10 @@ function playNote(audio: AudioContext, note: Note, peakGain: number) {
   const attack = Math.min(0.015, note.duration / 4)
   const t1 = t0 + attack
   const t2 = t0 + note.duration
+  const peak = note.gain ?? defaultGain
 
   gain.gain.setValueAtTime(0, t0)
-  gain.gain.linearRampToValueAtTime(peakGain, t1)
+  gain.gain.linearRampToValueAtTime(peak, t1)
   gain.gain.exponentialRampToValueAtTime(0.001, t2)
 
   osc.start(t0)
@@ -73,6 +76,34 @@ const PHRASES: Record<SoundKind, Note[]> = {
     { freq: 523, start: 0.09, duration: 0.1, type: 'square' },
     { freq: 659, start: 0.18, duration: 0.1, type: 'square' },
     { freq: 784, start: 0.27, duration: 0.3, type: 'square' },
+  ],
+  // Soft, brief UI blip — a tap acknowledgement.
+  tap: [{ freq: 880, start: 0, duration: 0.03, type: 'sine', gain: 0.08 }],
+  // Two rising notes: something opening.
+  open: [
+    { freq: 349, start: 0, duration: 0.08, type: 'sine' },
+    { freq: 466, start: 0.07, duration: 0.1, type: 'sine' },
+  ],
+  // Two falling notes: something closing.
+  close: [
+    { freq: 466, start: 0, duration: 0.08, type: 'sine' },
+    { freq: 349, start: 0.07, duration: 0.12, type: 'sine' },
+  ],
+  // Bright two-note ping, Mario-coin style.
+  coin: [
+    { freq: 988, start: 0, duration: 0.06, type: 'square', gain: 0.18 },
+    { freq: 1319, start: 0.05, duration: 0.25, type: 'square', gain: 0.18 },
+  ],
+  // Tiny 10ms tick for typewriter text.
+  type: [{ freq: 2000, start: 0, duration: 0.01, type: 'sine', gain: 0.06 }],
+  // Very quiet 15ms thud.
+  walk: [{ freq: 90, start: 0, duration: 0.015, type: 'triangle', gain: 0.05 }],
+  // Four-note ascending fanfare.
+  promote: [
+    { freq: 523, start: 0, duration: 0.11, type: 'triangle' },
+    { freq: 659, start: 0.1, duration: 0.11, type: 'triangle' },
+    { freq: 784, start: 0.2, duration: 0.11, type: 'triangle' },
+    { freq: 1047, start: 0.3, duration: 0.32, type: 'triangle' },
   ],
 }
 

@@ -1,29 +1,167 @@
 @import "tailwindcss";
+@import "@fontsource/press-start-2p/latin-400.css";
+@import "@fontsource/pixelify-sans/latin-400.css";
+@import "@fontsource/pixelify-sans/latin-600.css";
+@import "@fontsource/pixelify-sans/latin-700.css";
 
+/*
+ * Pixel theme. Colours come from src/pixel/palette.ts so DOM chrome and
+ * canvas art read as one world. Role colours (revenue/cost/debt/equity/
+ * cash) are the brief's, mapped onto the palette's v/r/a/u/t.
+ */
 @theme {
-  --color-bg: #0b0f17;
-  --color-panel: #131a26;
-  --color-panel-2: #1b2433;
-  --color-line: #263145;
-  --color-ink: #e6edf7;
-  --color-muted: #8b98ad;
+  --color-bg: #1b1a2e;
+  --color-panel: #2a2748;
+  --color-panel-2: #3b3a56;
+  --color-line: #6d6f8f;
+  --color-line-hi: #a7a9c4;
+  --color-shade: #14132a;
+  --color-ink: #f4f4f8;
+  --color-muted: #a7a9c4;
+  --color-paper: #e5dccb;
+  --color-paper-2: #bfb39c;
+  --color-paper-ink: #241f3a;
+  --color-gold: #f2b632;
 
-  /* Brief: revenue green, costs red, debt amber, equity blue, cash teal */
-  --color-revenue: #22c55e;
-  --color-cost: #ef4444;
-  --color-debt: #f59e0b;
-  --color-equity: #3b82f6;
-  --color-cash: #14b8a6;
+  --color-revenue: #4fc46a;
+  --color-cost: #d94a4a;
+  --color-debt: #f2b632;
+  --color-equity: #4a7ad9;
+  --color-cash: #3bbfb0;
 
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-sans: "Pixelify Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: "Press Start 2P", "Pixelify Sans", monospace;
+  --font-mono: "Pixelify Sans", ui-monospace, monospace;
 }
 
 html, body, #root { height: 100%; }
 body {
   background: var(--color-bg);
   color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.35;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+  /* Subtle pixel grid on the page ground so flat areas do not feel empty. */
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 8px 8px;
 }
-button { touch-action: manipulation; }
+button { touch-action: manipulation; font-family: inherit; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+input, textarea, select { font-family: inherit; }
+
+/* Headline face: the 8-bit font is tiny, so sizes here are deliberate. */
+.font-pixel { font-family: var(--font-pixel); letter-spacing: 0.02em; }
+.px-h1 { font-family: var(--font-pixel); font-size: 15px; line-height: 1.6; }
+.px-h2 { font-family: var(--font-pixel); font-size: 12px; line-height: 1.6; }
+.px-eyebrow { font-family: var(--font-pixel); font-size: 9px; line-height: 1.4; letter-spacing: 0.06em; text-transform: uppercase; }
+.px-num { font-family: var(--font-pixel); font-variant-numeric: tabular-nums; }
+.px-shadow { text-shadow: 2px 2px 0 var(--color-shade); }
+
+/*
+ * Bevelled pixel box. Corners are notched by 3px (clip-path) so the box
+ * reads as pixel-rounded; the bevel is an inset highlight on the top/left
+ * and an inset shade on the bottom/right, like a 16-bit dialog window.
+ */
+.px-box {
+  position: relative;
+  background: var(--color-panel);
+  border: 3px solid var(--color-line-hi);
+  box-shadow: inset 3px 3px 0 0 rgba(255,255,255,0.08), inset -3px -3px 0 0 var(--color-shade);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+}
+.px-box-dark { background: var(--color-shade); border-color: var(--color-line); }
+.px-box-paper {
+  background: var(--color-paper);
+  color: var(--color-paper-ink);
+  border-color: var(--color-paper-ink);
+  box-shadow: inset 3px 3px 0 0 rgba(255,255,255,0.5), inset -3px -3px 0 0 var(--color-paper-2);
+}
+.px-box-paper .text-muted { color: #5b5670; }
+
+/* Raised pixel button. Presses down 2px on :active and flips the bevel. */
+.px-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1rem;
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  background: var(--color-panel-2);
+  border: 3px solid var(--color-bg);
+  box-shadow: inset 3px 3px 0 0 rgba(255,255,255,0.18), inset -3px -3px 0 0 rgba(0,0,0,0.35), 0 3px 0 0 var(--color-bg);
+  clip-path: polygon(3px 0, calc(100% - 3px) 0, 100% 3px, 100% calc(100% - 3px), calc(100% - 3px) 100%, 3px 100%, 0 calc(100% - 3px), 0 3px);
+  user-select: none;
+  transition: transform 60ms steps(2), filter 120ms;
+}
+.px-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.px-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: inset 3px 3px 0 0 rgba(0,0,0,0.3), inset -3px -3px 0 0 rgba(255,255,255,0.08), 0 1px 0 0 var(--color-bg);
+}
+.px-btn:disabled { opacity: 0.45; }
+.px-btn-primary { background: var(--color-revenue); color: var(--color-bg); }
+.px-btn-gold { background: var(--color-gold); color: var(--color-bg); }
+.px-btn-danger { background: var(--color-cost); color: var(--color-ink); }
+.px-btn-paper { background: var(--color-paper); color: var(--color-paper-ink); }
+
+/* Chip used by task widgets: a flat pixel card with a coloured left rail. */
+.px-chip {
+  border: 2px solid var(--color-bg);
+  box-shadow: inset 2px 2px 0 0 rgba(255,255,255,0.1), inset -2px -2px 0 0 rgba(0,0,0,0.3);
+  clip-path: polygon(2px 0, calc(100% - 2px) 0, 100% 2px, 100% calc(100% - 2px), calc(100% - 2px) 100%, 2px 100%, 0 calc(100% - 2px), 0 2px);
+}
+
+/* Segmented progress bar, pixel style: filled cells with 1px gaps. */
+.px-bar { height: 10px; background: var(--color-shade); border: 2px solid var(--color-bg); display: flex; gap: 1px; padding: 1px; }
+.px-bar > i { display: block; flex: 1; background: var(--color-panel-2); }
+.px-bar > i.on { background: var(--color-revenue); }
+.px-bar > i.gold { background: var(--color-gold); }
+
+/* Inputs */
+.px-input {
+  background: var(--color-shade);
+  color: var(--color-ink);
+  border: 3px solid var(--color-line);
+  box-shadow: inset 2px 2px 0 0 rgba(0,0,0,0.4);
+  min-height: 44px;
+  padding: 0 0.75rem;
+  font-size: 18px;
+  outline: none;
+}
+.px-input:focus { border-color: var(--color-ink); }
+
+/* Typewriter caret for dialog boxes. */
+@keyframes px-blink { 0%, 49% { opacity: 1 } 50%, 100% { opacity: 0 } }
+.px-caret::after { content: "▮"; margin-left: 2px; animation: px-blink 0.8s steps(1) infinite; }
+
+/* Bounce-in for popups: 3 steps so it feels frame-animated. */
+@keyframes px-pop { 0% { transform: scale(0.85); opacity: 0 } 60% { transform: scale(1.04); opacity: 1 } 100% { transform: scale(1) } }
+.px-pop { animation: px-pop 180ms steps(3) both; }
+@keyframes px-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+.px-rise { animation: px-rise 160ms steps(4) both; }
+@keyframes px-shake { 0%,100% { transform: none } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
+.px-shake { animation: px-shake 240ms steps(4) 2; }
+@keyframes px-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
+.px-float { animation: px-float 1.2s steps(3) infinite; }
+@keyframes px-confetti { 0% { transform: translateY(-10vh) rotate(0deg); opacity: 1 } 100% { transform: translateY(110vh) rotate(360deg); opacity: 0.8 } }
+.px-confetti { position: absolute; top: 0; width: 8px; height: 8px; animation: px-confetti linear infinite; }
+
+/* Scanline overlay, opt-in via the .crt class on a container. */
+.crt::before {
+  content: ""; pointer-events: none; position: absolute; inset: 0; z-index: 50;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,0.12) 2px 3px);
+}
+
+/* Legacy aliases used across widgets: keep radius off everywhere. */
+.rounded, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-full { border-radius: 0 !important; }

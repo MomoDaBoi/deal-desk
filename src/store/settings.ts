@@ -19,9 +19,11 @@ interface SettingsState {
   /** Which Claude model the Mentor calls. */
   model: MentorModel
   soundOn: boolean
+  musicOn: boolean
   setApiKey: (k: string) => void
   setMentorEnabled: (v: boolean) => void
   setSoundOn: (v: boolean) => void
+  setMusicOn: (v: boolean) => void
   setModel: (m: MentorModel) => void
 }
 
@@ -32,9 +34,11 @@ export const useSettings = create<SettingsState>()(
       mentorEnabled: true,
       model: DEFAULT_MENTOR_MODEL,
       soundOn: false,
+      musicOn: false,
       setApiKey: (apiKey) => set({ apiKey: apiKey.trim() }),
       setMentorEnabled: (mentorEnabled) => set({ mentorEnabled }),
       setSoundOn: (soundOn) => set({ soundOn }),
+      setMusicOn: (musicOn) => set({ musicOn }),
       setModel: (model) => set({ model }),
     }),
     { name: SETTINGS_KEY, storage: createJSONStorage(() => localStorage) },
